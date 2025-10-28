@@ -1,0 +1,12 @@
+# Python cache files
+__pycache__/
+
+# Virtual environments
+.venv
+
+# Environment variables
+.env
+
+# Data
+*.xlsx
+*.csv

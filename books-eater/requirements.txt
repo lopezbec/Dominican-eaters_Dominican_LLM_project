@@ -1,0 +1,10 @@
+# Core dependencies
+requests==2.31.0
+python-dotenv==1.0.0
+
+# Data processing
+pandas==2.2.2
+openpyxl==3.1.2
+
+# YouTube scraping (no API key needed)
+scrapetube==2.6.0
