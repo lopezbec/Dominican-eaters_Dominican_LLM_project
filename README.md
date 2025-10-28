@@ -184,6 +184,12 @@ Each submodule has its own license. Please refer to individual project READMEs.
 
 For questions or collaborations regarding this project, please open an issue in the relevant repository.
 
+## Acknowledgment
+
+This project has been partially supported by the Ministerio de Educación Superior, Ciencia y Tecnología (MESCyT) of the Dominican Republic through the FONDOCYT grant. The authors gratefully acknowledge this support.
+
+Any opinions, findings, conclusions, or recommendations expressed in this material are those of the authors and do not necessarily reflect the views of MESCyT.
+
 ---
 
 **Preserving Dominican culture in the digital age** 🇩🇴
