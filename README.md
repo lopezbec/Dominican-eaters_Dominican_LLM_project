@@ -138,48 +138,6 @@ git push origin main
 - **openpyxl**: Excel file generation
 - **Genius API**: Lyrics fetching (lyrics-eater)
 
-## Project Goals
-
-This collection of scrapers aims to:
-
-1. **Preserve Dominican Culture**: Digitally catalog Dominican literature, poetry, and music
-2. **Enable Research**: Provide datasets for cultural and linguistic analysis
-3. **Support Education**: Make Dominican cultural content more accessible
-4. **Build LLM Training Data**: Create high-quality datasets for Dominican Spanish language models
-
-## Use Cases
-
-- **Academic Research**: Study Dominican literature and cultural trends
-- **Natural Language Processing**: Train language models on Dominican Spanish
-- **Cultural Preservation**: Archive digital copies of cultural content
-- **Educational Resources**: Provide materials for teaching Dominican culture
-- **Content Discovery**: Help people find Dominican cultural content online
-
-## Contributing
-
-Each submodule has its own contribution guidelines. To contribute:
-
-1. Fork the specific submodule repository
-2. Make your changes
-3. Submit a pull request to that submodule
-4. Update this parent repository if needed
-
-## Notes
-
-- All scrapers respect copyright and only collect publicly available content
-- Scrapers are designed for educational and research purposes
-- Content availability may change over time
-- Always verify rights before using collected content
-
-## License
-
-Each submodule has its own license. Please refer to individual project READMEs.
-
-## Authors
-
-- Christian Lopez - Project Lead
-- Contributors welcome!
-
 ## Contact
 
 For questions or collaborations regarding this project, please open an issue in the relevant repository.
