@@ -17,6 +17,7 @@ class Book:
     duracion: str = "N/A"
     tipo_contenido: str = "N/A"
     disponibilidad: str = "NO ENCONTRADO"
+    transcripcion: str = ""
     
     def to_dict(self) -> dict:
         """
@@ -33,7 +34,8 @@ class Book:
             'URL YouTube': self.url_youtube,
             'Duración': self.duracion,
             'Tipo Contenido': self.tipo_contenido,
-            'Disponibilidad': self.disponibilidad
+            'Disponibilidad': self.disponibilidad,
+            'Transcripción': self.transcripcion
         }
     
     def mark_as_found(self, url: str, duration: str, content_type: str, partial: bool = False):

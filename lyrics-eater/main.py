@@ -20,16 +20,14 @@ def main() -> None:
         return
     
     print(f"\n{'='*60}")
-    print(f"🎵 Lyrics Eater - Processing {len(searches)} searches")
+    print(f"Lyrics Eater - Processing {len(searches)} searches")
     print(f"{'='*60}\n")
     
-    # Initialize clients
     genius_client = GeniusAPIClient(config.GENIUS_ACCESS_TOKEN)
-    youtube_client = YouTubeAPIClient()  # No API key needed
+    youtube_client = YouTubeAPIClient()
     
     print("YouTube scraper enabled (no API limits!)\n")
     
-    # Initialize service
     lyrics_service = LyricsService(genius_client, youtube_client)
     
     songs, successful, failed = lyrics_service.process_multiple_queries(searches)

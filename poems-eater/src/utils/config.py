@@ -4,8 +4,8 @@
 VIDEOS_PER_SEARCH = 3  # Number of videos to check per poem
 
 # Output files
-OUTPUT_FILE = "dominican_poems.xlsx"
-OUTPUT_CSV = "dominican_poems.csv"
+OUTPUT_FILE = "../audio_processing/data/dominican_poems.xlsx"
+OUTPUT_CSV = "../audio_processing/data/dominican_poems.csv"
 
 # Optional input file for custom poems
 POEMS_FILE = "poems_list.txt"

@@ -21,7 +21,7 @@ class Config:
     
     PROJECT_ROOT: Path = Path(__file__).parent.parent.parent
     SEARCHES_FILE: str = "searches.txt"
-    OUTPUT_FILE: str = "dominican_songs.xlsx"
+    OUTPUT_FILE: str = "../audio_processing/data/dominican_songs.xlsx"
     
     RESULTS_PER_PAGE: int = 1
     

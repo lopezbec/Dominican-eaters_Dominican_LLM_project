@@ -14,19 +14,18 @@ def main() -> None:
     """Main entry point for the application."""
     
     print(f"\n{'='*70}")
-        print("Poems Eater - Buscador de Recitaciones de Poemas Dominicanos")
+    print("Poems Eater - Buscador de Recitaciones de Poemas Dominicanos")
     print(f"{'='*70}\n")
     
     # Try to load poems from file first
-        poems = FileHandler.load_poems_from_file(config.POEMS_FILE)
+    poems = FileHandler.load_poems_from_file(config.POEMS_FILE)
     
     if poems:
-            print(f"Cargados {len(poems)} poemas desde '{config.POEMS_FILE}'")
+        print(f"Cargados {len(poems)} poemas desde '{config.POEMS_FILE}'")
     else:
-        # Use predefined dataset
-            print(f"Usando dataset predefinido de poesía dominicana")
+        print(f"Usando dataset predefinido de poesía dominicana")
         poems = get_poems_as_objects()
-            print(f"{len(poems)} poemas en el dataset")
+        print(f"{len(poems)} poemas en el dataset")
     
     print(f"\n{'='*70}")
     print("Iniciando búsqueda en YouTube...")
@@ -34,7 +33,7 @@ def main() -> None:
     
     # Initialize YouTube client (no API key needed!)
     youtube_client = YouTubeClient(videos_per_search=config.VIDEOS_PER_SEARCH)
-        print("Cliente de YouTube inicializado (sin límites de API!)\n")
+    print("Cliente de YouTube inicializado (sin límites de API!)\n")
     
     # Initialize service
     poem_service = PoemService(youtube_client)
@@ -44,7 +43,7 @@ def main() -> None:
     
     if poems:
         print(f"\n{'='*70}")
-            print("Guardando resultados...")
+        print("Guardando resultados...")
         print(f"{'='*70}\n")
         
         # Save to Excel
@@ -56,21 +55,21 @@ def main() -> None:
         # Print statistics
         poem_service.print_statistics(stats)
         
-            print(f"Archivos generados:")
+        print(f"Archivos generados:")
         print(f"   - {config.OUTPUT_FILE}")
         print(f"   - {config.OUTPUT_CSV}")
         
     else:
-            print("\nNo se procesaron poemas")
+        print("\nNo se procesaron poemas")
 
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-            print("\n\nPrograma interrumpido por el usuario")
-            print("¡Hasta luego!")
+        print("\n\nPrograma interrumpido por el usuario")
+        print("¡Hasta luego!")
     except Exception as e:
-            print(f"\nError fatal: {e}")
+        print(f"\nError fatal: {e}")
         import traceback
         traceback.print_exc()

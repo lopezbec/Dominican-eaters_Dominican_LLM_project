@@ -48,7 +48,6 @@ class LyricsService:
             print(f"   Could not fetch details")
             return None, False
         
-        print(f"    Album: {song.album}")
         print(f"    Genre(s): {song.genres}")
         print(f"    Label: {song.label}")
         
@@ -62,11 +61,10 @@ class LyricsService:
             print(f"      Could not obtain lyrics")
             song.lyrics = "N/A"
         
-        # Fetch YouTube link
         print(f"     Searching YouTube...")
         youtube_url = self.youtube_client.search_music_video(song.title, song.artist)
         if youtube_url:
-            print(f"     ✓ YouTube link found")
+            print(f"     YouTube link found")
             song.youtube_url = youtube_url
         
         return song, True

@@ -20,8 +20,8 @@ class Config:
     # File paths
     PROJECT_ROOT: Path = Path(__file__).parent.parent.parent
     BOOKS_FILE: str = "books_list.txt"
-    OUTPUT_FILE: str = "dominican_audiobooks.xlsx"
-    OUTPUT_CSV: str = "dominican_audiobooks.csv"
+    OUTPUT_FILE: str = "../audio_processing/data/dominican_audiobooks.xlsx"
+    OUTPUT_CSV: str = "../audio_processing/data/dominican_audiobooks.csv"
     
     # Processing settings
     SLEEP_BETWEEN_SEARCHES: int = 2  # Seconds to wait between searches

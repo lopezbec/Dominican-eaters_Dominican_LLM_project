@@ -21,6 +21,7 @@ class Poem:
     calidad: str = "N/A"
     notas: str = ""
     disponibilidad: str = "NO ENCONTRADO"
+    transcripcion: str = ""
     
     def to_dict(self) -> dict:
         """
@@ -41,7 +42,8 @@ class Poem:
             'Tipo Contenido': self.tipo_contenido,
             'Calidad': self.calidad,
             'Notas': self.notas,
-            'Disponibilidad': self.disponibilidad
+            'Disponibilidad': self.disponibilidad,
+            'Transcripción': self.transcripcion
         }
     
     def mark_as_found(

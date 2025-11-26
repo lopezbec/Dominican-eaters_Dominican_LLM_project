@@ -1,153 +1,296 @@
-# Dominican Eaters - Dominican LLM Project
+# Dominican Eaters - LLM Training Dataset Project
 
-> A collection of web scrapers for Dominican cultural content: books, poems, and music lyrics.
+A comprehensive pipeline for collecting, processing, and aligning Dominican Spanish audio data from YouTube for Large Language Model training. This project focuses on three content domains: audiobooks, song lyrics, and poetry.
 
-## Overview
+## Project Overview
 
-This repository contains three specialized scrapers designed to collect and catalog Dominican cultural content from various online sources. Each scraper is maintained as an independent Git submodule.
+Dominican Eaters automates the collection and processing of Dominican Spanish content through:
+- **Web scraping**: Automated search and metadata extraction from YouTube
+- **Audio download**: Bulk downloading of audio files via yt-dlp
+- **Transcription**: Whisper-based speech-to-text conversion
+- **Text alignment**: Word Error Rate (WER) calculation for quality validation
+- **Dataset generation**: Export to multiple formats (JSONL, CSV, Excel)
 
-## Projects
-
-### 📚 [books-eater](./books-eater)
-Scraper for Dominican audiobooks available on YouTube.
-- Searches for audiobooks of Dominican literature
-- Exports metadata to Excel/CSV
-- Uses `scrapetube` (no API key required)
-
-### 📝 [poems-eater](./poems-eater)
-Scraper for Dominican poem recitations on YouTube.
-- Finds recitations, dramatizations, and readings
-- Includes 100+ classic and contemporary Dominican poems
-- Detailed statistics on authors, genres, and content types
-
-### 🎵 [lyrics-eater](./lyrics-eater)
-Scraper for Dominican song lyrics.
-- Integrates with Genius API and YouTube
-- Catalogs Dominican music and lyrics
-- Exports comprehensive song datasets
-
-## Structure
+## Project Structure
 
 ```
 Dominican-eaters_Dominican_LLM_project/
-├── books-eater/          # Submodule: Audiobook scraper
-├── poems-eater/          # Submodule: Poem recitation scraper
-├── lyrics-eater/         # Submodule: Song lyrics scraper
-└── README.md             # This file
+├── dominican-eater.py          # Main CLI entry point
+├── audio_processing/            # Core processing pipeline
+│   ├── src/                    # Processing modules
+│   │   ├── downloader.py       # YouTube audio download
+│   │   ├── transcriber.py      # Whisper transcription
+│   │   ├── aligner.py          # Text alignment & WER
+│   │   └── validator.py        # Quality validation
+│   ├── config.yaml             # Pipeline configuration
+│   └── utilities/setup.py      # Dependency installer
+├── books-eater/                # Audiobook scraper
+├── lyrics-eater/               # Song lyrics scraper
+└── poems-eater/                # Poetry scraper
 ```
 
-## Getting Started
+## Installation
 
-### Clone with Submodules
+### Prerequisites
+- Python 3.8+
+- FFmpeg (for audio processing)
+- Git
 
-To clone this repository with all submodules:
+### Setup
 
+1. Clone the repository:
 ```bash
-git clone --recurse-submodules git@github.com:lopezbec/Dominican-eaters_Dominican_LLM_project.git
-```
-
-Or if you already cloned without submodules:
-
-```bash
-git clone git@github.com:lopezbec/Dominican-eaters_Dominican_LLM_project.git
+git clone https://github.com/yourusername/Dominican-eaters_Dominican_LLM_project.git
 cd Dominican-eaters_Dominican_LLM_project
-git submodule init
-git submodule update
 ```
 
-### Install Dependencies
-
-Each project has its own dependencies. Navigate to each submodule and install:
-
+2. Create and activate virtual environment:
 ```bash
-# Books Eater
-cd books-eater
-pip install -r requirements.txt
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+# or
+.venv\Scripts\activate     # Windows
+```
 
-# Poems Eater
-cd ../poems-eater
-pip install -r requirements.txt
+3. Install dependencies:
+```bash
+# Install all dependencies
+python audio_processing/utilities/setup.py
 
-# Lyrics Eater
-cd ../lyrics-eater
-pip install -r requirements.txt
+# Or manually for each module
+pip install -r audio_processing/requirements.txt
+pip install -r books-eater/requirements.txt
+pip install -r lyrics-eater/requirements.txt
+pip install -r poems-eater/requirements.txt
+```
+
+4. Configure environment (lyrics module only):
+```bash
+cd lyrics-eater
+cp .env.example .env
+# Edit .env and add your Genius API token
+```
+
+5. Create project directories:
+```bash
+python dominican-eater.py setup
 ```
 
 ## Usage
 
-Each submodule can be run independently:
+### Quick Start - Full Pipeline
 
+Process all modules (books, lyrics, poems):
 ```bash
-# Run books scraper
-cd books-eater
-python main.py
-
-# Run poems scraper
-cd poems-eater
-python main.py
-
-# Run lyrics scraper
-cd lyrics-eater
-python main.py
+python dominican-eater.py pipeline --type all
 ```
 
-## Working with Submodules
-
-### Update All Submodules
-
+Process individual module:
 ```bash
-git submodule update --remote --merge
+python dominican-eater.py pipeline --type lyrics
 ```
 
-### Update a Specific Submodule
+### Individual Commands
 
+**1. Scrape Content Metadata**
 ```bash
-cd books-eater
-git pull origin main
-cd ..
-git add books-eater
-git commit -m "Update books-eater submodule"
+python dominican-eater.py scrape --type all
+python dominican-eater.py scrape --type books
 ```
 
-### Make Changes in a Submodule
-
-1. Navigate to the submodule directory
-2. Make your changes
-3. Commit in the submodule
-4. Push the submodule changes
-5. Update the parent repository
-
+**2. Download Audio**
 ```bash
-cd books-eater
-# Make changes...
-git add .
-git commit -m "Your changes"
-git push origin main
-
-cd ..
-git add books-eater
-git commit -m "Update books-eater reference"
-git push origin main
+python dominican-eater.py download --type lyrics-eater
+python dominican-eater.py download --type all --force
 ```
 
-## Technology Stack
+**3. Transcribe Audio**
+```bash
+python dominican-eater.py transcribe --type books-eater --model base
+python dominican-eater.py transcribe --type all --model large
+```
 
-- **Python 3.8+**
-- **scrapetube**: YouTube scraping without API key
-- **pandas**: Data manipulation and export
-- **openpyxl**: Excel file generation
-- **Genius API**: Lyrics fetching (lyrics-eater)
+Available Whisper models: `tiny`, `base`, `small`, `medium`, `large`, `large-v2`, `large-v3`
+
+**4. Align Text (Lyrics Only)**
+```bash
+python dominican-eater.py align --type lyrics-eater
+```
+
+**5. Validate Outputs**
+```bash
+python dominican-eater.py validate --type all
+```
+
+### Pipeline Options
+
+```bash
+# Skip steps in pipeline
+python dominican-eater.py pipeline --type lyrics --skip-scrape --skip-download
+
+# Force re-processing
+python dominican-eater.py pipeline --type all --force
+
+# Use specific Whisper model
+python dominican-eater.py pipeline --type books --model large-v3
+```
+
+## Modules
+
+### Books Eater
+Scrapes Dominican literature audiobooks from YouTube using a curated list of authors and titles.
+
+**Configuration**: `books-eater/src/utils/dominican_books.py`
+
+**Output**: `audio_processing/data/dominican_audiobooks.xlsx`
+
+### Lyrics Eater
+Fetches song lyrics from Genius API and finds corresponding YouTube audio.
+
+**Configuration**: 
+- Create `lyrics-eater/searches.txt` with artist names (one per line)
+- Add Genius API token to `lyrics-eater/.env`
+
+**Output**: `audio_processing/data/dominican_songs.xlsx`
+
+### Poems Eater
+Searches for Dominican poetry recitations on YouTube.
+
+**Configuration**: `poems-eater/src/utils/dominican_poems.py`
+
+**Output**: `audio_processing/data/dominican_poems.xlsx`
+
+## Output Structure
+
+After running the pipeline, outputs are organized as:
+
+```
+audio_processing/
+├── audio/
+│   ├── books/          # Downloaded audiobook files (.m4a)
+│   ├── lyrics/         # Downloaded song files (.m4a)
+│   └── poems/          # Downloaded poetry files (.m4a)
+├── transcriptions/
+│   ├── books/          # Whisper transcriptions (.json)
+│   ├── lyrics/         # Whisper transcriptions (.json)
+│   └── poems/          # Whisper transcriptions (.json)
+├── reference_texts/
+│   └── lyrics/         # Reference lyrics for alignment (.txt)
+├── reports/
+│   ├── books/          # Processing reports
+│   ├── lyrics/         # Processing + alignment reports
+│   └── poems/          # Processing reports
+└── data/
+    ├── dominican_audiobooks.xlsx
+    ├── dominican_songs.xlsx
+    └── dominican_poems.xlsx
+```
+
+## Configuration
+
+Main configuration file: `audio_processing/config.yaml`
+
+```yaml
+modules:
+  books-eater:
+    audio_dir: audio_processing/audio/books
+    transcriptions_dir: audio_processing/transcriptions/books
+    reports_dir: audio_processing/reports/books
+  
+  lyrics-eater:
+    audio_dir: audio_processing/audio/lyrics
+    transcriptions_dir: audio_processing/transcriptions/lyrics
+    reference_texts_dir: audio_processing/reference_texts/lyrics
+    reports_dir: audio_processing/reports/lyrics
+  
+  poems-eater:
+    audio_dir: audio_processing/audio/poems
+    transcriptions_dir: audio_processing/transcriptions/poems
+    reports_dir: audio_processing/reports/poems
+```
+
+## Text Alignment (Lyrics)
+
+The lyrics module includes advanced alignment features:
+
+- **WER Calculation**: Measures transcription accuracy against reference lyrics
+- **Intro Detection**: Automatically detects and skips video intros/dialogue
+- **Substring Matching**: Finds where lyrics begin in the transcription
+- **Quality Metrics**: Generates detailed alignment reports
+
+Average WER for Dominican Spanish lyrics: ~1.5 (98.4% success rate)
+
+## Reports
+
+Each module generates JSON reports tracking:
+- Download success/failure rates
+- Transcription quality metrics
+- Alignment scores (lyrics only)
+- Processing timestamps
+- Error logs
+
+View reports: `audio_processing/reports/[module]/`
+
+## Troubleshooting
+
+**FFmpeg not found**
+```bash
+# Ubuntu/Debian
+sudo apt install ffmpeg
+
+# macOS
+brew install ffmpeg
+
+# Windows
+# Download from https://ffmpeg.org/download.html
+```
+
+**Genius API errors (lyrics module)**
+- Verify token in `lyrics-eater/.env`
+- Get token at https://genius.com/api-clients
+
+**Out of memory during transcription**
+- Use smaller Whisper model: `--model tiny` or `--model base`
+- Process fewer files at once
+
+**YouTube download failures**
+- Update yt-dlp: `pip install --upgrade yt-dlp`
+- Some videos may be region-locked or removed
+
+## Development
+
+### Code Style
+- Python 3.8+ type hints
+- 4-space indentation
+- Max 100 character line length
+- Use `logging` module for debug output
+
+### Adding New Content
+
+**Add books**: Edit `books-eater/src/utils/dominican_books.py`
+
+**Add poems**: Edit `poems-eater/src/utils/dominican_poems.py`
+
+**Add songs**: Add artist names to `lyrics-eater/searches.txt`
+
+## License
+
+This project is developed for academic research in Dominican Spanish NLP.
+
+## Acknowledgments
+
+- **FONDOCYT**: Funding support for Dominican LLM research
+- **Whisper**: OpenAI's speech recognition model
+- **yt-dlp**: YouTube download tool
+- **Genius API**: Lyrics database
+
+## Contributing
+
+Contributions are welcome. Please:
+1. Fork the repository
+2. Create a feature branch
+3. Submit a pull request with clear description
 
 ## Contact
 
-For questions or collaborations regarding this project, please open an issue in the relevant repository.
-
-## Acknowledgment
-
-This project has been partially supported by the Ministerio de Educación Superior, Ciencia y Tecnología (MESCyT) of the Dominican Republic through the FONDOCYT grant. The authors gratefully acknowledge this support.
-
-Any opinions, findings, conclusions, or recommendations expressed in this material are those of the authors and do not necessarily reflect the views of MESCyT.
-
----
-
-**Preserving Dominican culture in the digital age** 🇩🇴
+For questions or collaboration inquiries, please open an issue on GitHub.

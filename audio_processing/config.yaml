@@ -1,0 +1,54 @@
+audio:
+  format: m4a
+  sample_rate: 16000
+  channels: 1
+  codec: aac
+  quality: 192k
+
+download:
+  max_retries: 3
+  retry_delay: 5
+  timeout: 300
+  
+whisper:
+  model: base
+  language: es
+  word_timestamps: true
+  task: transcribe
+  fp16: false
+  beam_size: 5
+  best_of: 5
+  temperature: 0.0
+  device: cuda
+
+alignment:
+  min_similarity: 0.7
+  aeneas_task_language: spa
+  aeneas_is_text_type: plain
+
+modules:
+  books-eater:
+    excel_path: audio_processing/data/dominican_audiobooks.xlsx
+    url_column: "URL YouTube"
+    audio_dir: audio_processing/audio/books
+    transcriptions_dir: audio_processing/transcriptions/books
+    reports_dir: audio_processing/reports/books
+    reference_texts_dir: audio_processing/reference_texts/books
+    
+  poems-eater:
+    excel_path: audio_processing/data/dominican_poems.xlsx
+    url_column: "URL YouTube"
+    audio_dir: audio_processing/audio/poems
+    transcriptions_dir: audio_processing/transcriptions/poems
+    reports_dir: audio_processing/reports/poems
+    reference_texts_dir: audio_processing/reference_texts/poems
+    
+  lyrics-eater:
+    excel_path: audio_processing/data/dominican_songs.xlsx
+    url_column: "enlace_youtube"
+    lyrics_column: "letras"
+    audio_dir: audio_processing/audio/lyrics
+    transcriptions_dir: audio_processing/transcriptions/lyrics
+    alignments_dir: audio_processing/alignments/lyrics
+    reports_dir: audio_processing/reports/lyrics
+    reference_texts_dir: audio_processing/reference_texts/lyrics

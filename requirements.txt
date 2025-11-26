@@ -1,0 +1,19 @@
+# Core dependencies for unified installation
+# Individual modules have their own requirements.txt for isolated development
+
+# Audio Processing Pipeline
+yt-dlp>=2023.12.30
+openai-whisper>=20231117
+pandas>=2.0.0
+openpyxl>=3.1.0
+pyyaml>=6.0.0
+tqdm>=4.66.0
+torch>=2.0.0
+numpy>=1.24.0
+ffmpeg-python>=0.2.0
+
+# Scrapers
+requests>=2.31.0
+beautifulsoup4>=4.12.2
+python-dotenv>=1.0.0
+scrapetube>=2.5.1
