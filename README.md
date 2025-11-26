@@ -277,19 +277,11 @@ brew install ffmpeg
 
 This project is developed for academic research in Dominican Spanish NLP.
 
-## Acknowledgments
+## Acknowledgment
 
-- **FONDOCYT**: Funding support for Dominican LLM research
-- **Whisper**: OpenAI's speech recognition model
-- **yt-dlp**: YouTube download tool
-- **Genius API**: Lyrics database
+This project has been partially supported by the Ministerio de Educación Superior, Ciencia y Tecnología (MESCyT) of the Dominican Republic through the FONDOCYT grant. The authors gratefully acknowledge this support.
 
-## Contributing
-
-Contributions are welcome. Please:
-1. Fork the repository
-2. Create a feature branch
-3. Submit a pull request with clear description
+Any opinions, findings, conclusions, or recommendations expressed in this material are those of the authors and do not necessarily reflect the views of MESCyT.
 
 ## Contact
 
