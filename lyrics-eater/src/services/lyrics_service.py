@@ -2,8 +2,8 @@
 
 from typing import List, Tuple
 
-from src.clients.genius_client import GeniusAPIClient
-from src.clients.youtube_client import YouTubeAPIClient
+from shared.clients.genius_client import GeniusAPIClient
+from shared.clients.youtube_client import YouTubeAPIClient
 from src.models.song import Song
 
 

@@ -3,7 +3,7 @@
 from typing import List, Tuple, Dict
 from collections import Counter
 
-from src.clients.youtube_client import YouTubeClient
+from shared.clients.youtube_client import YouTubeClient
 from src.models.poem import Poem
 
 

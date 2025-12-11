@@ -3,9 +3,11 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from shared.models.base_content import BaseContent
+
 
 @dataclass
-class Poem:
+class Poem(BaseContent):
     """
     Represents a Dominican poem with YouTube recitation information.
     """

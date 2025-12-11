@@ -5,7 +5,7 @@ Poems Eater - Dominican Poetry Recitation Finder
 Searches for Dominican poetry recitations on YouTube
 """
 
-from src.clients import YouTubeClient
+from shared.clients.youtube_client import YouTubeClient
 from src.services import PoemService
 from src.utils import config, FileHandler, get_poems_as_objects
 

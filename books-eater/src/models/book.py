@@ -3,9 +3,11 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from shared.models.base_content import BaseContent
+
 
 @dataclass
-class Book:
+class Book(BaseContent):
     """
     Represents a Dominican book with audiobook information.
     """

@@ -2,11 +2,16 @@ import os
 import re
 import json
 import subprocess
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional
 import yaml
 from tqdm import tqdm
 import logging
+
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+from shared.interfaces.video_downloader import IVideoDownloader
 
 try:
     import pandas as pd
@@ -22,12 +27,18 @@ logger = logging.getLogger(__name__)
 
 class AudioDownloader:
     
-    def __init__(self, config_path: str = "config.yaml"):
+    def __init__(self, config_path: str = "config.yaml", video_downloader: Optional[IVideoDownloader] = None):
         with open(config_path, 'r', encoding='utf-8') as f:
             self.config = yaml.safe_load(f)
         
         self.audio_config = self.config['audio']
         self.download_config = self.config['download']
+        
+        if video_downloader is None:
+            from .downloaders.ytdlp_downloader import YtDlpDownloader
+            video_downloader = YtDlpDownloader()
+        
+        self.video_downloader = video_downloader
         
     def sanitize_filename(self, filename: str) -> str:
         filename = re.sub(r'[<>:"/\\|?*]', '', filename)
@@ -36,21 +47,7 @@ class AudioDownloader:
         return filename
     
     def extract_video_info(self, url: str) -> Optional[Dict]:
-        try:
-            cmd = [
-                'yt-dlp',
-                '--dump-json',
-                '--no-warnings',
-                '--skip-download',
-                url
-            ]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-            if result.returncode == 0:
-                return json.loads(result.stdout)
-            return None
-        except Exception as e:
-            logger.error(f"Error extracting info from {url}: {e}")
-            return None
+        return self.video_downloader.extract_video_info(url)
     
     def download_audio(
         self, 
@@ -97,20 +94,15 @@ class AudioDownloader:
                 else:
                     logger.warning(f"File too small ({file_size} bytes), re-downloading: {filename}")
             
-            cmd = [
-                'yt-dlp',
-                '-f', 'bestaudio',
-                '-x',
-                '--audio-format', self.audio_config['format'],
-                '--audio-quality', self.audio_config['quality'],
-                '--postprocessor-args', f"ffmpeg:-ar {self.audio_config['sample_rate']} -ac {self.audio_config['channels']}",
-                '-o', full_path,
-                '--no-warnings',
-                '--quiet',
-                url
-            ]
-            
-            subprocess.run(cmd, check=True, timeout=self.download_config['timeout'])
+            self.video_downloader.download(
+                url=url,
+                output_path=full_path,
+                audio_format=self.audio_config['format'],
+                audio_quality=self.audio_config['quality'],
+                sample_rate=self.audio_config['sample_rate'],
+                channels=self.audio_config['channels'],
+                timeout=self.download_config['timeout']
+            )
             
             result['success'] = True
             result['file_path'] = full_path

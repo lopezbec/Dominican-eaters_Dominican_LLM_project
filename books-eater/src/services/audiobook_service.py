@@ -2,7 +2,7 @@
 
 from typing import List, Tuple, Dict
 
-from src.clients.youtube_client import YouTubeClient
+from shared.clients.youtube_client import YouTubeClient
 from src.models.book import Book
 
 

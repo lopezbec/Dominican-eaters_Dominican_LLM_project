@@ -1,17 +1,23 @@
 """Configuration management using environment variables."""
 
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+from shared.utils.module_config import ModuleConfig
+
 load_dotenv()
+
+_base_config = ModuleConfig(module_name="songs", input_file="searches.txt")
 
 
 class Config:
-    """
-    Centralized configuration using class variables.
-    """
+    
+    PROJECT_ROOT: Path = _base_config.PROJECT_ROOT
+    SEARCHES_FILE: str = _base_config.INPUT_FILE
+    OUTPUT_FILE: str = _base_config.OUTPUT_FILE
     
     GENIUS_ACCESS_TOKEN: str = os.getenv("GENIUS_ACCESS_TOKEN", "")
     GENIUS_BASE_URL: str = "https://api.genius.com"
@@ -19,20 +25,10 @@ class Config:
     API_TIMEOUT: int = 20
     SCRAPING_TIMEOUT: int = 20
     
-    PROJECT_ROOT: Path = Path(__file__).parent.parent.parent
-    SEARCHES_FILE: str = "searches.txt"
-    OUTPUT_FILE: str = "../audio_processing/data/dominican_songs.xlsx"
-    
     RESULTS_PER_PAGE: int = 1
     
     @classmethod
     def validate(cls) -> bool:
-        """
-        Validate that required configuration is present.
-        
-        Returns:
-            bool: True if config is valid, False otherwise
-        """
         if not cls.GENIUS_ACCESS_TOKEN:
             print(" Error: GENIUS_ACCESS_TOKEN not found in .env file")
             return False

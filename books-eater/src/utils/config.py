@@ -1,39 +1,32 @@
 """Configuration management."""
 
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+from shared.utils.module_config import ModuleConfig
+
 load_dotenv()
+
+_base_config = ModuleConfig(module_name="audiobooks", input_file="books_list.txt")
 
 
 class Config:
-    """
-    Centralized configuration.
-    """
     
-    # YouTube search settings
+    PROJECT_ROOT: Path = _base_config.PROJECT_ROOT
+    BOOKS_FILE: str = _base_config.INPUT_FILE
+    OUTPUT_FILE: str = _base_config.OUTPUT_FILE
+    OUTPUT_CSV: str = _base_config.OUTPUT_CSV
+    
     SEARCH_TIMEOUT: int = 30
     VIDEOS_PER_SEARCH: int = 3
     
-    # File paths
-    PROJECT_ROOT: Path = Path(__file__).parent.parent.parent
-    BOOKS_FILE: str = "books_list.txt"
-    OUTPUT_FILE: str = "../audio_processing/data/dominican_audiobooks.xlsx"
-    OUTPUT_CSV: str = "../audio_processing/data/dominican_audiobooks.csv"
-    
-    # Processing settings
-    SLEEP_BETWEEN_SEARCHES: int = 2  # Seconds to wait between searches
+    SLEEP_BETWEEN_SEARCHES: int = 2
     
     @classmethod
     def validate(cls) -> bool:
-        """
-        Validate configuration.
-        
-        Returns:
-            bool: Always True for this project (no API keys needed)
-        """
         return True
 
 

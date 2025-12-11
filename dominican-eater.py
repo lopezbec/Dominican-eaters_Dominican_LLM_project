@@ -9,23 +9,24 @@ import sys
 import subprocess
 import argparse
 from pathlib import Path
+from typing import List, Optional
 
 PROJECT_ROOT = Path(__file__).parent
 
-def run_command(cmd, description, cwd=None):
+def run_command(cmd: List[str], description: str, cwd: Optional[Path] = None) -> bool:
     print(f"\n{description}...")
     print(f"Running: {' '.join(cmd)}\n")
-    working_dir = cwd if cwd else PROJECT_ROOT
-    result = subprocess.run(cmd, cwd=working_dir)
+    working_dir: Path = cwd if cwd else PROJECT_ROOT
+    result: subprocess.CompletedProcess = subprocess.run(cmd, cwd=working_dir)
     if result.returncode != 0:
         print(f"Failed with exit code {result.returncode}")
         return False
     return True
 
-def scrape(module_type):
+def scrape(module_type: str) -> None:
     print(f"Scraping {module_type} data...")
     
-    modules = {
+    modules: dict[str, str] = {
         'books': 'books-eater',
         'lyrics': 'lyrics-eater', 
         'poems': 'poems-eater'
@@ -36,18 +37,18 @@ def scrape(module_type):
             print(f"\nScraping {name}...")
             run_command(['python', 'main.py'], f"Scraping {name}", cwd=PROJECT_ROOT / path)
     else:
-        module_path = PROJECT_ROOT / modules[module_type]
+        module_path: Path = PROJECT_ROOT / modules[module_type]
         run_command(['python', 'main.py'], f"Scraping {module_type}", cwd=module_path)
 
-def download(module_type, force=False):
-    cmd = ['python', 'audio_processing/src/downloader.py', '--module', module_type, '--config', 'audio_processing/config.yaml']
+def download(module_type: str, force: bool = False) -> None:
+    cmd: List[str] = ['python', 'audio_processing/src/downloader.py', '--module', module_type, '--config', 'audio_processing/config.yaml']
     if force:
         cmd.append('--force')
     
     run_command(cmd, f"Downloading audio for {module_type}")
 
-def transcribe(module_type, model='base', force=False, partial=False):
-    cmd = ['python', 'audio_processing/src/transcriber.py', '--module', module_type, '--config', 'audio_processing/config.yaml']
+def transcribe(module_type: str, model: str = 'base', force: bool = False, partial: bool = False) -> None:
+    cmd: List[str] = ['python', 'audio_processing/src/transcriber.py', '--module', module_type, '--config', 'audio_processing/config.yaml']
     if force:
         cmd.append('--force')
     if partial:
@@ -55,23 +56,25 @@ def transcribe(module_type, model='base', force=False, partial=False):
     
     run_command(cmd, f"Transcribing audio for {module_type}")
 
-def align(module_type='lyrics-eater'):
-    cmd = ['python', 'audio_processing/src/aligner.py', '--action', 'align', '--module', module_type, '--config', 'audio_processing/config.yaml']
+def align(module_type: str = 'lyrics-eater') -> None:
+    cmd: List[str] = ['python', 'audio_processing/src/aligner.py', '--action', 'align', '--module', module_type, '--config', 'audio_processing/config.yaml']
     run_command(cmd, f"Aligning text for {module_type}")
 
-def validate(module_type):
-    cmd = ['python', 'audio_processing/src/validator.py', '--module', module_type, '--config', 'audio_processing/config.yaml']
+def validate(module_type: str) -> None:
+    cmd: List[str] = ['python', 'audio_processing/src/validator.py', '--module', module_type, '--config', 'audio_processing/config.yaml']
     run_command(cmd, f"Validating {module_type}")
 
-def pipeline(module_type, skip_scrape=False, skip_download=False, skip_transcribe=False, force=False, model='base', partial=False):
+def pipeline(module_type: str, skip_scrape: bool = False, skip_download: bool = False, 
+             skip_transcribe: bool = False, force: bool = False, model: str = 'base', 
+             partial: bool = False) -> None:
     print(f"\nRUNNING FULL PIPELINE FOR {module_type.upper()}")
     
-    modules = ['books-eater', 'lyrics-eater', 'poems-eater'] if module_type == 'all' else [f'{module_type}-eater']
+    modules: List[str] = ['books-eater', 'lyrics-eater', 'poems-eater'] if module_type == 'all' else [f'{module_type}-eater']
     
     for module in modules:
         print(f"\nProcessing {module}")
         
-        module_short = module.replace('-eater', '')
+        module_short: str = module.replace('-eater', '')
         
         if not skip_scrape:
             print(f"\nStep 1: Scraping {module_short}...")
@@ -83,7 +86,7 @@ def pipeline(module_type, skip_scrape=False, skip_download=False, skip_transcrib
         
         if not skip_transcribe:
             print(f"\nStep 3: Transcribing audio for {module}...")
-            use_partial = partial or (module == 'lyrics-eater')
+            use_partial: bool = partial or (module == 'lyrics-eater')
             transcribe(module, model=model, force=force, partial=use_partial)
         
         if module == 'lyrics-eater':
@@ -95,10 +98,10 @@ def pipeline(module_type, skip_scrape=False, skip_download=False, skip_transcrib
     
     print(f"\nPIPELINE COMPLETE!")
 
-def setup():
+def setup() -> None:
     print("Setting up Dominican Eaters environment...")
     
-    dirs = [
+    dirs: List[str] = [
         'books-eater/audio',
         'books-eater/transcriptions',
         'books-eater/reports',
@@ -115,7 +118,7 @@ def setup():
     ]
     
     for dir_path in dirs:
-        full_path = PROJECT_ROOT / dir_path
+        full_path: Path = PROJECT_ROOT / dir_path
         full_path.mkdir(parents=True, exist_ok=True)
         print(f"  Created: {dir_path}")
     
@@ -126,7 +129,7 @@ def setup():
     print("     pip install -r requirements.txt")
     print("  3. Run: python dominican-eater.py pipeline --type all")
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description='Dominican Eaters LLM Project - Unified Pipeline',
         formatter_class=argparse.RawDescriptionHelpFormatter,

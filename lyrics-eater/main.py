@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-from src.clients import GeniusAPIClient, YouTubeAPIClient
+from shared.clients.genius_client import GeniusAPIClient
+from shared.clients.youtube_client import YouTubeAPIClient
 from src.services import LyricsService
 from src.utils import config, FileHandler
 

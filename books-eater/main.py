@@ -5,7 +5,7 @@ Books Eater - Dominican Audiobooks Finder
 Searches for Dominican literature audiobooks on YouTube
 """
 
-from src.clients import YouTubeClient
+from shared.clients.youtube_client import YouTubeClient
 from src.services import AudiobookService
 from src.utils import config, FileHandler, DOMINICAN_BOOKS
 from src.utils.dominican_books import get_books_as_objects

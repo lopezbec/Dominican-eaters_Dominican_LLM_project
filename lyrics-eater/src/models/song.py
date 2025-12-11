@@ -3,9 +3,11 @@
 from dataclasses import dataclass
 from typing import List
 
+from shared.models.base_content import BaseContent
+
 
 @dataclass
-class Song:
+class Song(BaseContent):
     """
     Represents a song with all its metadata.
     """

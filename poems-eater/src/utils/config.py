@@ -1,15 +1,19 @@
 """Configuration settings for Poems-Eater."""
 
-# YouTube search settings
-VIDEOS_PER_SEARCH = 3  # Number of videos to check per poem
+import sys
+from pathlib import Path
 
-# Output files
-OUTPUT_FILE = "../audio_processing/data/dominican_poems.xlsx"
-OUTPUT_CSV = "../audio_processing/data/dominican_poems.csv"
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+from shared.utils.module_config import ModuleConfig
 
-# Optional input file for custom poems
-POEMS_FILE = "poems_list.txt"
+_base_config = ModuleConfig(module_name="poems", input_file="poems_list.txt")
 
-# Search parameters
-MIN_VIDEO_DURATION = 30  # Minimum video duration in seconds
-MAX_VIDEO_DURATION = 1200  # Maximum video duration in seconds (20 minutes)
+OUTPUT_FILE = _base_config.OUTPUT_FILE
+OUTPUT_CSV = _base_config.OUTPUT_CSV
+
+POEMS_FILE = _base_config.INPUT_FILE
+
+VIDEOS_PER_SEARCH = 3
+
+MIN_VIDEO_DURATION = 30
+MAX_VIDEO_DURATION = 1200
