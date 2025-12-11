@@ -46,22 +46,24 @@ def download(module_type, force=False):
     
     run_command(cmd, f"Downloading audio for {module_type}")
 
-def transcribe(module_type, model='base', force=False):
+def transcribe(module_type, model='base', force=False, partial=False):
     cmd = ['python', 'audio_processing/src/transcriber.py', '--module', module_type, '--config', 'audio_processing/config.yaml']
     if force:
         cmd.append('--force')
+    if partial:
+        cmd.append('--partial')
     
     run_command(cmd, f"Transcribing audio for {module_type}")
 
 def align(module_type='lyrics-eater'):
-    cmd = ['python', 'audio_processing/src/aligner.py', '--action', 'align', '--config', 'audio_processing/config.yaml']
+    cmd = ['python', 'audio_processing/src/aligner.py', '--action', 'align', '--module', module_type, '--config', 'audio_processing/config.yaml']
     run_command(cmd, f"Aligning text for {module_type}")
 
 def validate(module_type):
     cmd = ['python', 'audio_processing/src/validator.py', '--module', module_type, '--config', 'audio_processing/config.yaml']
     run_command(cmd, f"Validating {module_type}")
 
-def pipeline(module_type, skip_scrape=False, skip_download=False, skip_transcribe=False, force=False, model='base'):
+def pipeline(module_type, skip_scrape=False, skip_download=False, skip_transcribe=False, force=False, model='base', partial=False):
     print(f"\nRUNNING FULL PIPELINE FOR {module_type.upper()}")
     
     modules = ['books-eater', 'lyrics-eater', 'poems-eater'] if module_type == 'all' else [f'{module_type}-eater']
@@ -81,7 +83,8 @@ def pipeline(module_type, skip_scrape=False, skip_download=False, skip_transcrib
         
         if not skip_transcribe:
             print(f"\nStep 3: Transcribing audio for {module}...")
-            transcribe(module, model=model, force=force)
+            use_partial = partial or (module == 'lyrics-eater')
+            transcribe(module, model=model, force=force, partial=use_partial)
         
         if module == 'lyrics-eater':
             print(f"\nStep 4: Aligning text for {module}...")
@@ -140,13 +143,15 @@ Examples:
   
   Transcribe with Whisper:
     python dominican-eater.py transcribe --type books --model large
+    python dominican-eater.py transcribe --type books --partial
   
   Align lyrics with audio:
-    python dominican-eater.py align
+    python dominican-eater.py align --type lyrics-eater
+    python dominican-eater.py align --type books-eater
   
   Run complete pipeline:
     python dominican-eater.py pipeline --type all
-    python dominican-eater.py pipeline --type lyrics --model large
+    python dominican-eater.py pipeline --type lyrics --model large --partial
   
   Validate data:
     python dominican-eater.py validate --type all
@@ -168,9 +173,10 @@ Examples:
     transcribe_parser.add_argument('--type', choices=['books-eater', 'lyrics-eater', 'poems-eater', 'all'], default='all', help='Module to transcribe')
     transcribe_parser.add_argument('--model', default='base', help='Whisper model (tiny, base, small, medium, large)')
     transcribe_parser.add_argument('--force', action='store_true', help='Force re-transcription even if files exist')
+    transcribe_parser.add_argument('--partial', action='store_true', help='Transcribe only first 60 seconds for quick testing')
     
     align_parser = subparsers.add_parser('align', help='Align transcriptions with reference text')
-    align_parser.add_argument('--type', default='lyrics-eater', help='Module to align (currently only lyrics-eater supported)')
+    align_parser.add_argument('--type', choices=['books-eater', 'lyrics-eater', 'poems-eater'], default='lyrics-eater', help='Module to align')
     
     validate_parser = subparsers.add_parser('validate', help='Validate pipeline outputs')
     validate_parser.add_argument('--type', choices=['books-eater', 'lyrics-eater', 'poems-eater', 'all'], default='all', help='Module to validate')
@@ -182,6 +188,7 @@ Examples:
     pipeline_parser.add_argument('--skip-transcribe', action='store_true', help='Skip transcription step')
     pipeline_parser.add_argument('--model', default='base', help='Whisper model to use')
     pipeline_parser.add_argument('--force', action='store_true', help='Force re-processing')
+    pipeline_parser.add_argument('--partial', action='store_true', help='Transcribe only first 60 seconds for quick testing')
     
     args = parser.parse_args()
     
@@ -196,7 +203,7 @@ Examples:
     elif args.command == 'download':
         download(args.type, force=args.force)
     elif args.command == 'transcribe':
-        transcribe(args.type, model=args.model, force=args.force)
+        transcribe(args.type, model=args.model, force=args.force, partial=args.partial)
     elif args.command == 'align':
         align(args.type)
     elif args.command == 'validate':
@@ -208,7 +215,8 @@ Examples:
             skip_download=args.skip_download,
             skip_transcribe=args.skip_transcribe,
             force=args.force,
-            model=args.model
+            model=args.model,
+            partial=args.partial
         )
 
 if __name__ == '__main__':
