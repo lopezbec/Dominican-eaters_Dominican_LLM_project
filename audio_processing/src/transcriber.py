@@ -56,7 +56,7 @@ class AudioTranscriber:
                 self.device = 'cpu'
                 logger.info("Model loaded on CPU")
     
-    def transcribe_audio(self, audio_path: str, skip_existing: bool = True) -> Dict:
+    def transcribe_audio(self, audio_path: str, skip_existing: bool = True, partial: bool = False) -> Dict:
         result = {
             'audio_path': audio_path,
             'success': False,
@@ -66,7 +66,8 @@ class AudioTranscriber:
             'language': None,
             'segments': [],
             'words': [],
-            'skipped': False
+            'skipped': False,
+            'partial': partial
         }
         
         try:
@@ -74,17 +75,23 @@ class AudioTranscriber:
             
             fp16 = self.whisper_config.get('fp16', True) and self.device == 'cuda'
             
-            transcription = self.model.transcribe(
-                audio_path,
-                language=self.whisper_config['language'],
-                task=self.whisper_config['task'],
-                word_timestamps=self.whisper_config['word_timestamps'],
-                fp16=fp16,
-                beam_size=self.whisper_config.get('beam_size', 5),
-                best_of=self.whisper_config.get('best_of', 5),
-                temperature=self.whisper_config.get('temperature', 0.0),
-                verbose=False
-            )
+            transcribe_kwargs = {
+                'language': self.whisper_config['language'],
+                'task': self.whisper_config['task'],
+                'word_timestamps': self.whisper_config['word_timestamps'],
+                'fp16': fp16,
+                'beam_size': self.whisper_config.get('beam_size', 5),
+                'best_of': self.whisper_config.get('best_of', 5),
+                'temperature': self.whisper_config.get('temperature', 0.0),
+                'verbose': False
+            }
+            
+            if partial:
+                partial_duration = self.whisper_config.get('partial_duration', 60)
+                transcribe_kwargs['duration'] = partial_duration
+                logger.info(f"Partial transcription: first {partial_duration} seconds")
+            
+            transcription = self.model.transcribe(audio_path, **transcribe_kwargs)
             
             processing_time = time.time() - start_time
             
@@ -136,8 +143,10 @@ class AudioTranscriber:
         
         return result
     
-    def transcribe_module(self, module_name: str, skip_existing: bool = True) -> Dict:
+    def transcribe_module(self, module_name: str, skip_existing: bool = True, partial: bool = False) -> Dict:
         logger.info(f"Starting transcription for module: {module_name}")
+        if partial:
+            logger.info("Partial mode: transcribing only first portion of audio for alignment verification")
         
         self.load_model()
         
@@ -180,7 +189,7 @@ class AudioTranscriber:
                 else:
                     logger.warning(f"Transcription too small ({file_size} bytes), re-transcribing: {output_filename}")
             
-            result = self.transcribe_audio(str(audio_file), skip_existing)
+            result = self.transcribe_audio(str(audio_file), skip_existing, partial=partial)
             
             if result['success']:
                 successful += 1
@@ -224,11 +233,11 @@ class AudioTranscriber:
         
         return report
     
-    def transcribe_all_modules(self, skip_existing: bool = True) -> Dict[str, Dict]:
+    def transcribe_all_modules(self, skip_existing: bool = True, partial: bool = False) -> Dict[str, Dict]:
         results = {}
         for module_name in self.config['modules'].keys():
             try:
-                results[module_name] = self.transcribe_module(module_name, skip_existing)
+                results[module_name] = self.transcribe_module(module_name, skip_existing, partial=partial)
                 
                 if torch and torch.cuda.is_available():
                     torch.cuda.empty_cache()
@@ -266,6 +275,11 @@ def main():
         action='store_true',
         help='Force re-transcription even if files exist'
     )
+    parser.add_argument(
+        '--partial',
+        action='store_true',
+        help='Transcribe only first portion of audio for alignment verification'
+    )
     
     args = parser.parse_args()
     
@@ -274,9 +288,9 @@ def main():
     skip_existing = not args.force
     
     if args.module == 'all':
-        transcriber.transcribe_all_modules(skip_existing)
+        transcriber.transcribe_all_modules(skip_existing, partial=args.partial)
     else:
-        transcriber.transcribe_module(args.module, skip_existing)
+        transcriber.transcribe_module(args.module, skip_existing, partial=args.partial)
 
 
 if __name__ == '__main__':
