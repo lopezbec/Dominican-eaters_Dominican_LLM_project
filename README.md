@@ -108,13 +108,22 @@ python dominican-eater.py download --type all --force
 ```bash
 python dominican-eater.py transcribe --type books-eater --model base
 python dominican-eater.py transcribe --type all --model large
+
+# Partial transcription (first 45 seconds only)
+python dominican-eater.py transcribe --type lyrics-eater --partial
 ```
 
 Available Whisper models: `tiny`, `base`, `small`, `medium`, `large`, `large-v2`, `large-v3`
 
-**4. Align Text (Lyrics Only)**
+*Note: Lyrics automatically use partial mode in pipeline for faster verification*
+
+**4. Align & Verify Text**
 ```bash
+# Verify lyrics alignment (automatically uses partial transcription)
 python dominican-eater.py align --type lyrics-eater
+
+# Verify books alignment
+python dominican-eater.py align --type books-eater
 ```
 
 **5. Validate Outputs**
@@ -133,6 +142,9 @@ python dominican-eater.py pipeline --type all --force
 
 # Use specific Whisper model
 python dominican-eater.py pipeline --type books --model large-v3
+
+# Use partial transcription (lyrics use this by default)
+python dominican-eater.py pipeline --type lyrics --partial
 ```
 
 ## Modules
@@ -145,13 +157,15 @@ Scrapes Dominican literature audiobooks from YouTube using a curated list of aut
 **Output**: `audio_processing/data/dominican_audiobooks.xlsx`
 
 ### Lyrics Eater
-Fetches song lyrics from Genius API and finds corresponding YouTube audio.
+Fetches song lyrics from Genius API and finds corresponding YouTube audio. Uses optimized partial transcription (first 45 seconds) for faster alignment verification during data collection.
 
 **Configuration**: 
 - Create `lyrics-eater/searches.txt` with artist names (one per line)
 - Add Genius API token to `lyrics-eater/.env`
 
 **Output**: `audio_processing/data/dominican_songs.xlsx`
+
+**Optimization**: Partial transcription enabled by default in pipeline for 3-4x faster processing
 
 ### Poems Eater
 Searches for Dominican poetry recitations on YouTube.
@@ -209,16 +223,27 @@ modules:
     reports_dir: audio_processing/reports/poems
 ```
 
-## Text Alignment (Lyrics)
+## Text Alignment & Verification
 
-The lyrics module includes advanced alignment features:
+The pipeline includes advanced alignment features for quality verification:
 
-- **WER Calculation**: Measures transcription accuracy against reference lyrics
-- **Intro Detection**: Automatically detects and skips video intros/dialogue
-- **Substring Matching**: Finds where lyrics begin in the transcription
-- **Quality Metrics**: Generates detailed alignment reports
+### Alignment Metrics
 
-Average WER for Dominican Spanish lyrics: ~1.5 (98.4% success rate)
+We use four complementary metrics to evaluate transcription quality:
+
+1. **WER (Word Error Rate)**: Word-level accuracy (lower is better, < 0.2 is excellent)
+2. **Character Similarity**: Character-level match using Levenshtein distance (higher is better, > 0.85 is excellent)
+3. **Jaccard Similarity**: Vocabulary overlap (higher is better, > 0.7 is excellent)
+4. **Cosine Similarity**: Word frequency distribution (higher is better, > 0.8 is excellent)
+
+### Optimization Features
+
+- **Partial Transcription**: For lyrics, only first 45 seconds are transcribed (sufficient for verification)
+- **Limited Search**: Alignment searches only first 200 words for start position
+- **Early Stop**: Stops at first high-confidence match (≥0.8 similarity)
+- **Result**: 3-4x faster processing (~30-45 seconds per song)
+
+*Note: These optimizations are for data collection phase. Full transcription will be done on server during model training.*
 
 ## Reports
 
