@@ -20,11 +20,16 @@ whisper:
   best_of: 5
   temperature: 0.0
   device: cuda
+  partial_duration: 45
 
 alignment:
   min_similarity: 0.7
   aeneas_task_language: spa
   aeneas_is_text_type: plain
+  window_size: 50
+  min_match_length: 30
+  wer_threshold: 0.5
+  char_similarity_threshold: 0.6
 
 modules:
   books-eater:
@@ -34,6 +39,7 @@ modules:
     transcriptions_dir: audio_processing/transcriptions/books
     reports_dir: audio_processing/reports/books
     reference_texts_dir: audio_processing/reference_texts/books
+    alignments_dir: audio_processing/alignments/books
     
   poems-eater:
     excel_path: audio_processing/data/dominican_poems.xlsx
@@ -42,6 +48,7 @@ modules:
     transcriptions_dir: audio_processing/transcriptions/poems
     reports_dir: audio_processing/reports/poems
     reference_texts_dir: audio_processing/reference_texts/poems
+    alignments_dir: audio_processing/alignments/poems
     
   lyrics-eater:
     excel_path: audio_processing/data/dominican_songs.xlsx

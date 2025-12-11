@@ -66,13 +66,13 @@ class PipelineValidator:
         
         return validation
     
-    def validate_alignments(self, module_name: str = 'lyrics-eater') -> Dict:
-        if module_name != 'lyrics-eater':
-            return {'module': module_name, 'status': 'not_applicable'}
-        
+    def validate_alignments(self, module_name: str) -> Dict:
         module_config = self.config['modules'][module_name]
-        alignments_dir = module_config['alignments_dir']
+        alignments_dir = module_config.get('alignments_dir')
         reports_dir = module_config['reports_dir']
+        
+        if not alignments_dir:
+            return {'module': module_name, 'status': 'not_applicable'}
         
         alignment_files = list(Path(alignments_dir).glob('*.json'))
         
@@ -89,6 +89,9 @@ class PipelineValidator:
             'has_alignment_report': report is not None,
             'report_successful': report.get('successful', 0) if report else 0,
             'average_wer': report.get('average_wer', None) if report else None,
+            'average_char_similarity': report.get('average_char_similarity', None) if report else None,
+            'average_jaccard_similarity': report.get('average_jaccard_similarity', None) if report else None,
+            'average_cosine_similarity': report.get('average_cosine_similarity', None) if report else None,
             'status': 'ok' if alignment_files else 'no_files'
         }
         
@@ -101,10 +104,8 @@ class PipelineValidator:
             'module': module_name,
             'downloads': self.validate_downloads(module_name),
             'transcriptions': self.validate_transcriptions(module_name),
+            'alignments': self.validate_alignments(module_name)
         }
-        
-        if module_name == 'lyrics-eater':
-            validation['alignments'] = self.validate_alignments(module_name)
         
         return validation
     
@@ -116,9 +117,9 @@ class PipelineValidator:
         return results
     
     def print_validation_report(self, validation: Dict):
-        print("\n" + "="*60)
+        print("\n" + "="*80)
         print("PIPELINE VALIDATION REPORT")
-        print("="*60)
+        print("="*80)
         
         for module_name, module_data in validation.items():
             print(f"\n[{module_name.upper()}]")
@@ -133,10 +134,22 @@ class PipelineValidator:
             
             if 'alignments' in module_data:
                 al = module_data['alignments']
-                wer_str = f"WER: {al['average_wer']:.3f}" if al['average_wer'] is not None else "WER: N/A"
-                print(f"  Alignments: {al['alignment_files_count']} files | {wer_str} | Status: {al['status']}")
+                if al['status'] != 'not_applicable':
+                    metrics = []
+                    if al.get('average_wer') is not None:
+                        metrics.append(f"WER: {al['average_wer']:.3f}")
+                    if al.get('average_char_similarity') is not None:
+                        metrics.append(f"CharSim: {al['average_char_similarity']:.3f}")
+                    if al.get('average_jaccard_similarity') is not None:
+                        metrics.append(f"Jaccard: {al['average_jaccard_similarity']:.3f}")
+                    if al.get('average_cosine_similarity') is not None:
+                        metrics.append(f"Cosine: {al['average_cosine_similarity']:.3f}")
+                    
+                    metrics_str = " | ".join(metrics) if metrics else "N/A"
+                    print(f"  Alignments: {al['alignment_files_count']} files | {metrics_str}")
+                    print(f"    Status: {al['status']}")
         
-        print("\n" + "="*60)
+        print("\n" + "="*80)
 
 
 def main():
