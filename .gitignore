@@ -83,3 +83,8 @@ logs/
 *.bak
 *~
 .ai/
+
+# PDFs (large files, should not be in git)
+*.pdf
+books-eater/scraped_books/pdfs/
+books-eater/scraped_books/markdowns/
