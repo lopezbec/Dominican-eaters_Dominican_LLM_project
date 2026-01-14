@@ -38,3 +38,8 @@ class Song(BaseContent):
             'enlace_youtube': self.youtube_url,
             'discografica': self.label
         }
+    
+    @property
+    def display_name(self) -> str:
+        """Get display name for the song."""
+        return f"{self.title} - {self.artist}"

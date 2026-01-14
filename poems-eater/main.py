@@ -4,72 +4,70 @@
 Poems Eater - Dominican Poetry Recitation Finder
 Searches for Dominican poetry recitations on YouTube
 """
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
+from typing import Any, List
+from shared.base.base_runner import BaseEaterRunner
 from shared.clients.youtube_client import YouTubeClient
+from shared.clients.adapters import YouTubeSearcherAdapter
+from shared.utils.file_handler import FileHandler
 from src.services import PoemService
-from src.utils import config, FileHandler, get_poems_as_objects
+from src.utils import config
+from src.utils.dominican_poems import get_poems_as_objects
+from src.models.poem import Poem
+from shared.utils.base_config import BaseConfig
+from src.utils.file_handler import load_poems_from_file
+
+
+class PoemsEaterRunner(BaseEaterRunner):
+    
+    def __init__(self):
+        super().__init__(
+            module_name="poems",
+            title="Poems Eater - Buscador de Recitaciones de Poemas Dominicanos"
+        )
+    
+    def load_config(self) -> BaseConfig:
+        return config
+
+    def get_client(self) -> YouTubeSearcherAdapter:
+        youtube_client = YouTubeClient(videos_per_search=self.config.VIDEOS_PER_SEARCH)
+                logger.info("Cliente de YouTube inicializado (sin límites de API!)\n")
+        return YouTubeSearcherAdapter(youtube_client)
+    
+    def get_service(self, client: YouTubeSearcherAdapter) -> PoemService:
+        return PoemService(client)
+
+    def load_input_data(self) -> List[Poem]:
+        from src.utils.dominican_poems import get_poems_as_objects
+        return self.load_with_fallback(
+            file_path=self.config.POEMS_FILE,
+            fallback_provider=get_poems_as_objects,
+            file_description=f"poemas desde '{self.config.POEMS_FILE}'",
+            fallback_description="dataset predefinido de poesía dominicana"
+        )
+    
+    def save_results(self, poems: List[Poem]) -> bool:
+        return self.save_dual_format(poems)
+    
+    def _get_model_class(self) -> type:
+        from src.models.poem import Poem
+        return Poem
+    
+    def _get_output_file(self) -> str:
+        return self.config.OUTPUT_FILE
+    
+    def _get_output_csv(self) -> str:
+        return self.config.OUTPUT_CSV
 
 
 def main() -> None:
-    """Main entry point for the application."""
-    
-    print(f"\n{'='*70}")
-    print("Poems Eater - Buscador de Recitaciones de Poemas Dominicanos")
-    print(f"{'='*70}\n")
-    
-    # Try to load poems from file first
-    poems = FileHandler.load_poems_from_file(config.POEMS_FILE)
-    
-    if poems:
-        print(f"Cargados {len(poems)} poemas desde '{config.POEMS_FILE}'")
-    else:
-        print(f"Usando dataset predefinido de poesía dominicana")
-        poems = get_poems_as_objects()
-        print(f"{len(poems)} poemas en el dataset")
-    
-    print(f"\n{'='*70}")
-    print("Iniciando búsqueda en YouTube...")
-    print(f"{'='*70}\n")
-    
-    # Initialize YouTube client (no API key needed!)
-    youtube_client = YouTubeClient(videos_per_search=config.VIDEOS_PER_SEARCH)
-    print("Cliente de YouTube inicializado (sin límites de API!)\n")
-    
-    # Initialize service
-    poem_service = PoemService(youtube_client)
-    
-    # Process all poems
-    poems, stats = poem_service.process_multiple_poems(poems)
-    
-    if poems:
-        print(f"\n{'='*70}")
-        print("Guardando resultados...")
-        print(f"{'='*70}\n")
-        
-        # Save to Excel
-        FileHandler.save_to_excel(poems, config.OUTPUT_FILE)
-        
-        # Optionally save to CSV
-        FileHandler.save_to_csv(poems, config.OUTPUT_CSV)
-        
-        # Print statistics
-        poem_service.print_statistics(stats)
-        
-        print(f"Archivos generados:")
-        print(f"   - {config.OUTPUT_FILE}")
-        print(f"   - {config.OUTPUT_CSV}")
-        
-    else:
-        print("\nNo se procesaron poemas")
+    """Main entry point for application."""
+    from shared.base.base_runner import BaseEaterRunner
+    BaseEaterRunner.create_and_run(PoemsEaterRunner)
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\n\nPrograma interrumpido por el usuario")
-        print("¡Hasta luego!")
-    except Exception as e:
-        print(f"\nError fatal: {e}")
-        import traceback
-        traceback.print_exc()
+    main()

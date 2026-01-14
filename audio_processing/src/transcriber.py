@@ -1,18 +1,13 @@
 import os
-import json
 import time
 from pathlib import Path
-from typing import Dict, List, Optional
-import yaml
-from tqdm import tqdm
+from typing import Dict
 import logging
 
-try:
-    import whisper
-    import torch
-except ImportError:
-    whisper = None
-    torch = None
+from .utils.file_validator import TranscriptionFileValidator
+from .utils.progress_reporter import ProgressReporter
+from .utils.report_exporter import ReportExporter
+from .models.whisper_model import WhisperModelManager
 
 logging.basicConfig(
     level=logging.INFO,
@@ -23,40 +18,30 @@ logger = logging.getLogger(__name__)
 
 class AudioTranscriber:
     
-    def __init__(self, config_path: str = "config.yaml"):
-        with open(config_path, 'r', encoding='utf-8') as f:
-            self.config = yaml.safe_load(f)
-        
-        self.whisper_config = self.config['whisper']
-        self.model = None
-        self.device = 'cpu'
+    def __init__(
+        self,
+        config: Dict,
+        model_manager: WhisperModelManager,
+        file_validator: TranscriptionFileValidator,
+        progress_reporter: ProgressReporter,
+        report_exporter: ReportExporter
+    ):
+        self.config = config
+        self.whisper_config = config['whisper']
+        self.model_manager = model_manager
+        self.file_validator = file_validator
+        self.progress_reporter = progress_reporter
+        self.report_exporter = report_exporter
         
     def load_model(self):
-        if whisper is None:
-            raise ImportError("openai-whisper is required. Install with: pip install openai-whisper")
-        
-        if self.model is None:
-            model_name = self.whisper_config['model']
-            logger.info(f"Loading Whisper model: {model_name}")
-            
-            if torch and torch.cuda.is_available():
-                try:
-                    self.model = whisper.load_model(model_name, device='cuda')
-                    self.device = 'cuda'
-                    logger.info(f"Model loaded on CUDA (GPU)")
-                except Exception as e:
-                    logger.warning(f"Failed to load on CUDA, using CPU: {e}")
-                    if torch and torch.cuda.is_available():
-                        torch.cuda.empty_cache()
-                    self.model = whisper.load_model(model_name, device='cpu')
-                    self.device = 'cpu'
-                    logger.info("Model loaded on CPU")
-            else:
-                self.model = whisper.load_model(model_name, device='cpu')
-                self.device = 'cpu'
-                logger.info("Model loaded on CPU")
+        self.model_manager.load_model()
     
-    def transcribe_audio(self, audio_path: str, skip_existing: bool = True, partial: bool = False) -> Dict:
+    def transcribe_audio(
+        self, 
+        audio_path: str, 
+        skip_existing: bool = True, 
+        partial: bool = False
+    ) -> Dict:
         result = {
             'audio_path': audio_path,
             'success': False,
@@ -73,25 +58,23 @@ class AudioTranscriber:
         try:
             start_time = time.time()
             
-            fp16 = self.whisper_config.get('fp16', True) and self.device == 'cuda'
-            
             transcribe_kwargs = {
                 'language': self.whisper_config['language'],
                 'task': self.whisper_config['task'],
                 'word_timestamps': self.whisper_config['word_timestamps'],
-                'fp16': fp16,
                 'beam_size': self.whisper_config.get('beam_size', 5),
                 'best_of': self.whisper_config.get('best_of', 5),
                 'temperature': self.whisper_config.get('temperature', 0.0),
-                'verbose': False
             }
             
             if partial:
                 partial_duration = self.whisper_config.get('partial_duration', 60)
                 transcribe_kwargs['duration'] = partial_duration
-                logger.info(f"Partial transcription: first {partial_duration} seconds")
+                self.progress_reporter.report_success(
+                    f"Partial transcription: first {partial_duration} seconds"
+                )
             
-            transcription = self.model.transcribe(audio_path, **transcribe_kwargs)
+            transcription = self.model_manager.transcribe(audio_path, **transcribe_kwargs)
             
             processing_time = time.time() - start_time
             
@@ -131,22 +114,26 @@ class AudioTranscriber:
             result['segments'] = segments_data
             result['words'] = all_words
             
-            if torch and torch.cuda.is_available():
-                torch.cuda.empty_cache()
+            self.model_manager.cleanup()
             
         except Exception as e:
             result['error'] = str(e)
-            logger.error(f"Transcription failed for {audio_path}: {e}")
-            
-            if torch and torch.cuda.is_available():
-                torch.cuda.empty_cache()
+            self.progress_reporter.report_error(f"Transcription failed for {audio_path}: {e}")
+            self.model_manager.cleanup()
         
         return result
     
-    def transcribe_module(self, module_name: str, skip_existing: bool = True, partial: bool = False) -> Dict:
-        logger.info(f"Starting transcription for module: {module_name}")
+    def transcribe_module(
+        self, 
+        module_name: str, 
+        skip_existing: bool = True, 
+        partial: bool = False
+    ) -> Dict:
+        self.progress_reporter.report_success(f"Starting transcription for module: {module_name}")
         if partial:
-            logger.info("Partial mode: transcribing only first portion of audio for alignment verification")
+            self.progress_reporter.report_success(
+                "Partial mode: transcribing only first portion of audio for alignment verification"
+            )
         
         self.load_model()
         
@@ -159,7 +146,7 @@ class AudioTranscriber:
         audio_files = list(Path(audio_dir).glob('*.m4a'))
         
         if not audio_files:
-            logger.warning(f"No audio files found in {audio_dir}")
+            self.progress_reporter.report_warning(f"No audio files found in {audio_dir}")
             return {'error': 'No audio files found'}
         
         results = []
@@ -167,14 +154,18 @@ class AudioTranscriber:
         failed = 0
         skipped = 0
         
-        for audio_file in tqdm(audio_files, desc=f"Transcribing {module_name}"):
+        for audio_file in self.progress_reporter.report_batch(
+            audio_files, f"Transcribing {module_name}"
+        ):
             output_filename = audio_file.stem + '.json'
             output_path = os.path.join(transcriptions_dir, output_filename)
             
-            if skip_existing and os.path.exists(output_path):
-                file_size = os.path.getsize(output_path)
-                if file_size > 100:
-                    logger.info(f"Skipping existing transcription: {output_filename}")
+            if skip_existing:
+                is_valid, validation_msg = self.file_validator.validate_exists(output_path)
+                if is_valid:
+                    self.progress_reporter.report_success(
+                        f"Skipping existing transcription: {output_filename}"
+                    )
                     skipped += 1
                     successful += 1
                     results.append({
@@ -186,21 +177,26 @@ class AudioTranscriber:
                         'processing_time': 0
                     })
                     continue
-                else:
-                    logger.warning(f"Transcription too small ({file_size} bytes), re-transcribing: {output_filename}")
+                elif os.path.exists(output_path):
+                    self.progress_reporter.report_warning(
+                        f"Re-transcribing {output_filename}: {validation_msg}"
+                    )
             
             result = self.transcribe_audio(str(audio_file), skip_existing, partial=partial)
             
             if result['success']:
                 successful += 1
                 
+                import json
                 with open(output_path, 'w', encoding='utf-8') as f:
                     json.dump(result, f, indent=2, ensure_ascii=False)
                 
-                logger.info(f"Transcribed: {audio_file.name}")
+                self.progress_reporter.report_success(f"Transcribed: {audio_file.name}")
             else:
                 failed += 1
-                logger.error(f"Failed: {audio_file.name} - {result['error']}")
+                self.progress_reporter.report_error(
+                    f"Failed: {audio_file.name} - {result['error']}"
+                )
             
             results.append({
                 'file': audio_file.name,
@@ -219,42 +215,45 @@ class AudioTranscriber:
             'failed': failed,
             'success_rate': successful / len(audio_files) if audio_files else 0,
             'model': self.whisper_config['model'],
-            'device': self.device,
+            'device': self.model_manager.get_device(),
             'results': results
         }
         
         report_path = os.path.join(module_config['reports_dir'], 'transcription_report.json')
-        os.makedirs(module_config['reports_dir'], exist_ok=True)
-        with open(report_path, 'w', encoding='utf-8') as f:
-            json.dump(report, f, indent=2, ensure_ascii=False)
+        self.report_exporter.export_json(report, report_path)
         
-        logger.info(f"Transcription report saved to: {report_path}")
-        logger.info(f"Summary: {successful}/{len(audio_files)} successful ({skipped} skipped), {failed} failed")
+        self.progress_reporter.report_success(
+            f"Summary: {successful}/{len(audio_files)} successful ({skipped} skipped), "
+            f"{failed} failed"
+        )
         
         return report
     
-    def transcribe_all_modules(self, skip_existing: bool = True, partial: bool = False) -> Dict[str, Dict]:
+    def transcribe_all_modules(
+        self, 
+        skip_existing: bool = True, 
+        partial: bool = False
+    ) -> Dict[str, Dict]:
         results = {}
         for module_name in self.config['modules'].keys():
             try:
-                results[module_name] = self.transcribe_module(module_name, skip_existing, partial=partial)
-                
-                if torch and torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-                    logger.info("Cleared CUDA cache after module")
-                    
+                results[module_name] = self.transcribe_module(
+                    module_name, skip_existing, partial=partial
+                )
+                self.model_manager.cleanup()
+                self.progress_reporter.report_success("Cleared CUDA cache after module")
             except Exception as e:
-                logger.error(f"Error processing module {module_name}: {e}")
+                self.progress_reporter.report_error(
+                    f"Error processing module {module_name}: {e}"
+                )
                 results[module_name] = {'error': str(e)}
-                
-                if torch and torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-                    
+                self.model_manager.cleanup()
         return results
 
 
 def main():
     import argparse
+    from .utils.config_loader import ConfigLoader
     
     parser = argparse.ArgumentParser(description='Transcribe audio files with Whisper')
     parser.add_argument(
@@ -283,7 +282,25 @@ def main():
     
     args = parser.parse_args()
     
-    transcriber = AudioTranscriber(args.config)
+    config_loader = ConfigLoader()
+    config = config_loader.load_config(args.config)
+    
+    whisper_config = config['whisper']
+    model_manager = WhisperModelManager(
+        model_name=whisper_config['model'],
+        fp16=whisper_config.get('fp16', True)
+    )
+    file_validator = TranscriptionFileValidator()
+    progress_reporter = ProgressReporter(logger)
+    report_exporter = ReportExporter()
+    
+    transcriber = AudioTranscriber(
+        config=config,
+        model_manager=model_manager,
+        file_validator=file_validator,
+        progress_reporter=progress_reporter,
+        report_exporter=report_exporter
+    )
     
     skip_existing = not args.force
     

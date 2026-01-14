@@ -1,29 +1,24 @@
 """Business logic for processing song lyrics requests."""
 
-from typing import List, Tuple
+import logging
+from typing import Tuple, Optional
 
-from shared.clients.genius_client import GeniusAPIClient
-from shared.clients.youtube_client import YouTubeAPIClient
+from shared.services.base_service import BaseService
+from shared.services.stats_formatter import ProcessingStats
+from shared.interfaces.searchers import GeniusSearcher, YouTubeSearcher
 from src.models.song import Song
 
+logger = logging.getLogger(__name__)
 
-class LyricsService:
-    """
-    Service for processing song search queries and fetching lyrics.
-    """
+
+class LyricsService(BaseService):
     
-    def __init__(self, genius_client: GeniusAPIClient, youtube_client: YouTubeAPIClient):
-        """
-        Initialize the service.
-        
-        Args:
-            genius_client: Genius API client instance
-            youtube_client: YouTube API client instance
-        """
+    def __init__(self, genius_client: GeniusSearcher, youtube_client: YouTubeSearcher):
+        super().__init__()
         self.genius_client = genius_client
         self.youtube_client = youtube_client
     
-    def process_search_query(self, query: str) -> Tuple[Song, bool]:
+    def process_search_query(self, query: str) -> Tuple[Optional[Song], bool]:
         """
         Process a single search query and return song with lyrics.
         
@@ -36,79 +31,45 @@ class LyricsService:
         results = self.genius_client.search(query)
         
         if not results:
-            print(f"   No results found for '{query}'")
+            logger.info("No results found for query: %s", query)
             return None, False
         
         first_result = results[0]
-        print(f"   Found: {first_result['title']} - {first_result['artist']}")
+        logger.info("Found: %s - %s", first_result['title'], first_result['artist'])
         
         song = self.genius_client.get_song_details(first_result['id'])
         
         if not song:
-            print(f"   Could not fetch details")
+            logger.warning("Could not fetch details for song ID: %s", first_result['id'])
             return None, False
         
-        print(f"    Genre(s): {song.genres}")
-        print(f"    Label: {song.label}")
+        logger.info("Song details - Genre: %s, Label: %s", song.genres, song.label)
         
-        print(f"     Fetching lyrics...")
+        logger.debug("Fetching lyrics...")
         lyrics = self.genius_client.scrape_lyrics(song.url)
         
         if lyrics:
-            print(f"     Lyrics obtained ({len(lyrics)} chars)")
+            logger.info("Lyrics obtained (%d characters)", len(lyrics))
             song.lyrics = lyrics
         else:
-            print(f"      Could not obtain lyrics")
+            logger.warning("Could not obtain lyrics for: %s", song.title)
             song.lyrics = "N/A"
         
-        print(f"     Searching YouTube...")
+        logger.debug("Searching YouTube for music video...")
         youtube_url = self.youtube_client.search_music_video(song.title, song.artist)
         if youtube_url:
-            print(f"     YouTube link found")
-            song.youtube_url = youtube_url
+            logger.info("YouTube video found: %s", youtube_url)
+        else:
+            logger.info("No YouTube video found for: %s", song.title)
         
         return song, True
     
-    def process_multiple_queries(
-        self,
-        queries: List[str],
-        show_progress: bool = True
-    ) -> Tuple[List[Song], int, int]:
-        """
-        Process multiple search queries.
-        
-        Args:
-            queries: List of search queries
-            show_progress: Whether to show progress messages
-            
-        Returns:
-            Tuple of (list of Songs, successful count, failed count)
-        """
-        songs = []
-        successful = 0
-        failed = 0
-        total = len(queries)
-        
-        for idx, query in enumerate(queries, 1):
-            try:
-                if show_progress:
-                    print(f"\n[{idx}/{total}] Searching: '{query}'...")
-                
-                song, success = self.process_search_query(query)
-                
-                if success and song:
-                    songs.append(song)
-                    successful += 1
-                else:
-                    failed += 1
-                    
-            except KeyboardInterrupt:
-                print("\n\n  Process interrupted by user")
-                print(f"Songs processed so far: {successful}")
-                break
-            except Exception as e:
-                print(f"   Unexpected error: {e}")
-                failed += 1
-                continue
-        
-        return songs, successful, failed
+    def _process_single(self, item: str) -> Tuple[Optional[Song], bool]:
+        return self.process_search_query(item)
+    
+    def _update_stats(self, stats: ProcessingStats, item: Optional[Song], success: bool):
+        if success and item:
+            stats.found += 1
+        else:
+            stats.not_found += 1
+

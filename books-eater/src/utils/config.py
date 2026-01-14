@@ -6,28 +6,27 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
-from shared.utils.module_config import ModuleConfig
+from shared.utils.base_config import BaseConfig
 
 load_dotenv()
 
-_base_config = ModuleConfig(module_name="audiobooks", input_file="books_list.txt")
 
-
-class Config:
+class Config(BaseConfig):
     
-    PROJECT_ROOT: Path = _base_config.PROJECT_ROOT
-    BOOKS_FILE: str = _base_config.INPUT_FILE
-    OUTPUT_FILE: str = _base_config.OUTPUT_FILE
-    OUTPUT_CSV: str = _base_config.OUTPUT_CSV
-    
-    SEARCH_TIMEOUT: int = 30
-    VIDEOS_PER_SEARCH: int = 3
-    
-    SLEEP_BETWEEN_SEARCHES: int = 2
-    
-    @classmethod
-    def validate(cls) -> bool:
-        return True
+    def __init__(self):
+        super().__init__(
+            module_name="audiobooks",
+            input_file="books_list.txt",
+            SEARCH_TIMEOUT=30,
+            VIDEOS_PER_SEARCH=3,
+            SLEEP_BETWEEN_SEARCHES=2
+        )
+        
+        self.BOOKS_FILE = self.INPUT_FILE
+        self.SEARCH_TIMEOUT = 30
+        self.VIDEOS_PER_SEARCH = 3
+        self.SLEEP_BETWEEN_SEARCHES = 2
 
 
 config = Config()
+

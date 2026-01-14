@@ -83,6 +83,9 @@ logs/
 *.bak
 *~
 .ai/
+context/
+.context/
+cleanup_*.py
 
 # PDFs (large files, should not be in git)
 *.pdf

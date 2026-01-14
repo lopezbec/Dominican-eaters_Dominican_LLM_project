@@ -1,10 +1,12 @@
 """Common file I/O utilities for reading and writing data."""
 
 import os
+import logging
 from pathlib import Path
 from typing import List, Optional, Callable, TypeVar
 
 T = TypeVar('T')
+logger = logging.getLogger(__name__)
 
 
 def ensure_directory_exists(directory: str) -> bool:
@@ -23,7 +25,7 @@ def ensure_directory_exists(directory: str) -> bool:
         os.makedirs(directory, exist_ok=True)
         return True
     except Exception as e:
-        print(f"Error creating directory {directory}: {e}")
+        logger.error("Error creating directory %s: %s", directory, e)
         return False
 
 
@@ -62,7 +64,7 @@ def load_items_from_text_file(
         return items if items else None
         
     except Exception as e:
-        print(f"Error reading {filename}: {e}")
+        logger.error("Error reading %s: %s", filename, e)
         return None
 
 
@@ -90,7 +92,7 @@ def save_text_file(filename: str, content: str) -> bool:
         return True
         
     except Exception as e:
-        print(f"Error writing to {filename}: {e}")
+        logger.error("Error writing to %s: %s", filename, e)
         return False
 
 
@@ -132,5 +134,5 @@ def find_files_by_pattern(directory: str, pattern: str) -> List[Path]:
             return []
         return list(dir_path.glob(pattern))
     except Exception as e:
-        print(f"Error searching directory {directory}: {e}")
+        logger.error("Error searching directory %s: %s", directory, e)
         return []

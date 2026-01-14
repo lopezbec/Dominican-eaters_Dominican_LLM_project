@@ -11,6 +11,11 @@ import subprocess
 from .metrics.text_similarity import TextSimilarityMetrics
 from .utils.text_normalizer import TextNormalizer
 from .alignment.reference_extractor import ReferenceTextExtractor
+from .config.constants import (
+    ALIGNMENT_WINDOW_SIZE_WORDS,
+    ALIGNMENT_MIN_MATCH_LENGTH,
+    ALIGNMENT_MAX_SEARCH_WORDS
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -45,9 +50,9 @@ class ForcedAligner:
         self,
         reference: str,
         hypothesis: str,
-        window_size: int = 50,
-        min_match_length: int = 30,
-        max_search_words: int = 200
+        window_size: int = ALIGNMENT_WINDOW_SIZE_WORDS,
+        min_match_length: int = ALIGNMENT_MIN_MATCH_LENGTH,
+        max_search_words: int = ALIGNMENT_MAX_SEARCH_WORDS
     ) -> Tuple[int, float]:
         ref_normalized = self.text_normalizer.normalize_text(reference)
         hyp_normalized = self.text_normalizer.normalize_text(hypothesis)
@@ -188,10 +193,14 @@ class ForcedAligner:
         )
         
         if not reference_file:
-            result['error'] = 'No reference text found'
-            return result
+            reference = transcription_data.get('transcription', '')
+            if not reference:
+                result['error'] = 'No reference text found'
+                return result
+            logger.info(f"Using transcription as reference for {trans_file.name}")
+        else:
+            reference = self.reference_extractor.extract_text_from_txt(str(reference_file))
         
-        reference = self.reference_extractor.extract_text_from_txt(str(reference_file))
         result['has_reference'] = True
         
         ref_normalized = self.text_normalizer.normalize_text(reference)

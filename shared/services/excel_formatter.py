@@ -1,9 +1,12 @@
 """Universal Excel formatter for all content types with professional styling."""
 
 from typing import List, Dict, Any
+import logging
 import pandas as pd
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.worksheet.worksheet import Worksheet
+
+logger = logging.getLogger(__name__)
 
 
 class AvailabilityColors:
@@ -82,11 +85,11 @@ class ExcelFormatter:
                         df.columns.get_loc(self._get_column_name_from_letter(df, availability_column)) + 1
                     )
             
-            print(f"Excel guardado exitosamente: {filename}")
+            logger.info("Excel saved successfully: %s", filename)
             return True
             
         except Exception as e:
-            print(f"Error guardando Excel: {e}")
+            logger.error("Error saving Excel %s: %s", filename, e)
             return False
     
     def _apply_column_widths(self, worksheet: Worksheet, widths: Dict[str, int]):

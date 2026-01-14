@@ -1,22 +1,18 @@
 import os
-import re
-import json
 import subprocess
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional
-import yaml
-from tqdm import tqdm
 import logging
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from shared.interfaces.video_downloader import IVideoDownloader
-
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
+from shared.utils.file_utils import get_safe_filename
+from .utils.file_validator import AudioFileValidator
+from .utils.data_loader import DataLoader
+from .utils.progress_reporter import ProgressReporter
+from .utils.report_exporter import ReportExporter
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,24 +23,23 @@ logger = logging.getLogger(__name__)
 
 class AudioDownloader:
     
-    def __init__(self, config_path: str = "config.yaml", video_downloader: Optional[IVideoDownloader] = None):
-        with open(config_path, 'r', encoding='utf-8') as f:
-            self.config = yaml.safe_load(f)
-        
-        self.audio_config = self.config['audio']
-        self.download_config = self.config['download']
-        
-        if video_downloader is None:
-            from .downloaders.ytdlp_downloader import YtDlpDownloader
-            video_downloader = YtDlpDownloader()
-        
+    def __init__(
+        self,
+        config: Dict,
+        video_downloader: IVideoDownloader,
+        file_validator: AudioFileValidator,
+        data_loader: DataLoader,
+        progress_reporter: ProgressReporter,
+        report_exporter: ReportExporter
+    ):
+        self.config = config
+        self.audio_config = config['audio']
+        self.download_config = config['download']
         self.video_downloader = video_downloader
-        
-    def sanitize_filename(self, filename: str) -> str:
-        filename = re.sub(r'[<>:"/\\|?*]', '', filename)
-        filename = re.sub(r'\s+', '_', filename)
-        filename = filename[:100]
-        return filename
+        self.file_validator = file_validator
+        self.data_loader = data_loader
+        self.progress_reporter = progress_reporter
+        self.report_exporter = report_exporter
     
     def extract_video_info(self, url: str) -> Optional[Dict]:
         return self.video_downloader.extract_video_info(url)
@@ -76,23 +71,25 @@ class AudioDownloader:
             
             title = info.get('title', f'unknown_{index}')
             duration = info.get('duration', None)
-            sanitized_title = self.sanitize_filename(title)
+            sanitized_title = get_safe_filename(title, max_length=100)
             
             filename = f"{submodule}_{index:03d}_{sanitized_title}.{self.audio_config['format']}"
             full_path = os.path.join(output_path, filename)
             
-            if not force and os.path.exists(full_path):
-                file_size = os.path.getsize(full_path)
-                if file_size > 1024:
-                    logger.info(f"Skipping existing file: {filename} ({file_size} bytes)")
+            if not force:
+                is_valid, validation_msg = self.file_validator.validate_exists(full_path)
+                if is_valid:
+                    self.progress_reporter.report_success(f"Skipping existing file: {filename}")
                     result['success'] = True
                     result['skipped'] = True
                     result['file_path'] = full_path
                     result['title'] = title
                     result['duration'] = duration
                     return result
-                else:
-                    logger.warning(f"File too small ({file_size} bytes), re-downloading: {filename}")
+                elif os.path.exists(full_path):
+                    self.progress_reporter.report_warning(
+                        f"Re-downloading {filename}: {validation_msg}"
+                    )
             
             self.video_downloader.download(
                 url=url,
@@ -118,42 +115,18 @@ class AudioDownloader:
         
         return result
     
-    def load_urls_from_csv(self, csv_path: str, url_column: str) -> List[str]:
-        if pd is None:
-            raise ImportError("pandas is required. Install with: pip install pandas")
-        
-        df = pd.read_csv(csv_path)
-        urls = []
-        for idx, row in df.iterrows():
-            url = row.get(url_column, '')
-            if isinstance(url, str) and url.startswith('http') and 'youtube.com' in url:
-                urls.append(url)
-        return urls
-    
-    def load_urls_from_excel(self, excel_path: str, url_column: str) -> List[str]:
-        if pd is None:
-            raise ImportError("pandas and openpyxl are required. Install with: pip install pandas openpyxl")
-        
-        df = pd.read_excel(excel_path)
-        urls = []
-        for idx, row in df.iterrows():
-            url = row.get(url_column, '')
-            if isinstance(url, str) and url.startswith('http') and 'youtube.com' in url:
-                urls.append(url)
-        return urls
-    
     def download_module(self, module_name: str, force: bool = False) -> Dict:
-        logger.info(f"Starting download for module: {module_name}")
+        self.progress_reporter.report_success(f"Starting download for module: {module_name}")
         
         module_config = self.config['modules'][module_name]
         
         if 'csv_path' in module_config:
-            urls = self.load_urls_from_csv(
+            urls = self.data_loader.load_urls_from_csv(
                 module_config['csv_path'],
                 module_config['url_column']
             )
         elif 'excel_path' in module_config:
-            urls = self.load_urls_from_excel(
+            urls = self.data_loader.load_urls_from_excel(
                 module_config['excel_path'],
                 module_config['url_column']
             )
@@ -167,16 +140,18 @@ class AudioDownloader:
         successful = 0
         failed = 0
         
-        for idx, url in enumerate(tqdm(urls, desc=f"Downloading {module_name}")):
+        for idx, url in enumerate(
+            self.progress_reporter.report_batch(urls, f"Downloading {module_name}")
+        ):
             result = self.download_audio(url, audio_dir, module_name, idx, force)
             results.append(result)
             
             if result['success']:
                 successful += 1
-                logger.info(f"Downloaded: {result['title']}")
+                self.progress_reporter.report_success(f"Downloaded: {result['title']}")
             else:
                 failed += 1
-                logger.error(f"Failed: {url} - {result['error']}")
+                self.progress_reporter.report_error(f"Failed: {url} - {result['error']}")
         
         report = {
             'module': module_name,
@@ -188,12 +163,11 @@ class AudioDownloader:
         }
         
         report_path = os.path.join(module_config['reports_dir'], 'download_report.json')
-        os.makedirs(module_config['reports_dir'], exist_ok=True)
-        with open(report_path, 'w', encoding='utf-8') as f:
-            json.dump(report, f, indent=2, ensure_ascii=False)
+        self.report_exporter.export_json(report, report_path)
         
-        logger.info(f"Download report saved to: {report_path}")
-        logger.info(f"Summary: {successful}/{len(urls)} successful, {failed} failed")
+        self.progress_reporter.report_success(
+            f"Summary: {successful}/{len(urls)} successful, {failed} failed"
+        )
         
         return report
     
@@ -203,13 +177,15 @@ class AudioDownloader:
             try:
                 results[module_name] = self.download_module(module_name, force)
             except Exception as e:
-                logger.error(f"Error processing module {module_name}: {e}")
+                self.progress_reporter.report_error(f"Error processing module {module_name}: {e}")
                 results[module_name] = {'error': str(e)}
         return results
 
 
 def main():
     import argparse
+    from .utils.config_loader import ConfigLoader
+    from .downloaders.ytdlp_downloader import YtDlpDownloader
     
     parser = argparse.ArgumentParser(description='Download audio from YouTube URLs')
     parser.add_argument(
@@ -233,7 +209,23 @@ def main():
     
     args = parser.parse_args()
     
-    downloader = AudioDownloader(args.config)
+    config_loader = ConfigLoader()
+    config = config_loader.load_config(args.config)
+    
+    video_downloader = YtDlpDownloader()
+    file_validator = AudioFileValidator()
+    data_loader = DataLoader()
+    progress_reporter = ProgressReporter(logger)
+    report_exporter = ReportExporter()
+    
+    downloader = AudioDownloader(
+        config=config,
+        video_downloader=video_downloader,
+        file_validator=file_validator,
+        data_loader=data_loader,
+        progress_reporter=progress_reporter,
+        report_exporter=report_exporter
+    )
     
     if args.module == 'all':
         downloader.download_all_modules(args.force)

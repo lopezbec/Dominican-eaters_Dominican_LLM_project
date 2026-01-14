@@ -4,8 +4,11 @@ from typing import Optional, Dict, List
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import scrapetube
+import logging
 
 from ..utils.text_utils import normalize_text, extract_last_name, extract_significant_words
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -45,10 +48,10 @@ class AudiobookMatcher(ContentMatcher):
     Single Responsibility: Audiobook-specific matching and classification.
     """
     
-    def matches_content(self, video_title: str, book_title: str, author: str) -> bool:
+    def matches_content(self, video_title: str, content_title: str, content_author: str) -> bool:
         video_normalized = normalize_text(video_title)
-        book_normalized = normalize_text(book_title)
-        author_normalized = normalize_text(author)
+        book_normalized = normalize_text(content_title)
+        author_normalized = normalize_text(content_author)
         
         author_lastname = extract_last_name(author_normalized)
         book_words = extract_significant_words(book_normalized)
@@ -99,7 +102,7 @@ class AudiobookMatcher(ContentMatcher):
                     return "Lectura Parcial"
                 else:
                     return "Fragmentos"
-            except Exception:
+            except (ValueError, TypeError):
                 pass
         
         return "Lectura Amateur"
@@ -112,7 +115,7 @@ class MusicVideoMatcher(ContentMatcher):
     Single Responsibility: Music video-specific matching (simple).
     """
     
-    def matches_content(self, video_title: str, song_title: str, artist: str) -> bool:
+    def matches_content(self, video_title: str, content_title: str, content_author: str) -> bool:
         return True
     
     def classify_content(self, title: str, duration: str) -> str:
@@ -126,10 +129,10 @@ class PoemRecitationMatcher(ContentMatcher):
     Single Responsibility: Poem-specific matching and classification.
     """
     
-    def matches_content(self, video_title: str, poem_title: str, author: str) -> bool:
+    def matches_content(self, video_title: str, content_title: str, content_author: str) -> bool:
         video_normalized = normalize_text(video_title)
-        poem_normalized = normalize_text(poem_title)
-        author_normalized = normalize_text(author)
+        poem_normalized = normalize_text(content_title)
+        author_normalized = normalize_text(content_author)
         
         author_lastname = extract_last_name(author_normalized)
         poem_words = extract_significant_words(poem_normalized)
@@ -236,7 +239,8 @@ class YouTubeClient:
             
             return None
             
-        except Exception:
+        except (RuntimeError, ValueError, TypeError, OSError, AttributeError, KeyError) as e:
+            logger.error("search_video failed for title=%s author=%s: %s", title, author, e)
             return None
     
     def _search_with_query(
@@ -281,7 +285,11 @@ class YouTubeClient:
             
             return None
             
-        except Exception:
+        except (RuntimeError, ValueError, OSError) as e:
+            logger.exception("Error during YouTube search for query=%s: %s", query, e)
+            return None
+        except (AttributeError, KeyError, IndexError, TypeError) as e:
+            logger.error("Data parsing error during YouTube search for query=%s: %s", query, e)
             return None
     
     def _parse_duration(self, video: dict) -> str:
@@ -293,7 +301,7 @@ class YouTubeClient:
         try:
             length_text = video.get('lengthText', {}).get('simpleText', 'N/A')
             return length_text if length_text else 'N/A'
-        except Exception:
+        except (KeyError, AttributeError, TypeError, ValueError):
             return 'N/A'
     
     def _is_valid_duration(self, duration: str) -> bool:
@@ -316,7 +324,7 @@ class YouTubeClient:
             
             return (self.config.min_duration_seconds <= seconds <= 
                     self.config.max_duration_seconds)
-        except Exception:
+        except (ValueError, TypeError, IndexError):
             return True
     
     def _is_likely_target_content(self, title: str) -> bool:

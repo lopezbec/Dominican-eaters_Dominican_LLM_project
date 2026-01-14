@@ -5,13 +5,10 @@ import requests
 from typing import Optional, Dict, List
 from bs4 import BeautifulSoup
 
+from .base_client import BaseAPIClient, logger
 
-class GeniusAPIClient:
-    """
-    Client for interacting with Genius API.
-    
-    Single Responsibility: Genius API communication and data retrieval.
-    """
+
+class GeniusAPIClient(BaseAPIClient):
     
     def __init__(
         self,
@@ -21,82 +18,46 @@ class GeniusAPIClient:
         scraping_timeout: int = 15,
         results_per_page: int = 5
     ):
-        self.access_token = access_token
-        self.base_url = base_url
-        self.api_timeout = api_timeout
+        super().__init__(
+            base_url=base_url,
+            api_key=access_token,
+            timeout=api_timeout,
+            max_retries=3,
+            backoff_factor=0.5
+        )
         self.scraping_timeout = scraping_timeout
         self.results_per_page = results_per_page
-        self._session = self._create_session()
     
-    def _create_session(self) -> requests.Session:
-        """
-        Create a requests session with default headers.
-        
-        Single Responsibility: Session initialization.
-        """
-        session = requests.Session()
-        session.headers.update({
-            "Authorization": f"Bearer {self.access_token}",
-            "User-Agent": "DominicanEaters/1.0"
-        })
-        return session
+    def _get_auth_headers(self) -> Dict[str, str]:
+        return {"Authorization": f"Bearer {self.api_key}"}
     
-    def _make_request(
+    def _make_api_request(
         self,
         endpoint: str,
         params: Optional[Dict] = None,
         timeout: Optional[int] = None
     ) -> Optional[Dict]:
-        """
-        Make a GET request to Genius API.
+        response = self.get(endpoint, params=params, timeout=timeout)
         
-        Single Responsibility: HTTP request execution.
-        
-        Args:
-            endpoint: API endpoint (e.g., '/search')
-            params: Query parameters
-            timeout: Request timeout in seconds
-            
-        Returns:
-            API response data or None on error
-        """
-        timeout = timeout or self.api_timeout
-        url = f"{self.base_url}{endpoint}"
+        if not response:
+            return None
         
         try:
-            response = self._session.get(url, params=params, timeout=timeout)
-            response.raise_for_status()
             result = response.json()
             
             if result.get("meta", {}).get("status") == 200:
                 return result.get("response")
             else:
-                print(f" API Error: {result}")
+                logger.error("API Error: %s", result)
                 return None
-                
-        except requests.exceptions.Timeout:
-            print(f" Timeout: Request exceeded {timeout}s")
-            return None
-        except requests.exceptions.RequestException as e:
-            print(f" Request Error: {e}")
+        except ValueError:
+            logger.error("JSON Decode Error while parsing Genius response")
             return None
     
     def search(self, query: str, per_page: Optional[int] = None) -> List[Dict]:
-        """
-        Search for songs on Genius.
-        
-        Single Responsibility: Song search.
-        
-        Args:
-            query: Search query (e.g., "Obsesion Aventura")
-            per_page: Number of results per page
-            
-        Returns:
-            List of song dictionaries with id, title, artist, url
-        """
         per_page = per_page or self.results_per_page
         params = {"q": query, "per_page": per_page}
-        response = self._make_request("/search", params=params)
+        response = self._make_api_request("/search", params=params)
         
         if not response:
             return []
@@ -113,18 +74,7 @@ class GeniusAPIClient:
         ]
     
     def get_song_details(self, song_id: int) -> Optional[Dict]:
-        """
-        Get detailed information about a song.
-        
-        Single Responsibility: Song metadata retrieval.
-        
-        Args:
-            song_id: Genius song ID
-            
-        Returns:
-            Song details dictionary or None on error
-        """
-        response = self._make_request(f"/songs/{song_id}")
+        response = self._make_api_request(f"/songs/{song_id}")
         
         if not response:
             return None
@@ -145,29 +95,18 @@ class GeniusAPIClient:
         }
     
     def scrape_lyrics(self, url: str, timeout: Optional[int] = None) -> str:
-        """
-        Scrape lyrics from a Genius song page.
-        
-        Single Responsibility: Web scraping for lyrics.
-        
-        Args:
-            url: Genius song URL
-            timeout: Request timeout in seconds
-            
-        Returns:
-            Cleaned lyrics text or empty string on error
-        """
         timeout = timeout or self.scraping_timeout
         
         try:
-            response = requests.get(url, timeout=timeout)
+            # Reuse session from BaseHTTPClient to get retries, headers and consistent timeouts
+            response = self._session.get(url, timeout=timeout)
             response.raise_for_status()
             
             soup = BeautifulSoup(response.text, 'html.parser')
             lyrics_divs = soup.find_all('div', attrs={'data-lyrics-container': 'true'})
             
             if not lyrics_divs:
-                print(f"  No lyrics found at {url}")
+                logger.info("No lyrics found at %s", url)
                 return ""
             
             lyrics = '\n'.join([div.get_text(separator="\n") for div in lyrics_divs])
@@ -176,27 +115,16 @@ class GeniusAPIClient:
             return lyrics
             
         except requests.exceptions.Timeout:
-            print(f"  Timeout: Scraping exceeded {timeout}s")
+            logger.warning("Timeout: Scraping exceeded %ss for %s", timeout, url)
             return ""
         except requests.exceptions.RequestException as e:
-            print(f" Scraping Error: {e}")
+            logger.error("Scraping Error: %s", e)
             return ""
-        except Exception as e:
-            print(f" Unexpected Error: {e}")
+        except Exception:
+            logger.exception("Unexpected error while scraping %s", url)
             return ""
     
     def _clean_lyrics(self, lyrics: str) -> str:
-        """
-        Clean lyrics text by removing metadata tags.
-        
-        Single Responsibility: Lyrics text cleaning.
-        
-        Args:
-            lyrics: Raw lyrics text
-            
-        Returns:
-            Cleaned lyrics text
-        """
         import os
         lyrics = re.sub(r'[\(\[].*?[\)\]]', '', lyrics)
         lyrics = os.linesep.join([line for line in lyrics.splitlines() if line.strip()])

@@ -4,73 +4,70 @@
 Books Eater - Dominican Audiobooks Finder
 Searches for Dominican literature audiobooks on YouTube
 """
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
+from typing import Any, List
+from shared.base.base_runner import BaseEaterRunner
 from shared.clients.youtube_client import YouTubeClient
+from shared.clients.adapters import YouTubeSearcherAdapter
+from shared.utils.file_handler import FileHandler
 from src.services import AudiobookService
-from src.utils import config, FileHandler, DOMINICAN_BOOKS
+from src.utils import config
 from src.utils.dominican_books import get_books_as_objects
+from src.models.book import Book
+from shared.utils.base_config import BaseConfig
+from src.utils.file_handler import load_books_from_file
+
+
+class BooksEaterRunner(BaseEaterRunner):
+    
+    def __init__(self):
+        super().__init__(
+            module_name="audiobooks",
+            title="Books Eater - Buscador de Audiolibros Dominicanos"
+        )
+    
+    def load_config(self) -> BaseConfig:
+        return config
+
+    def get_client(self) -> YouTubeSearcherAdapter:
+        youtube_client = YouTubeClient(videos_per_search=self.config.VIDEOS_PER_SEARCH)
+                logger.info("Cliente de YouTube inicializado (sin límites de API!)\n")
+        return YouTubeSearcherAdapter(youtube_client)
+    
+    def get_service(self, client: YouTubeSearcherAdapter) -> AudiobookService:
+        return AudiobookService(client)
+
+    def load_input_data(self) -> List[Book]:
+        from src.utils.dominican_books import get_books_as_objects
+        return self.load_with_fallback(
+            file_path=self.config.BOOKS_FILE,
+            fallback_provider=get_books_as_objects,
+            file_description=f"libros desde '{self.config.BOOKS_FILE}'",
+            fallback_description="dataset predefinido de literatura dominicana"
+        )
+    
+    def save_results(self, books: List[Book]) -> bool:
+        return self.save_dual_format(books)
+    
+    def _get_model_class(self) -> type:
+        from src.models.book import Book
+        return Book
+    
+    def _get_output_file(self) -> str:
+        return self.config.OUTPUT_FILE
+    
+    def _get_output_csv(self) -> str:
+        return self.config.OUTPUT_CSV
 
 
 def main() -> None:
-    """Main entry point for the application."""
-    print(f"\n{'='*60}")
-    print("Books Eater - Buscador de Audiolibros Dominicanos")
-    print(f"{'='*60}\n")
-    
-    # Try to load books from file first
-    books = FileHandler.load_books_from_file(config.BOOKS_FILE)
-
-    if books:
-        print(f"Cargados {len(books)} libros desde '{config.BOOKS_FILE}'")
-    else:
-        # Use predefined dataset
-        print(f"Usando dataset predefinido de literatura dominicana")
-        books = get_books_as_objects()
-        print(f"{len(books)} libros en el dataset")
-    
-    print(f"\n{'='*60}")
-    print("Iniciando búsqueda en YouTube...")
-    print(f"{'='*60}\n")
-    
-    # Initialize YouTube client (no API key needed!)
-    youtube_client = YouTubeClient(videos_per_search=config.VIDEOS_PER_SEARCH)
-    print("Cliente de YouTube inicializado (sin límites de API!)\n")
-    
-    # Initialize service
-    audiobook_service = AudiobookService(youtube_client)
-    
-    # Process all books
-    books, stats = audiobook_service.process_multiple_books(books)
-    
-    if books:
-        print(f"\n{'='*60}")
-        print("Guardando resultados...")
-        print(f"{'='*60}\n")
-        
-        # Save to Excel
-        FileHandler.save_to_excel(books, config.OUTPUT_FILE)
-        
-        # Optionally save to CSV
-        FileHandler.save_to_csv(books, config.OUTPUT_CSV)
-        
-        # Print statistics
-        audiobook_service.print_statistics(stats)
-
-        print(f"Archivos generados:")
-        print(f"   - {config.OUTPUT_FILE}")
-        print(f"   - {config.OUTPUT_CSV}")
-        
-    else:
-        print("\nNo se procesaron libros")
+    """Main entry point for application."""
+    from shared.base.base_runner import BaseEaterRunner
+    BaseEaterRunner.create_and_run(BooksEaterRunner)
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\n\nPrograma interrumpido por el usuario")
-        print("¡Hasta luego!")
-    except Exception as e:
-        print(f"\nError fatal: {e}")
-        import traceback
-        traceback.print_exc()
+    main()
