@@ -96,7 +96,7 @@ class FileHandler:
             
             data = [item.to_dict() for item in items]
             df = pd.DataFrame(data)
-            df.to_csv(filename, index=False, encoding='utf-8')
+            df.to_csv(filename, index=False, encoding='utf-8-sig')
             
             return True
             

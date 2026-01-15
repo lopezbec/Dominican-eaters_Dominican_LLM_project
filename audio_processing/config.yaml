@@ -35,27 +35,27 @@ modules:
   books-eater:
     excel_path: audio_processing/data/dominican_audiobooks.xlsx
     url_column: "URL YouTube"
-    audio_dir: audio_processing/audio/books
-    transcriptions_dir: audio_processing/transcriptions/books
-    reports_dir: audio_processing/reports/books
-    reference_texts_dir: audio_processing/reference_texts/books
-    alignments_dir: audio_processing/alignments/books
+    audio_dir: books-eater/audio
+    transcriptions_dir: books-eater/transcriptions
+    reports_dir: books-eater/reports
+    reference_texts_dir: books-eater/reference_texts
+    alignments_dir: books-eater/alignments
     
   poems-eater:
     excel_path: audio_processing/data/dominican_poems.xlsx
     url_column: "URL YouTube"
-    audio_dir: audio_processing/audio/poems
-    transcriptions_dir: audio_processing/transcriptions/poems
-    reports_dir: audio_processing/reports/poems
-    reference_texts_dir: audio_processing/reference_texts/poems
-    alignments_dir: audio_processing/alignments/poems
+    audio_dir: poems-eater/audio
+    transcriptions_dir: poems-eater/transcriptions
+    reports_dir: poems-eater/reports
+    reference_texts_dir: poems-eater/reference_texts
+    alignments_dir: poems-eater/alignments
     
   lyrics-eater:
     excel_path: audio_processing/data/dominican_songs.xlsx
     url_column: "enlace_youtube"
     lyrics_column: "letras"
-    audio_dir: audio_processing/audio/lyrics
-    transcriptions_dir: audio_processing/transcriptions/lyrics
-    alignments_dir: audio_processing/alignments/lyrics
-    reports_dir: audio_processing/reports/lyrics
-    reference_texts_dir: audio_processing/reference_texts/lyrics
+    audio_dir: lyrics-eater/audio
+    transcriptions_dir: lyrics-eater/transcriptions
+    alignments_dir: lyrics-eater/alignments
+    reports_dir: lyrics-eater/reports
+    reference_texts_dir: lyrics-eater/reference_texts
