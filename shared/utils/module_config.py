@@ -26,8 +26,8 @@ class ModuleConfig:
         return current_file.parent.parent.parent
     
     def _generate_output_path(self, extension: str) -> str:
-        filename = f"dominican_{self.module_name}.{extension}"
-        return f"../{self._output_subdir}/{filename}"
+        """Generate absolute path to output file."""
+        return str(self.get_absolute_output_path(extension))
     
     def get_absolute_output_path(self, extension: str) -> Path:
         return self.PROJECT_ROOT / self._output_subdir / f"dominican_{self.module_name}.{extension}"

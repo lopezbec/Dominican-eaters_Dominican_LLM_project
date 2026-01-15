@@ -1,7 +1,7 @@
 """Data model for Dominican poems and recitations."""
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from shared.models.base_content import BaseContent
 from shared.models.enums import ContentAvailability
@@ -137,3 +137,44 @@ class Poem(BaseContent):
                 genero=parsed.get('genero', 'N/A')
             )
         return None
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Poem':
+        """
+        Create Poem from dictionary (for Excel loading).
+        
+        Maps Spanish column names to model attributes.
+        
+        Args:
+            data: Dictionary with poem data (from pandas DataFrame)
+            
+        Returns:
+            Poem object
+            
+        Example:
+            >>> data = {
+            ...     'Número': 1,
+            ...     'Título': 'Quisqueya',
+            ...     'Autor': 'Salomé Ureña',
+            ...     'Año': '1874',
+            ...     'Género': 'Patriótico',
+            ...     'URL YouTube': 'https://youtube.com/...',
+            ...     'Duración': '3:45'
+            ... }
+            >>> poem = Poem.from_dict(data)
+        """
+        return cls(
+            numero=int(data.get(PoemColumns.NUMBER, 0)),
+            titulo=str(data.get(PoemColumns.TITLE, '')),
+            autor=str(data.get(PoemColumns.AUTHOR, '')),
+            año=str(data.get(PoemColumns.YEAR, 'N/A')),
+            genero=str(data.get(PoemColumns.GENRE, 'N/A')),
+            url_youtube=str(data.get(PoemColumns.URL_YOUTUBE, ContentAvailability.NOT_FOUND)),
+            duracion=str(data.get(PoemColumns.DURATION, 'N/A')),
+            recitador=str(data.get(PoemColumns.RECITER, 'N/A')),
+            tipo_contenido=str(data.get(PoemColumns.CONTENT_TYPE, 'N/A')),
+            calidad=str(data.get(PoemColumns.QUALITY, 'N/A')),
+            notas=str(data.get(PoemColumns.NOTES, '')),
+            disponibilidad=str(data.get(PoemColumns.AVAILABILITY, ContentAvailability.NOT_FOUND)),
+            transcripcion=str(data.get(PoemColumns.TRANSCRIPTION, ''))
+        )

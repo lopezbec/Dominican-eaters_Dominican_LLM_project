@@ -117,7 +117,8 @@ def download(module: str, force: bool):
             cmd = [
                 sys.executable, '-m', 
                 'audio_processing.src.downloader',
-                '--module', mod
+                '--module', mod,
+                '--config', 'audio_processing/config.yaml'
             ]
             if force:
                 cmd.append('--force')
@@ -181,7 +182,8 @@ def transcribe(module: str, model: str, partial: bool):
                 sys.executable, '-m', 
                 'audio_processing.src.transcriber',
                 '--module', mod,
-                '--model', model
+                '--model', model,
+                '--config', 'audio_processing/config.yaml'
             ]
             if partial:
                 cmd.append('--partial')
@@ -283,7 +285,8 @@ def validate(module: str):
             cmd = [
                 sys.executable, '-m', 
                 'audio_processing.src.validator',
-                '--module', mod
+                '--module', mod,
+                '--config', 'audio_processing/config.yaml'
             ]
             
             result = subprocess.run(

@@ -291,6 +291,9 @@ class YouTubeClient:
         except (AttributeError, KeyError, IndexError, TypeError) as e:
             logger.error("Data parsing error during YouTube search for query=%s: %s", query, e)
             return None
+        except Exception as e:
+            logger.error("Unexpected error during YouTube search for query=%s: %s", query, e)
+            return None
     
     def _parse_duration(self, video: dict) -> str:
         """

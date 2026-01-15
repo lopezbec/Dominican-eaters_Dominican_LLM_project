@@ -30,6 +30,11 @@ class PoemService(BaseService):
         Returns:
             Tuple of (updated Poem object, success boolean)
         """
+        # Skip if already has valid YouTube URL (performance optimization)
+        if poem.url_youtube and poem.url_youtube != ContentAvailability.NOT_FOUND:
+            logger.info("✓ Skipping (already found): %s - %s [%s]", poem.titulo, poem.autor, poem.url_youtube[:50])
+            return poem, True
+        
         logger.info("Searching for poem recitation: %s - %s (%s)", poem.titulo, poem.autor, poem.genero)
         
         result = self.youtube_client.search_poem_recitation(

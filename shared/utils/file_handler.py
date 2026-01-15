@@ -68,6 +68,9 @@ class FileHandler:
         if not items:
             return False
         
+        # Ensure parent directory exists
+        Path(filename).parent.mkdir(parents=True, exist_ok=True)
+        
         first_item = items[0]
         type_name = type(first_item).__name__.lower()
         if 'book' in type_name:
@@ -87,6 +90,9 @@ class FileHandler:
         try:
             if not items:
                 return False
+            
+            # Ensure parent directory exists
+            Path(filename).parent.mkdir(parents=True, exist_ok=True)
             
             data = [item.to_dict() for item in items]
             df = pd.DataFrame(data)

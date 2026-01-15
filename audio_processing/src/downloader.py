@@ -115,6 +115,39 @@ class AudioDownloader:
         
         return result
     
+    def _extract_reference_texts(self, module_name: str) -> None:
+        """
+        Extract reference texts after downloads complete.
+        
+        For lyrics-eater: Extract lyrics from Excel
+        For poems-eater: Extract poems from data source
+        For books-eater: No extraction needed (long-form content)
+        """
+        try:
+            if module_name == 'lyrics-eater':
+                self.progress_reporter.report_success("Extracting reference texts from lyrics...")
+                from .alignment.reference_extractor import ReferenceTextExtractor
+                extractor = ReferenceTextExtractor(self.config)
+                result = extractor.extract_text_from_excel(module_name)
+                self.progress_reporter.report_success(
+                    f"Extracted {result.get('extracted', 0)} reference texts for {module_name}"
+                )
+            elif module_name == 'poems-eater':
+                self.progress_reporter.report_success("Extracting reference texts from poems...")
+                from .alignment.reference_extractor import ReferenceTextExtractor
+                extractor = ReferenceTextExtractor(self.config)
+                result = extractor.extract_text_from_excel(module_name)
+                if result.get('note'):
+                    self.progress_reporter.report_warning(result['note'])
+            elif module_name == 'books-eater':
+                # Books don't need reference extraction (full audiobooks)
+                logger.info("Skipping reference extraction for books-eater (full audiobooks)")
+        except Exception as e:
+            self.progress_reporter.report_warning(
+                f"Failed to extract reference texts for {module_name}: {e}"
+            )
+            logger.exception(f"Reference extraction error for {module_name}")
+    
     def download_module(self, module_name: str, force: bool = False) -> Dict:
         self.progress_reporter.report_success(f"Starting download for module: {module_name}")
         
@@ -168,6 +201,9 @@ class AudioDownloader:
         self.progress_reporter.report_success(
             f"Summary: {successful}/{len(urls)} successful, {failed} failed"
         )
+        
+        # Extract reference texts after successful downloads
+        self._extract_reference_texts(module_name)
         
         return report
     

@@ -132,8 +132,8 @@ class BaseAPIClient(BaseHTTPClient):
         backoff_factor: float = 0.5,
         user_agent: Optional[str] = None
     ):
+        self.api_key = api_key  # Set BEFORE calling super().__init__ to avoid AttributeError
         super().__init__(base_url, timeout, max_retries, backoff_factor, user_agent)
-        self.api_key = api_key
     
     def _get_default_headers(self) -> Dict[str, str]:
         headers = super()._get_default_headers()

@@ -27,6 +27,11 @@ class AudiobookService(BaseService):
         Returns:
             Tuple of (updated Book object, success boolean)
         """
+        # Skip if already has valid YouTube URL (performance optimization)
+        if book.url_youtube and book.url_youtube != ContentAvailability.NOT_FOUND:
+            logger.info("✓ Skipping (already found): %s - %s", book.titulo, book.autor)
+            return book, True
+        
         logger.info("Searching for audiobook: %s - %s", book.titulo, book.autor)
 
         result = self.youtube_client.search_audiobook(book.titulo, book.autor)

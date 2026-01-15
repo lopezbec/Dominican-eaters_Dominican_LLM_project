@@ -58,6 +58,23 @@ class AudioTranscriber:
         try:
             start_time = time.time()
             
+            # Handle partial transcription by loading audio and clipping
+            audio_to_transcribe = audio_path
+            if partial:
+                partial_duration = self.whisper_config.get('partial_duration', 60)
+                self.progress_reporter.report_success(
+                    f"Partial transcription: first {partial_duration} seconds"
+                )
+                # Load audio with whisper's audio loading
+                import whisper
+                audio = whisper.load_audio(audio_path)
+                # Clip to desired duration (audio is at 16kHz)
+                sample_rate = 16000
+                max_samples = int(partial_duration * sample_rate)
+                audio = audio[:max_samples]
+                # Use clipped audio directly
+                audio_to_transcribe = audio
+            
             transcribe_kwargs = {
                 'language': self.whisper_config['language'],
                 'task': self.whisper_config['task'],
@@ -67,14 +84,7 @@ class AudioTranscriber:
                 'temperature': self.whisper_config.get('temperature', 0.0),
             }
             
-            if partial:
-                partial_duration = self.whisper_config.get('partial_duration', 60)
-                transcribe_kwargs['duration'] = partial_duration
-                self.progress_reporter.report_success(
-                    f"Partial transcription: first {partial_duration} seconds"
-                )
-            
-            transcription = self.model_manager.transcribe(audio_path, **transcribe_kwargs)
+            transcription = self.model_manager.transcribe(audio_to_transcribe, **transcribe_kwargs)
             
             processing_time = time.time() - start_time
             
@@ -279,6 +289,12 @@ def main():
         action='store_true',
         help='Transcribe only first portion of audio for alignment verification'
     )
+    parser.add_argument(
+        '--model',
+        type=str,
+        default=None,
+        help='Whisper model to use (overrides config file). Options: tiny, base, small, medium, large, large-v2, large-v3'
+    )
     
     args = parser.parse_args()
     
@@ -286,8 +302,12 @@ def main():
     config = config_loader.load_config(args.config)
     
     whisper_config = config['whisper']
+    
+    # Use CLI model if provided, otherwise use config model
+    model_name = args.model if args.model else whisper_config['model']
+    
     model_manager = WhisperModelManager(
-        model_name=whisper_config['model'],
+        model_name=model_name,
         fp16=whisper_config.get('fp16', True)
     )
     file_validator = TranscriptionFileValidator()

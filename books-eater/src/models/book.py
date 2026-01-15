@@ -1,7 +1,7 @@
 """Data model for Dominican books and audiobooks."""
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from shared.models.base_content import BaseContent
 from shared.models.enums import ContentAvailability
@@ -104,3 +104,39 @@ class Book(BaseContent):
                 año=parsed.get('año', 'N/A')
             )
         return None
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Book':
+        """
+        Create Book from dictionary (for Excel loading).
+        
+        Maps Spanish column names to model attributes.
+        
+        Args:
+            data: Dictionary with book data (from pandas DataFrame)
+            
+        Returns:
+            Book object
+            
+        Example:
+            >>> data = {
+            ...     'Número': 1,
+            ...     'Título': 'Over',
+            ...     'Autor': 'Junot Díaz',
+            ...     'Año': '2012',
+            ...     'URL YouTube': 'https://youtube.com/...',
+            ...     'Duración': '45:00'
+            ... }
+            >>> book = Book.from_dict(data)
+        """
+        return cls(
+            numero=int(data.get(BookColumns.NUMBER, 0)),
+            titulo=str(data.get(BookColumns.TITLE, '')),
+            autor=str(data.get(BookColumns.AUTHOR, '')),
+            año=str(data.get(BookColumns.YEAR, 'N/A')),
+            url_youtube=str(data.get(BookColumns.URL_YOUTUBE, ContentAvailability.NOT_FOUND)),
+            duracion=str(data.get(BookColumns.DURATION, 'N/A')),
+            tipo_contenido=str(data.get(BookColumns.CONTENT_TYPE, 'N/A')),
+            disponibilidad=str(data.get(BookColumns.AVAILABILITY, ContentAvailability.NOT_FOUND)),
+            transcripcion=str(data.get(BookColumns.TRANSCRIPTION, ''))
+        )
