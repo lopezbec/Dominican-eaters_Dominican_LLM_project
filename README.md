@@ -58,18 +58,35 @@ cp .env.example .env
 Run the main CLI for full pipeline or per-module operations (recommended):
 
 ```bash
-# Full pipeline for all modules
-python cli.py pipeline --type all
+# Scrape (module values: books, lyrics, poems, all)
+python cli.py scrape --module books
+python cli.py scrape --module all
 
-# Run all steps for a specific module
-python cli.py pipeline --type lyrics-eater
+# Download audio (module values: books-eater, lyrics-eater, poems-eater, all)
+python cli.py download --module lyrics-eater
+python cli.py download --module all --force
 
-# Individual operations
-python cli.py scrape --type books
-python cli.py download --type lyrics-eater
-python cli.py transcribe --type books-eater --model base
-python cli.py align --type lyrics-eater
-python cli.py validate --type all
+# Transcribe (module values: books-eater, lyrics-eater, poems-eater, all)
+python cli.py transcribe --module lyrics-eater --model base
+python cli.py transcribe --module books-eater --model large
+python cli.py transcribe --module lyrics-eater --partial
+
+# Align (module values: books-eater, lyrics-eater, poems-eater, all)
+python cli.py align --module lyrics-eater
+python cli.py align --module all
+
+# Validate (module values: books-eater, lyrics-eater, poems-eater, all)
+python cli.py validate --module lyrics-eater
+python cli.py validate --module all
+
+# Pipeline (module values: books, lyrics, poems, all)
+python cli.py pipeline --module lyrics
+python cli.py pipeline --module all --skip-scrape --model large
+python cli.py pipeline --module books --force
+
+Notes:
+- Use `--partial` for partial transcription (lyrics collection uses partial mode by default when using the `pipeline` command with `--module lyrics`).
+- To see help for any command: `python cli.py <command> --help`.
 ```
 
 Available Whisper models: `tiny`, `base`, `small`, `medium`, `large`, `large-v2`, `large-v3`. Use `--partial` for partial transcriptions (lyrics use partial mode during collection by default).
@@ -151,9 +168,11 @@ The pipeline performs multi-metric evaluation for transcription quality using th
 - Whisper OOM: use smaller model (`tiny`, `base`) or switch to CPU
 - YouTube download failures: update `yt-dlp` and check video availability
 
-## License
+## Acknowledgment
 
-This project is developed for academic research in Dominican Spanish NLP. See repository license for details.
+This project has been partially supported by the Ministerio de Educación Superior, Ciencia y Tecnología (MESCyT) of the Dominican Republic through the FONDOCYT grant. The authors gratefully acknowledge this support.
+
+Any opinions, findings, conclusions, or recommendations expressed in this material are those of the authors and do not necessarily reflect the views of MESCyT.
 
 ## Support
 
