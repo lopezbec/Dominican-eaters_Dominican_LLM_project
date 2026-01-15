@@ -54,14 +54,8 @@ source .venv/bin/activate  # Linux/Mac
 
 3. Install dependencies:
 ```bash
-# Install all dependencies
-python audio_processing/utilities/setup.py
-
-# Or manually for each module
-pip install -r audio_processing/requirements.txt
-pip install -r books-eater/requirements.txt
-pip install -r lyrics-eater/requirements.txt
-pip install -r poems-eater/requirements.txt
+# Single unified requirements file for all modules
+pip install -r requirements.txt
 ```
 
 4. Configure environment (lyrics module only):

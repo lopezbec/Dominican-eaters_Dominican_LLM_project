@@ -83,8 +83,19 @@ logs/
 *.bak
 *~
 .ai/
+context/
+.context/
+cleanup_*.py
 
-# PDFs (large files, should not be in git)
+# PDFs and data files (large files, should not be in git)
 *.pdf
+*.xlsx
+*.xls
 books-eater/scraped_books/pdfs/
 books-eater/scraped_books/markdowns/
+books-eater/scraped_books/*.xlsx
+books-eater/scraped_books/*.xls
+
+# Module-specific requirements (use root requirements.txt only)
+*/requirements.txt
+!requirements.txt

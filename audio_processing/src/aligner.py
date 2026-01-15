@@ -11,6 +11,11 @@ import subprocess
 from .metrics.text_similarity import TextSimilarityMetrics
 from .utils.text_normalizer import TextNormalizer
 from .alignment.reference_extractor import ReferenceTextExtractor
+from .config.constants import (
+    ALIGNMENT_WINDOW_SIZE_WORDS,
+    ALIGNMENT_MIN_MATCH_LENGTH,
+    ALIGNMENT_MAX_SEARCH_WORDS
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -45,9 +50,9 @@ class ForcedAligner:
         self,
         reference: str,
         hypothesis: str,
-        window_size: int = 50,
-        min_match_length: int = 30,
-        max_search_words: int = 200
+        window_size: int = ALIGNMENT_WINDOW_SIZE_WORDS,
+        min_match_length: int = ALIGNMENT_MIN_MATCH_LENGTH,
+        max_search_words: int = ALIGNMENT_MAX_SEARCH_WORDS
     ) -> Tuple[int, float]:
         ref_normalized = self.text_normalizer.normalize_text(reference)
         hyp_normalized = self.text_normalizer.normalize_text(hypothesis)
@@ -136,13 +141,25 @@ class ForcedAligner:
         module_name: str
     ) -> Optional[Path]:
         if module_name == 'lyrics-eater':
+            # Extract index from transcription filename: lyrics-eater_050_SongTitle.json
             match = re.match(r'lyrics-eater_(\d{3})_', trans_file.name)
             if match:
                 index = match.group(1)
-                reference_files = list(Path(reference_texts_dir).glob(f"{index}_*.txt"))
-                if reference_files:
-                    return reference_files[0]
+                # Look for reference file: lyrics-eater_050.txt
+                reference_file = Path(reference_texts_dir) / f"lyrics-eater_{index}.txt"
+                if reference_file.exists():
+                    return reference_file
+        elif module_name == 'poems-eater':
+            # Extract index from transcription filename: poems-eater_050_PoemTitle.json
+            match = re.match(r'poems-eater_(\d{3})_', trans_file.name)
+            if match:
+                index = match.group(1)
+                # Look for reference file: poems-eater_050.txt
+                reference_file = Path(reference_texts_dir) / f"poems-eater_{index}.txt"
+                if reference_file.exists():
+                    return reference_file
         else:
+            # For books-eater or other modules: use base name
             base_name = trans_file.stem
             txt_file = Path(reference_texts_dir) / f"{base_name}.txt"
             if txt_file.exists():
@@ -188,10 +205,12 @@ class ForcedAligner:
         )
         
         if not reference_file:
-            result['error'] = 'No reference text found'
+            result['error'] = f'No reference text file found - run extract action first for {module_name}'
+            logger.warning(f"No reference file found for {trans_file.name}. Expected in: {reference_texts_dir}")
             return result
         
         reference = self.reference_extractor.extract_text_from_txt(str(reference_file))
+        
         result['has_reference'] = True
         
         ref_normalized = self.text_normalizer.normalize_text(reference)

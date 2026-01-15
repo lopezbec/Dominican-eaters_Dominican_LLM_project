@@ -24,7 +24,7 @@ class TranscriptionExporter:
                 data = json.load(f)
                 return data.get('transcription', '')
         except Exception as e:
-            print(f"      Error loading transcription from {json_path}: {e}")
+                logger.info("      Error loading transcription from {json_path}: {e}")
             return None
     
     def export_to_excel(
@@ -42,9 +42,9 @@ class TranscriptionExporter:
             'no_audio': 0
         }
         
-        print(f"\n{'='*60}")
-        print("Exportando transcripciones a Excel/CSV")
-        print(f"{'='*60}\n")
+                logger.info("\n{'='*60}")
+                logger.info("Exportando transcripciones a Excel/CSV")
+                logger.info("{'='*60}\n")
         
         for idx, item in enumerate(content_items, 1):
             if hasattr(item, 'disponibilidad') and item.disponibilidad in ["ENCONTRADO", "PARCIAL"]:
@@ -59,22 +59,22 @@ class TranscriptionExporter:
                     item.transcripcion = transcription
                     stats['with_transcription'] += 1
                     display_name = item.get_display_name()[:50]
-                    print(f"[{idx}/{stats['total']}] {display_name} - Transcripción cargada ({len(transcription)} chars)")
+                logger.info("[{idx}/{stats['total']}] {display_name} - Transcripción cargada ({len(transcription)} chars)")
                 else:
                     stats['without_transcription'] += 1
                     display_name = item.get_display_name()[:50]
-                    print(f"[{idx}/{stats['total']}] {display_name} - No se encontró transcripción")
+                logger.info("[{idx}/{stats['total']}] {display_name} - No se encontró transcripción")
             else:
                 stats['no_audio'] += 1
         
         df = pd.DataFrame([item.to_dict() for item in content_items])
         
         df.to_excel(excel_path, index=False, engine='openpyxl')
-        print(f"\nExcel guardado: {excel_path}")
+                logger.info("\nExcel guardado: {excel_path}")
         
         if csv_path:
             df.to_csv(csv_path, index=False, encoding='utf-8-sig')
-            print(f"CSV guardado: {csv_path}")
+                logger.info("CSV guardado: {csv_path}")
         
         return stats
     
@@ -85,15 +85,15 @@ class TranscriptionExporter:
         return f"{self.module_prefix}_{title}.m4a"
     
     def print_statistics(self, stats: Dict[str, int], content_type_name: str = "items"):
-        print(f"\n{'='*60}")
-        print("Estadísticas de Exportación:")
-        print(f"{'='*60}")
-        print(f"   Total de {content_type_name}: {stats['total']}")
-        print(f"   Con transcripción: {stats['with_transcription']}")
-        print(f"   Sin transcripción: {stats['without_transcription']}")
-        print(f"   Sin audio: {stats['no_audio']}")
+                logger.info("\n{'='*60}")
+                logger.info("Estadísticas de Exportación:")
+                logger.info("{'='*60}")
+                logger.info("   Total de {content_type_name}: {stats['total']}")
+                logger.info("   Con transcripción: {stats['with_transcription']}")
+                logger.info("   Sin transcripción: {stats['without_transcription']}")
+                logger.info("   Sin audio: {stats['no_audio']}")
         
         if stats['total'] > 0:
             success_rate = (stats['with_transcription'] / stats['total']) * 100
-            print(f"\n   Tasa de éxito: {success_rate:.1f}%")
-        print(f"{'='*60}\n")
+                logger.info("\n   Tasa de éxito: {success_rate:.1f}%")
+                logger.info("{'='*60}\n")

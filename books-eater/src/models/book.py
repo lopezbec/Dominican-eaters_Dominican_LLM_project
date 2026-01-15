@@ -1,9 +1,12 @@
 """Data model for Dominican books and audiobooks."""
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from shared.models.base_content import BaseContent
+from shared.models.enums import ContentAvailability
+from shared.utils.text_parser import TextParser
+from shared.constants.column_names import BookColumns
 
 
 @dataclass
@@ -15,13 +18,23 @@ class Book(BaseContent):
     titulo: str
     autor: str
     año: str
-    url_youtube: str = "NO ENCONTRADO"
+    url_youtube: str = ContentAvailability.NOT_FOUND
     duracion: str = "N/A"
     tipo_contenido: str = "N/A"
-    disponibilidad: str = "NO ENCONTRADO"
+    disponibilidad: str = ContentAvailability.NOT_FOUND
     transcripcion: str = ""
+
+    def has_transcription(self) -> bool:
+        """
+        Check if content has transcription data.
+        
+        Returns:
+            True if transcription exists and is not empty
+        """
+        return bool(self.transcripcion and self.transcripcion.strip())
+
     
-    def to_dict(self) -> dict:
+    def to_dict(self) -> Dict[str, str]:
         """
         Convert book to dictionary for export.
         
@@ -29,15 +42,15 @@ class Book(BaseContent):
             Dictionary with column names
         """
         return {
-            'Número': self.numero,
-            'Título Libro': self.titulo,
-            'Autor': self.autor,
-            'Año': self.año,
-            'URL YouTube': self.url_youtube,
-            'Duración': self.duracion,
-            'Tipo Contenido': self.tipo_contenido,
-            'Disponibilidad': self.disponibilidad,
-            'Transcripción': self.transcripcion
+            BookColumns.NUMBER: self.numero,
+            BookColumns.TITLE: self.titulo,
+            BookColumns.AUTHOR: self.autor,
+            BookColumns.YEAR: self.año,
+            BookColumns.URL_YOUTUBE: self.url_youtube,
+            BookColumns.DURATION: self.duracion,
+            BookColumns.CONTENT_TYPE: self.tipo_contenido,
+            BookColumns.AVAILABILITY: self.disponibilidad,
+            BookColumns.TRANSCRIPTION: self.transcripcion
         }
     
     def mark_as_found(self, url: str, duration: str, content_type: str, partial: bool = False):
@@ -50,16 +63,23 @@ class Book(BaseContent):
             content_type: Type of content (e.g., "Lectura Completa", "Dramatización")
             partial: Whether it's a partial/fragment version
         """
-        self.url_youtube = url
-        self.duracion = duration
-        self.tipo_contenido = content_type
-        self.disponibilidad = "PARCIAL" if partial else "ENCONTRADO"
+        super().mark_as_found(url, duration, content_type=content_type, partial=partial)
+    
+    def _set_additional_fields(self, **kwargs):
+        """Set book-specific fields."""
+        if 'content_type' in kwargs:
+            self.tipo_contenido = kwargs['content_type']
     
     def mark_as_partial(self, url: str, duration: str, content_type: str = "Fragmentos"):
         """
         Mark the book as partially found.
         """
         self.mark_as_found(url, duration, content_type, partial=True)
+    
+    @property
+    def display_name(self) -> str:
+        """Get display name for the book."""
+        return f"{self.titulo} - {self.autor}"
     
     @staticmethod
     def create_from_text(numero: int, text: str) -> Optional['Book']:
@@ -73,13 +93,50 @@ class Book(BaseContent):
         Returns:
             Book object or None if parsing fails
         """
-        try:
-            parts = [p.strip() for p in text.split('|')]
-            if len(parts) >= 2:
-                titulo = parts[0]
-                autor = parts[1]
-                año = parts[2] if len(parts) > 2 else "N/A"
-                return Book(numero=numero, titulo=titulo, autor=autor, año=año)
-            return None
-        except Exception:
-            return None
+        field_names = ['titulo', 'autor', 'año']
+        parsed = TextParser.parse_delimited(text, field_names)
+        
+        if parsed:
+            return Book(
+                numero=numero,
+                titulo=parsed['titulo'],
+                autor=parsed['autor'],
+                año=parsed.get('año', 'N/A')
+            )
+        return None
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Book':
+        """
+        Create Book from dictionary (for Excel loading).
+        
+        Maps Spanish column names to model attributes.
+        
+        Args:
+            data: Dictionary with book data (from pandas DataFrame)
+            
+        Returns:
+            Book object
+            
+        Example:
+            >>> data = {
+            ...     'Número': 1,
+            ...     'Título': 'Over',
+            ...     'Autor': 'Junot Díaz',
+            ...     'Año': '2012',
+            ...     'URL YouTube': 'https://youtube.com/...',
+            ...     'Duración': '45:00'
+            ... }
+            >>> book = Book.from_dict(data)
+        """
+        return cls(
+            numero=int(data.get(BookColumns.NUMBER, 0)),
+            titulo=str(data.get(BookColumns.TITLE, '')),
+            autor=str(data.get(BookColumns.AUTHOR, '')),
+            año=str(data.get(BookColumns.YEAR, 'N/A')),
+            url_youtube=str(data.get(BookColumns.URL_YOUTUBE, ContentAvailability.NOT_FOUND)),
+            duracion=str(data.get(BookColumns.DURATION, 'N/A')),
+            tipo_contenido=str(data.get(BookColumns.CONTENT_TYPE, 'N/A')),
+            disponibilidad=str(data.get(BookColumns.AVAILABILITY, ContentAvailability.NOT_FOUND)),
+            transcripcion=str(data.get(BookColumns.TRANSCRIPTION, ''))
+        )
