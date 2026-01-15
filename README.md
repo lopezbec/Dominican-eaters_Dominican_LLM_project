@@ -1,307 +1,164 @@
-# Dominican Eaters - LLM Training Dataset Project
+# Dominican Eaters 🇩🇴
 
-A comprehensive pipeline for collecting, processing, and aligning Dominican Spanish audio data from YouTube for Large Language Model training. This project focuses on three content domains: audiobooks, song lyrics, and poetry.
+**Dominican Eaters** is a professional pipeline for collecting, processing, and aligning Dominican Spanish audio content (audiobooks, song lyrics, poetry) from YouTube for Large Language Model training. This document provides a concise, enterprise-grade overview, installation instructions, usage examples, and the exact output layout used by the pipeline.
 
-## Project Overview
+## Platform Requirements
 
-Dominican Eaters automates the collection and processing of Dominican Spanish content through:
-- **Web scraping**: Automated search and metadata extraction from YouTube
-- **Audio download**: Bulk downloading of audio files via yt-dlp
-- **Transcription**: Whisper-based speech-to-text conversion
-- **Text alignment**: Word Error Rate (WER) calculation for quality validation
-- **Dataset generation**: Export to multiple formats (JSONL, CSV, Excel)
+> **Environment**: Python 3.8+ (3.13 recommended), FFmpeg, Git. CUDA available for Whisper when GPU is present.
 
-## Project Structure
+- Python 3.8 or newer
+- FFmpeg for audio processing
+- Internet connection for scraper modules
 
-```
-Dominican-eaters_Dominican_LLM_project/
-├── dominican-eater.py          # Main CLI entry point
-├── audio_processing/            # Core processing pipeline
-│   ├── src/                    # Processing modules
-│   │   ├── downloader.py       # YouTube audio download
-│   │   ├── transcriber.py      # Whisper transcription
-│   │   ├── aligner.py          # Text alignment & WER
-│   │   └── validator.py        # Quality validation
-│   ├── config.yaml             # Pipeline configuration
-│   └── utilities/setup.py      # Dependency installer
-├── books-eater/                # Audiobook scraper
-├── lyrics-eater/               # Song lyrics scraper
-└── poems-eater/                # Poetry scraper
-```
+## Dependencies
 
-## Installation
+- See `requirements.txt` at repository root for the consolidated dependency list.
+- Optional GPU: CUDA drivers for Whisper model acceleration.
 
-### Prerequisites
-- Python 3.8+
-- FFmpeg (for audio processing)
-- Git
+## Quick Installation
 
-### Setup
+1. Clone repository
 
-1. Clone the repository:
 ```bash
 git clone https://github.com/yourusername/Dominican-eaters_Dominican_LLM_project.git
 cd Dominican-eaters_Dominican_LLM_project
 ```
 
-2. Create and activate virtual environment:
+2. Create and activate virtual environment
+
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
-# or
-.venv\Scripts\activate     # Windows
+source .venv/bin/activate  # Linux/macOS
 ```
 
-3. Install dependencies:
+3. Install dependencies
+
 ```bash
-# Single unified requirements file for all modules
 pip install -r requirements.txt
 ```
 
-4. Configure environment (lyrics module only):
+4. Configure lyrics module (Genius API)
+
 ```bash
 cd lyrics-eater
 cp .env.example .env
 # Edit .env and add your Genius API token
 ```
 
-5. Create project directories:
-```bash
-python dominican-eater.py setup
-```
+## Features
+
+- Automated YouTube metadata scraping for books, lyrics and poems
+- Bulk audio download via `yt-dlp`
+- Whisper-based transcription (partial and full modes)
+- Multi-metric alignment and verification (WER, char similarity, jaccard, cosine)
+- Export of processed metadata and reports for dataset generation
 
 ## Usage
 
-### Quick Start - Full Pipeline
-
-Process all modules (books, lyrics, poems):
-```bash
-python dominican-eater.py pipeline --type all
-```
-
-Process individual module:
-```bash
-python dominican-eater.py pipeline --type lyrics
-```
-
-### Individual Commands
-
-**1. Scrape Content Metadata**
-```bash
-python dominican-eater.py scrape --type all
-python dominican-eater.py scrape --type books
-```
-
-**2. Download Audio**
-```bash
-python dominican-eater.py download --type lyrics-eater
-python dominican-eater.py download --type all --force
-```
-
-**3. Transcribe Audio**
-```bash
-python dominican-eater.py transcribe --type books-eater --model base
-python dominican-eater.py transcribe --type all --model large
-
-# Partial transcription (first 45 seconds only)
-python dominican-eater.py transcribe --type lyrics-eater --partial
-```
-
-Available Whisper models: `tiny`, `base`, `small`, `medium`, `large`, `large-v2`, `large-v3`
-
-*Note: Lyrics automatically use partial mode in pipeline for faster verification*
-
-**4. Align & Verify Text**
-```bash
-# Verify lyrics alignment (automatically uses partial transcription)
-python dominican-eater.py align --type lyrics-eater
-
-# Verify books alignment
-python dominican-eater.py align --type books-eater
-```
-
-**5. Validate Outputs**
-```bash
-python dominican-eater.py validate --type all
-```
-
-### Pipeline Options
+Run the main CLI for full pipeline or per-module operations (recommended):
 
 ```bash
-# Skip steps in pipeline
-python dominican-eater.py pipeline --type lyrics --skip-scrape --skip-download
+# Full pipeline for all modules
+python cli.py pipeline --type all
 
-# Force re-processing
-python dominican-eater.py pipeline --type all --force
+# Run all steps for a specific module
+python cli.py pipeline --type lyrics-eater
 
-# Use specific Whisper model
-python dominican-eater.py pipeline --type books --model large-v3
-
-# Use partial transcription (lyrics use this by default)
-python dominican-eater.py pipeline --type lyrics --partial
+# Individual operations
+python cli.py scrape --type books
+python cli.py download --type lyrics-eater
+python cli.py transcribe --type books-eater --model base
+python cli.py align --type lyrics-eater
+python cli.py validate --type all
 ```
 
-## Modules
+Available Whisper models: `tiny`, `base`, `small`, `medium`, `large`, `large-v2`, `large-v3`. Use `--partial` for partial transcriptions (lyrics use partial mode during collection by default).
 
-### Books Eater
-Scrapes Dominican literature audiobooks from YouTube using a curated list of authors and titles.
+## Output Structure (Exact Paths)
 
-**Configuration**: `books-eater/src/utils/dominican_books.py`
+The pipeline stores module-specific outputs according to `audio_processing/config.yaml`. The following entries are used as-is by the system configuration:
 
-**Output**: `audio_processing/data/dominican_audiobooks.xlsx`
+```mermaid
+graph TB
+  subgraph audio_processing
+    direction TB
+    data[data/\ndominican_*_*.xlsx]
+    subgraph audio_dirs[Audio Directories]
+      books_audio[books-eater/audio]
+      lyrics_audio[lyrics-eater/audio]
+      poems_audio[poems-eater/audio]
+    end
+    subgraph transcriptions_dirs[Transcriptions]
+      books_tx[books-eater/transcriptions]
+      lyrics_tx[lyrics-eater/transcriptions]
+      poems_tx[poems-eater/transcriptions]
+    end
+    subgraph reference_texts[Reference Texts]
+      books_ref[books-eater/reference_texts]
+      lyrics_ref[lyrics-eater/reference_texts]
+      poems_ref[poems-eater/reference_texts]
+    end
+    subgraph alignments[Alignments]
+      books_align[books-eater/alignments]
+      lyrics_align[lyrics-eater/alignments]
+      poems_align[poems-eater/alignments]
+    end
+    subgraph reports[Reports]
+      books_rep[books-eater/reports]
+      lyrics_rep[lyrics-eater/reports]
+      poems_rep[poems-eater/reports]
+    end
 
-### Lyrics Eater
-Fetches song lyrics from Genius API and finds corresponding YouTube audio. Uses optimized partial transcription (first 45 seconds) for faster alignment verification during data collection.
-
-**Configuration**: 
-- Create `lyrics-eater/searches.txt` with artist names (one per line)
-- Add Genius API token to `lyrics-eater/.env`
-
-**Output**: `audio_processing/data/dominican_songs.xlsx`
-
-**Optimization**: Partial transcription enabled by default in pipeline for 3-4x faster processing
-
-### Poems Eater
-Searches for Dominican poetry recitations on YouTube.
-
-**Configuration**: `poems-eater/src/utils/dominican_poems.py`
-
-**Output**: `audio_processing/data/dominican_poems.xlsx`
-
-## Output Structure
-
-After running the pipeline, outputs are organized as:
-
-```
-audio_processing/
-├── audio/
-│   ├── books/          # Downloaded audiobook files (.m4a)
-│   ├── lyrics/         # Downloaded song files (.m4a)
-│   └── poems/          # Downloaded poetry files (.m4a)
-├── transcriptions/
-│   ├── books/          # Whisper transcriptions (.json)
-│   ├── lyrics/         # Whisper transcriptions (.json)
-│   └── poems/          # Whisper transcriptions (.json)
-├── reference_texts/
-│   └── lyrics/         # Reference lyrics for alignment (.txt)
-├── reports/
-│   ├── books/          # Processing reports
-│   ├── lyrics/         # Processing + alignment reports
-│   └── poems/          # Processing reports
-└── data/
-    ├── dominican_audiobooks.xlsx
-    ├── dominican_songs.xlsx
-    └── dominican_poems.xlsx
+    data --> books_audio
+    data --> lyrics_audio
+    data --> poems_audio
+    books_audio --> books_tx --> books_ref --> books_align --> books_rep
+    lyrics_audio --> lyrics_tx --> lyrics_ref --> lyrics_align --> lyrics_rep
+    poems_audio --> poems_tx --> poems_ref --> poems_align --> poems_rep
+  end
 ```
 
-## Configuration
+Notes:
+- Paths above are repository-relative and intentionally reference module-local directories (e.g., `books-eater/audio`).
+- Excel metadata outputs are placed under `audio_processing/data/`.
+- Reports are stored per-module in the `reports` directory listed per module.
 
-Main configuration file: `audio_processing/config.yaml`
 
-```yaml
-modules:
-  books-eater:
-    audio_dir: audio_processing/audio/books
-    transcriptions_dir: audio_processing/transcriptions/books
-    reports_dir: audio_processing/reports/books
-  
-  lyrics-eater:
-    audio_dir: audio_processing/audio/lyrics
-    transcriptions_dir: audio_processing/transcriptions/lyrics
-    reference_texts_dir: audio_processing/reference_texts/lyrics
-    reports_dir: audio_processing/reports/lyrics
-  
-  poems-eater:
-    audio_dir: audio_processing/audio/poems
-    transcriptions_dir: audio_processing/transcriptions/poems
-    reports_dir: audio_processing/reports/poems
-```
+Notes:
+- Paths above are repository-relative and intentionally reference module-local directories (e.g., `books-eater/audio`).
+- Excel metadata outputs are placed under `audio_processing/data/`.
+- Reports are stored per-module in the `reports` directory listed per module.
 
 ## Text Alignment & Verification
 
-The pipeline includes advanced alignment features for quality verification:
+The pipeline performs multi-metric evaluation for transcription quality using thresholds and parameters from `audio_processing/config.yaml` (WER, char similarity, Jaccard, cosine). Lyrics processing uses partial transcriptions (first 45 seconds) for rapid verification.
 
-### Alignment Metrics
+## Development Practices
 
-We use four complementary metrics to evaluate transcription quality:
+- Follow Python typing and style rules (type hints mandatory, 4-space indent, 100-char line length)
+- Use `logging` instead of `print` for non-CLI output
+- Configuration is centralized in `audio_processing/config.yaml` — edit that file to change module output paths or processing parameters
 
-1. **WER (Word Error Rate)**: Word-level accuracy (lower is better, < 0.2 is excellent)
-2. **Character Similarity**: Character-level match using Levenshtein distance (higher is better, > 0.85 is excellent)
-3. **Jaccard Similarity**: Vocabulary overlap (higher is better, > 0.7 is excellent)
-4. **Cosine Similarity**: Word frequency distribution (higher is better, > 0.8 is excellent)
+## Contributing
 
-### Optimization Features
-
-- **Partial Transcription**: For lyrics, only first 45 seconds are transcribed (sufficient for verification)
-- **Limited Search**: Alignment searches only first 200 words for start position
-- **Early Stop**: Stops at first high-confidence match (≥0.8 similarity)
-- **Result**: 3-4x faster processing (~30-45 seconds per song)
-
-*Note: These optimizations are for data collection phase. Full transcription will be done on server during model training.*
-
-## Reports
-
-Each module generates JSON reports tracking:
-- Download success/failure rates
-- Transcription quality metrics
-- Alignment scores (lyrics only)
-- Processing timestamps
-- Error logs
-
-View reports: `audio_processing/reports/[module]/`
+1. Fork the repository and create a feature branch.
+2. Run tests and linters locally.
+3. Open a pull request with a clear description of changes.
 
 ## Troubleshooting
 
-**FFmpeg not found**
-```bash
-# Ubuntu/Debian
-sudo apt install ffmpeg
-
-# macOS
-brew install ffmpeg
-
-# Windows
-# Download from https://ffmpeg.org/download.html
-```
-
-**Genius API errors (lyrics module)**
-- Verify token in `lyrics-eater/.env`
-- Get token at https://genius.com/api-clients
-
-**Out of memory during transcription**
-- Use smaller Whisper model: `--model tiny` or `--model base`
-- Process fewer files at once
-
-**YouTube download failures**
-- Update yt-dlp: `pip install --upgrade yt-dlp`
-- Some videos may be region-locked or removed
-
-## Development
-
-### Code Style
-- Python 3.8+ type hints
-- 4-space indentation
-- Max 100 character line length
-- Use `logging` module for debug output
-
-### Adding New Content
-
-**Add books**: Edit `books-eater/src/utils/dominican_books.py`
-
-**Add poems**: Edit `poems-eater/src/utils/dominican_poems.py`
-
-**Add songs**: Add artist names to `lyrics-eater/searches.txt`
+- FFmpeg missing: install via your OS package manager
+- Whisper OOM: use smaller model (`tiny`, `base`) or switch to CPU
+- YouTube download failures: update `yt-dlp` and check video availability
 
 ## License
 
-This project is developed for academic research in Dominican Spanish NLP.
+This project is developed for academic research in Dominican Spanish NLP. See repository license for details.
 
-## Acknowledgment
+## Support
 
-This project has been partially supported by the Ministerio de Educación Superior, Ciencia y Tecnología (MESCyT) of the Dominican Republic through the FONDOCYT grant. The authors gratefully acknowledge this support.
+Open an issue on GitHub for questions or collaboration requests.
 
-Any opinions, findings, conclusions, or recommendations expressed in this material are those of the authors and do not necessarily reflect the views of MESCyT.
+---
 
-## Contact
-
-For questions or collaboration inquiries, please open an issue on GitHub.
+*Maintainers: please ensure `audio_processing/config.yaml` remains the source of truth for module paths and thresholds.*
