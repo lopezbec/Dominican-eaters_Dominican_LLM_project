@@ -54,13 +54,14 @@ class LyricsEaterRunner(BaseEaterRunner):
         searches = FileHandler.load_searches(self.config.SEARCHES_FILE)
 
         if not searches:
-            logger.info(" Error: No searches found in '{self.config.SEARCHES_FILE}'")
+            logger.info(" Error: No searches found in '%s'", self.config.SEARCHES_FILE)
             logger.info(
-                " Tip: Create '{self.config.SEARCHES_FILE}' with one search per line"
+                " Tip: Create '%s' with one search per line", self.config.SEARCHES_FILE
             )
             return []
 
-        logger.info("Processing {len(searches)} searches")
+        logger.info(f"Loaded {len(searches)} searches from {self.config.SEARCHES_FILE}")
+        logger.info("Processing %d searches", len(searches))
         return searches
 
     def save_results(self, items: List[Any]) -> bool:

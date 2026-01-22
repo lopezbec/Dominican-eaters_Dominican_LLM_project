@@ -66,15 +66,15 @@ def scrape(module: str):
                 continue
             
             result = subprocess.run(
-                [sys.executable, str(main_script)],
-                cwd=str(Path.cwd()),
+                [sys.executable, str(main_script.resolve())],
+                cwd=str(main_script.parent),
                 capture_output=False
             )
             
             if result.returncode != 0:
                 click.echo(f"Error: {mod}-eater failed with code {result.returncode}", err=True)
             else:
-                click.secho(f"✓ {mod}-eater completed successfully", fg='green')
+                click.secho(f"{mod}-eater completed successfully", fg='green')
                 
         except Exception as e:
             click.echo(f"Error running {mod}-eater: {e}", err=True)

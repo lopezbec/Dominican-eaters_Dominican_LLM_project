@@ -15,7 +15,7 @@ class Config(BaseConfig):
     
     def __init__(self):
         super().__init__(
-            module_name="songs",
+            module_name="lyrics-eater",
             input_file="searches.txt",
             API_TIMEOUT=20,
             SCRAPING_TIMEOUT=20,
@@ -38,4 +38,3 @@ class Config(BaseConfig):
 
 
 config = Config()
-

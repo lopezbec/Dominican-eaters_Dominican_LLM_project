@@ -24,18 +24,21 @@ class BaseHTTPClient(ABC):
         self.timeout = timeout
         self.max_retries = max_retries
         self.backoff_factor = backoff_factor
-        self.user_agent = user_agent or "DominicanEaters/1.0"
+        self.user_agent = user_agent or "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
         self._session = self._create_session()
     
     def _create_session(self) -> requests.Session:
         session = requests.Session()
         session.headers.update(self._get_default_headers())
-        
+        # Configure retry strategy to respect Retry-After header (for 429 responses)
+        # and avoid raising immediately on status so urllib3 can consult Retry-After.
         retry_strategy = Retry(
             total=self.max_retries,
             backoff_factor=self.backoff_factor,
             status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
+            allowed_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+            respect_retry_after_header=True,
+            raise_on_status=False,
         )
         
         adapter = HTTPAdapter(max_retries=retry_strategy)
@@ -105,6 +108,34 @@ class BaseHTTPClient(ABC):
         logger.warning("Timeout: Request to %s exceeded %ss", url, timeout)
     
     def _handle_http_error(self, error: requests.exceptions.HTTPError):
+        # If it's a 429 Too Many Requests, try to respect the Retry-After header
+        resp = getattr(error, "response", None)
+        if resp is not None and resp.status_code == 429:
+            retry_after = resp.headers.get("Retry-After")
+            wait = None
+            try:
+                if retry_after is not None:
+                    # Retry-After can be seconds or HTTP-date; try seconds first
+                    wait = int(retry_after)
+            except Exception:
+                wait = None
+
+            if wait is None:
+                # Fallback heuristic based on backoff_factor
+                try:
+                    wait = max(1, int(self.backoff_factor * 5))
+                except Exception:
+                    wait = 5
+
+            logger.warning(
+                "HTTP 429 received from %s. Respecting Retry-After: sleeping %s seconds (header=%s)",
+                getattr(resp, 'url', 'unknown'), wait, retry_after,
+            )
+            try:
+                time.sleep(wait)
+            except Exception:
+                pass
+
         logger.error("HTTP Error: %s", error)
     
     def _handle_request_error(self, error: requests.exceptions.RequestException):

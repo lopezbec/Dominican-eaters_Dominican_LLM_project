@@ -1,5 +1,6 @@
 from typing import List, Optional, TypeVar, Callable, Type
 import os
+import re
 import pandas as pd
 from pathlib import Path
 import logging
@@ -50,12 +51,21 @@ class FileHandler:
             searches = []
             with open(filename, 'r', encoding='utf-8') as f:
                 for line in f:
-                    line = line.strip()
-                    
-                    if not line or line.startswith('#'):
+                    # Normalize and remove common numbered prefixes like "00001| ".
+                    raw = line.strip()
+
+                    # Skip empty lines and comments
+                    if not raw or raw.startswith('#'):
                         continue
-                    
-                    searches.append(line)
+
+                    # Remove leading numbers and a pipe/separator (e.g. "00001| Foo")
+                    cleaned = re.sub(r'^\s*\d+\s*\|\s*', '', raw)
+
+                    # If cleaning produced an empty line, skip it
+                    if not cleaned:
+                        continue
+
+                    searches.append(cleaned)
             
             return searches if searches else None
             

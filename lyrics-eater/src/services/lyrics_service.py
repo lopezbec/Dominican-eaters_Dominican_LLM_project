@@ -1,6 +1,7 @@
 """Business logic for processing song lyrics requests."""
 
 import logging
+import time
 from typing import Tuple, Optional
 
 from shared.services.base_service import BaseService
@@ -28,6 +29,10 @@ class LyricsService(BaseService):
         Returns:
             Tuple of (Song object or None, success boolean)
         """
+        # Throttle requests to avoid hitting Genius rate limits (simple fixed sleep).
+        # This sleeps 2 seconds before each search request.
+        time.sleep(2)
+
         results = self.genius_client.search(query)
         
         if not results:
@@ -72,4 +77,3 @@ class LyricsService(BaseService):
             stats.found += 1
         else:
             stats.not_found += 1
-

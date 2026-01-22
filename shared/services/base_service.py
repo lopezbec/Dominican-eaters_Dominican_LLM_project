@@ -15,6 +15,7 @@ class BaseService(ABC):
         self, items: List[Any], show_progress: bool = True
     ) -> Tuple[List[Any], ProcessingStats]:
         stats = self._init_stats(len(items))
+        results: List[Any] = []
 
         for idx, item in enumerate(items, 1):
             try:
@@ -24,14 +25,17 @@ class BaseService(ABC):
                 updated_item, success = self._process_single(item)
                 self._update_stats(stats, updated_item, success)
 
+                results.append(updated_item if success else None)
+
             except KeyboardInterrupt:
                 self._handle_interrupt(idx)
                 break
             except Exception as e:
                 self._handle_error(e, stats)
+                results.append(None)
                 continue
 
-        return items, stats
+        return results, stats
 
     @abstractmethod
     def _process_single(self, item: Any) -> Tuple[Any, bool]:
