@@ -84,3 +84,46 @@ class Song(BaseContent):
             lyrics=str(data.get('letras', '')),
             youtube_url=str(data.get('enlace_youtube', 'N/A'))
         )
+
+    @classmethod
+    def create_from_text(cls, index: int, text: str) -> 'Song':
+        """
+        Create a Song object from a single line of input (used by FileHandler).
+
+        Expected formats:
+          - "Artist - Title"
+          - "Title" (artist empty)
+
+        Args:
+            index: line index (unused, kept for signature compatibility)
+            text: the raw line
+
+        Returns:
+            Song instance with sensible defaults for missing fields.
+        """
+        raw = text.strip()
+        if not raw:
+            return None
+
+        if ' - ' in raw:
+            artist, title = [p.strip() for p in raw.split(' - ', 1)]
+        elif '-' in raw:
+            artist, title = [p.strip() for p in raw.split('-', 1)]
+        else:
+            artist = ''
+            title = raw
+
+        song_id = f"{artist}_{title}".replace(' ', '_').lower()
+
+        return cls(
+            song_id=song_id,
+            title=title,
+            artist=artist,
+            url='',
+            genres='N/A',
+            label='N/A',
+            album='N/A',
+            release_date='N/A',
+            lyrics='',
+            youtube_url='N/A'
+        )

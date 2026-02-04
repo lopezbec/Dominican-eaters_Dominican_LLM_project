@@ -51,8 +51,10 @@ modules:
     alignments_dir: poems-eater/alignments
     
   lyrics-eater:
-    excel_path: audio_processing/data/dominican_songs.xlsx
+    excel_path: audio_processing/data/dominican_lyrics-eater.xlsx
     url_column: "enlace_youtube"
+    # Optional column containing a stable id (e.g. youtube id). If absent, extractor will parse the id from the URL.
+    # id_column: "youtube_id"
     lyrics_column: "letras"
     audio_dir: lyrics-eater/audio
     transcriptions_dir: lyrics-eater/transcriptions

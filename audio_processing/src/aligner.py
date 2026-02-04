@@ -45,6 +45,8 @@ class ForcedAligner:
         self.reference_extractor = reference_extractor or ReferenceTextExtractor(
             self.config
         )
+        # cache for module reference mappings
+        self._reference_maps: Dict[str, Dict[str, str]] = {}
     
     def find_best_alignment_start(
         self,
@@ -140,30 +142,108 @@ class ForcedAligner:
         reference_texts_dir: str,
         module_name: str
     ) -> Optional[Path]:
-        if module_name == 'lyrics-eater':
-            # Extract index from transcription filename: lyrics-eater_050_SongTitle.json
-            match = re.match(r'lyrics-eater_(\d{3})_', trans_file.name)
-            if match:
-                index = match.group(1)
-                # Look for reference file: lyrics-eater_050.txt
-                reference_file = Path(reference_texts_dir) / f"lyrics-eater_{index}.txt"
-                if reference_file.exists():
-                    return reference_file
-        elif module_name == 'poems-eater':
-            # Extract index from transcription filename: poems-eater_050_PoemTitle.json
-            match = re.match(r'poems-eater_(\d{3})_', trans_file.name)
-            if match:
-                index = match.group(1)
-                # Look for reference file: poems-eater_050.txt
-                reference_file = Path(reference_texts_dir) / f"poems-eater_{index}.txt"
-                if reference_file.exists():
-                    return reference_file
-        else:
-            # For books-eater or other modules: use base name
-            base_name = trans_file.stem
-            txt_file = Path(reference_texts_dir) / f"{base_name}.txt"
-            if txt_file.exists():
-                return txt_file
+        # Try mapping lookup first (mapping written by extractor), then filename-based fallbacks
+        module_config = self.config['modules'].get(module_name, {})
+
+        # load mapping for module if present
+        reports_dir = module_config.get('reports_dir')
+        mapping = None
+        if reports_dir:
+            if module_name not in self._reference_maps:
+                map_path = Path(reports_dir) / 'lyrics_reference_map.json'
+                if map_path.exists():
+                    try:
+                        with open(map_path, 'r', encoding='utf-8') as mf:
+                            self._reference_maps[module_name] = json.load(mf)
+                    except Exception as e:
+                        logger.warning(f"Failed to load reference map {map_path}: {e}")
+                        self._reference_maps[module_name] = {}
+                else:
+                    # No mapping file: attempt to build mapping from existing reference_texts dir
+                    built = {}
+                    ref_dir = Path(module_config.get('reference_texts_dir', ''))
+                    if ref_dir.exists():
+                        built = {'by_video_id': {}, 'by_seq': {}}
+                        for p in ref_dir.glob(f"{module_name}_*.txt"):
+                            name = p.name
+                            # extract token between prefix and .txt
+                            m = re.match(rf'{re.escape(module_name)}_([^\.]+)\.txt', name)
+                            if m:
+                                token = m.group(1)
+                                built['by_video_id'][token] = name
+                                # if token is numeric, map zero-padded seq too
+                                if re.fullmatch(r"\d+", token):
+                                    seq = f"{int(token):03d}"
+                                    built['by_seq'][seq] = name
+                    self._reference_maps[module_name] = built
+            mapping = self._reference_maps.get(module_name, {})
+
+        # try reading a stable id from the transcription json itself (if included)
+        id_key = None
+        try:
+            with open(trans_file, 'r', encoding='utf-8') as tf:
+                tdata = json.load(tf)
+                for k in ('video_id', 'youtube_id', 'url'):
+                    if k in tdata and tdata[k]:
+                        if k == 'url':
+                            m = re.search(r'(?:v=|youtu\.be/)([A-Za-z0-9_-]{11})', str(tdata[k]))
+                            if m:
+                                id_key = m.group(1)
+                                break
+                        else:
+                            id_key = str(tdata[k]).strip()
+                            break
+        except Exception:
+            id_key = None
+
+        # if mapping available, try mapping lookup by id_key
+        if mapping:
+            by_video = mapping.get('by_video_id', {})
+            by_seq = mapping.get('by_seq', {})
+            if id_key and id_key in by_video:
+                candidate = Path(reference_texts_dir) / by_video[id_key]
+                if candidate.exists():
+                    logger.info(f"Reference map used for {trans_file.name} -> {candidate.name}")
+                    return candidate
+
+        # parse token from filename: <module>_<token>_Title.json
+        match = re.match(rf'{re.escape(module_name)}_([^_]+)_', trans_file.name)
+        if match:
+            token = match.group(1)
+            # try mapping by token first
+            if mapping:
+                by_video = mapping.get('by_video_id', {})
+                by_seq = mapping.get('by_seq', {})
+                if token in by_video:
+                    candidate = Path(reference_texts_dir) / by_video[token]
+                    if candidate.exists():
+                        logger.info(f"Reference map used for {trans_file.name} -> {candidate.name}")
+                        return candidate
+                if token in by_seq:
+                    candidate = Path(reference_texts_dir) / by_seq[token]
+                    if candidate.exists():
+                        logger.info(f"Reference map used for {trans_file.name} -> {candidate.name}")
+                        return candidate
+
+            # fallback: variable token filename
+            candidate = Path(reference_texts_dir) / f"{module_name}_{token}.txt"
+            if candidate.exists():
+                return candidate
+
+        # legacy fallback: strict 3-digit numeric id
+        match = re.match(rf'{re.escape(module_name)}_(\d{{3}})_', trans_file.name)
+        if match:
+            index = match.group(1)
+            reference_file = Path(reference_texts_dir) / f"{module_name}_{index}.txt"
+            if reference_file.exists():
+                return reference_file
+
+        # for other modules, try base name
+        base_name = trans_file.stem
+        txt_file = Path(reference_texts_dir) / f"{base_name}.txt"
+        if txt_file.exists():
+            return txt_file
+
         return None
     
     def _process_alignment(

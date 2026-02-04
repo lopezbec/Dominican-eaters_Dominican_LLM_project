@@ -1,4 +1,6 @@
 import os
+import json
+import re
 from typing import Dict
 import logging
 
@@ -29,38 +31,71 @@ class ReferenceTextExtractor:
         lyrics_column = module_config['lyrics_column']
         url_column = module_config['url_column']
         reference_texts_dir = module_config['reference_texts_dir']
+        reports_dir = module_config.get('reports_dir', 'lyrics-eater/reports')
         
         os.makedirs(reference_texts_dir, exist_ok=True)
+        os.makedirs(reports_dir, exist_ok=True)
         
         if pd is None:
             raise ImportError("pandas and openpyxl required")
         
         df = pd.read_excel(excel_path)
-        
+
+        mapping = {
+            'by_video_id': {},  # video_id -> filename
+            'by_seq': {}        # zero-padded seq index -> filename
+        }
+
         extracted = 0
-        for idx, row in df.iterrows():
+        for seq_idx, (_, row) in enumerate(df.iterrows()):
             url = row.get(url_column, '')
             lyrics = row.get(lyrics_column, '')
-            
+
             if not isinstance(url, str) or not url.startswith('http'):
                 continue
-            
+
             if not isinstance(lyrics, str) or not lyrics.strip():
                 continue
-            
-            filename = f"lyrics-eater_{idx:03d}.txt"
+
+            # determine stable id: prefer configured id_column, else parse YouTube id from URL, else fallback to seq
+            id_col = module_config.get('id_column')
+            id_val = None
+            if id_col and id_col in row and row.get(id_col):
+                id_val = str(row.get(id_col)).strip()
+            else:
+                m = re.search(r'(?:v=|youtu\.be/)([A-Za-z0-9_-]{11})', str(url))
+                if m:
+                    id_val = m.group(1)
+                else:
+                    id_val = f"{seq_idx:03d}"
+
+            filename = f"lyrics-eater_{id_val}.txt"
             output_path = os.path.join(reference_texts_dir, filename)
-            
+
             from shared.utils.text_utils import clean_reference_text
             cleaned_lyrics = clean_reference_text(lyrics)
-            
+
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(cleaned_lyrics)
-            
+
+            # populate mapping entries
+            mapping['by_video_id'][id_val] = filename
+            seq_key = f"{seq_idx:03d}"
+            mapping['by_seq'][seq_key] = filename
+
             extracted += 1
-        
+
+        # write mapping file to reports dir
+        map_path = os.path.join(reports_dir, 'lyrics_reference_map.json')
+        try:
+            with open(map_path, 'w', encoding='utf-8') as mf:
+                json.dump(mapping, mf, ensure_ascii=False, indent=2)
+            logger.info(f"Wrote reference mapping to: {map_path}")
+        except Exception as e:
+            logger.warning(f"Failed to write reference mapping to {map_path}: {e}")
+
         logger.info(f"Extracted {extracted} reference texts for lyrics-eater")
-        return {'extracted': extracted}
+        return {'extracted': extracted, 'mapping_path': map_path}
     
     def _extract_poems(self) -> Dict:
         """
