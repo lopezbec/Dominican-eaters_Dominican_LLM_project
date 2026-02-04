@@ -1,5 +1,33 @@
 #!/usr/bin/env python3
-# parakeet.py — lightweight wrapper moved to testing/stt
+"""
+parakeet.py - NVIDIA Parakeet TDT 0.6B V3 Batch Transcription
+
+Transcribes audio files using NVIDIA's Parakeet TDT 0.6B V3 model.
+
+Model: nvidia/parakeet-tdt-0.6b-v3
+- 600M parameters
+- **25 European languages** including Spanish (es)
+- FastConformer-TDT architecture
+- **Automatic language detection**
+- WER: 1.93% (LibriSpeech test-clean), **3.45% (FLEURS Spanish)**
+- Supports word-level and segment-level timestamps
+- Max audio: 24 minutes per file
+- License: CC-BY-4.0 (commercial use allowed)
+
+Performance:
+- RTFx: 3380 (A100, batch 128)
+- Very fast inference
+- Excellent timestamp accuracy (95.5% F1)
+- **Excellent for Spanish** (3.45% WER on FLEURS es)
+
+Supported Languages:
+Bulgarian, Croatian, Czech, Danish, Dutch, English, Estonian, Finnish, French,
+German, Greek, Hungarian, Italian, Latvian, Lithuanian, Maltese, Polish,
+Portuguese, Romanian, Slovak, Slovenian, Spanish, Swedish, Russian, Ukrainian
+
+Documentation: https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3
+"""
+
 from pathlib import Path
 import argparse
 import logging
@@ -22,6 +50,7 @@ def find_audio_files(audio_dir: Path, max_files: int) -> List[Path]:
 
 def transcribe_and_save(model, audio_path: Path, out_dir: Path) -> Optional[Path]:
     try:
+        # Request timestamps from the model
         output = model.transcribe([str(audio_path)], timestamps=True)
         if not output:
             logger.error("No transcription returned for %s", audio_path)
@@ -30,6 +59,7 @@ def transcribe_and_save(model, audio_path: Path, out_dir: Path) -> Optional[Path
         transcript_text = getattr(item, "text", "")
         timestamps = getattr(item, "timestamp", {})
 
+        # Build JSON structure
         payload = {
             "file": audio_path.name,
             "transcript": transcript_text,
@@ -67,14 +97,17 @@ def main() -> None:
         "--out-dir",
         type=str,
         default=None,
-        help="Output directory for JSONs (default: testing/stt/transcriptions/parakeet/)",
+        help="Output directory for JSONs (default: testing/transcriptions/parakeet/)",
     )
     args = parser.parse_args()
 
-    this_dir = Path(__file__).resolve().parent
-    repo_root = this_dir.parent.parent
+    # Resolve repo and default dirs
+    this_dir = Path(__file__).resolve().parent  # testing/
+    repo_root = this_dir.parent
     default_audio_dir = repo_root / "lyrics-eater" / "audio"
-    default_out_dir = this_dir / "transcriptions" / "parakeet"
+    default_out_dir = (
+        this_dir / "transcriptions" / "parakeet"
+    )  # testing/transcriptions/parakeet
 
     audio_dir = Path(args.audio_dir) if args.audio_dir else default_audio_dir
     out_dir = Path(args.out_dir) if args.out_dir else default_out_dir
@@ -88,7 +121,7 @@ def main() -> None:
         logger.error("No .m4a files found in %s", audio_dir)
         return
 
-    logger.info("Loading Parakeet model (may take a moment)...")
+    logger.info("Loading Parakeet TDT 0.6B V3 model (may take a moment)...")
     model = nemo_asr.models.ASRModel.from_pretrained(
         model_name="nvidia/parakeet-tdt-0.6b-v3"
     )

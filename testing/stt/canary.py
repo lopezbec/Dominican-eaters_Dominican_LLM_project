@@ -1,3 +1,30 @@
+#!/usr/bin/env python3
+"""
+canary.py - NVIDIA Canary 1B Flash Batch ASR/AST
+
+Transcribes and translates audio using NVIDIA's Canary 1B Flash model.
+
+Model: nvidia/canary-1b-flash
+- 883M parameters
+- 4 languages: English, German, French, Spanish
+- FastConformer Encoder + Transformer Decoder
+- WER: 1.48% (LibriSpeech test-clean), 3.62% (Spanish MCV)
+- Supports ASR + AST (Speech Translation)
+- Word & segment-level timestamps
+- License: CC-BY-4.0 (commercial use allowed)
+
+Performance:
+- RTFx: 1045 (A100), 1669 (H100)
+- Excellent for Spanish (including Dominican Spanish)
+- Multi-task: ASR + Translation
+
+Tasks:
+1. ASR: Transcribe in same language (en→en, es→es, etc.)
+2. AST: Translate speech (es→en, en→es, etc.)
+
+Documentation: https://huggingface.co/nvidia/canary-1b-flash
+"""
+
 from pathlib import Path
 import argparse
 import logging
@@ -77,7 +104,7 @@ def main() -> None:
         "--out-dir",
         type=str,
         default=None,
-        help="Output directory for JSONs (default: testing/stt/transcriptions/canary)",
+        help="Output directory for JSONs (default: testing/transcriptions/canary)",
     )
     parser.add_argument(
         "--source-lang",
@@ -98,7 +125,7 @@ def main() -> None:
     )
     args = parser.parse_args()
     this_dir = Path(__file__).resolve().parent
-    repo_root = this_dir.parent.parent
+    repo_root = this_dir.parent
     default_audio_dir = repo_root / "lyrics-eater" / "audio"
     default_out_dir = this_dir / "transcriptions" / "canary"
     audio_dir = Path(args.audio_dir) if args.audio_dir else default_audio_dir
@@ -113,8 +140,10 @@ def main() -> None:
     if not files:
         logger.error("No audio files found in %s", audio_dir)
         return
-    logger.info("Loading canary-1b-v2 model (this may take a while)...")
-    model = nemo_asr.models.ASRModel.from_pretrained(model_name="nvidia/canary-1b-v2")
+    logger.info("Loading Canary 1B Flash model (this may take a while)...")
+    model = nemo_asr.models.ASRModel.from_pretrained(
+        model_name="nvidia/canary-1b-flash"
+    )
     saved = []
     for audio_path in tqdm(files, desc="Processing", unit="file"):
         json_path = transcribe_and_save(
