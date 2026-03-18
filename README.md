@@ -4,15 +4,15 @@
 
 ## Platform Requirements
 
-> **Environment**: Python 3.8+ (3.13 recommended), FFmpeg, Git. CUDA available for Whisper when GPU is present.
+> **Environment**: uv, Python 3.12+, FFmpeg, Git. CUDA available for Whisper when GPU is present.
 
-- Python 3.8 or newer
+- uv and Python 3.12 or newer
 - FFmpeg for audio processing
 - Internet connection for scraper modules
 
 ## Dependencies
 
-- See `requirements.txt` at repository root for the consolidated dependency list.
+- Runtime dependencies are defined in `pyproject.toml` and locked in `uv.lock`.
 - Optional GPU: CUDA drivers for Whisper model acceleration.
 
 ## Quick Installation
@@ -24,20 +24,13 @@ git clone https://github.com/yourusername/Dominican-eaters_Dominican_LLM_project
 cd Dominican-eaters_Dominican_LLM_project
 ```
 
-2. Create and activate virtual environment
+2. Create uv environment and install dependencies
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # Linux/macOS
+uv sync
 ```
 
-3. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-4. Configure lyrics module (Genius API)
+3. Configure lyrics module (Genius API)
 
 ```bash
 cd lyrics-eater
@@ -59,35 +52,39 @@ Run the main CLI for full pipeline or per-module operations (recommended):
 
 ```bash
 # Scrape (module values: books, lyrics, poems, all)
-python cli.py scrape --module books
-python cli.py scrape --module all
+uv run python cli.py scrape --module books
+uv run python cli.py scrape --module all
 
 # Download audio (module values: books-eater, lyrics-eater, poems-eater, all)
-python cli.py download --module lyrics-eater
-python cli.py download --module all --force
+uv run python cli.py download --module lyrics-eater
+uv run python cli.py download --module all --force
 
 # Transcribe (module values: books-eater, lyrics-eater, poems-eater, all)
-python cli.py transcribe --module lyrics-eater --model base
-python cli.py transcribe --module books-eater --model large
-python cli.py transcribe --module lyrics-eater --partial
+uv run python cli.py transcribe --module lyrics-eater --model base
+uv run python cli.py transcribe --module books-eater --model large
+uv run python cli.py transcribe --module lyrics-eater --partial
 
 # Align (module values: books-eater, lyrics-eater, poems-eater, all)
-python cli.py align --module lyrics-eater
-python cli.py align --module all
+uv run python cli.py align --module lyrics-eater
+uv run python cli.py align --module all
 
 # Validate (module values: books-eater, lyrics-eater, poems-eater, all)
-python cli.py validate --module lyrics-eater
-python cli.py validate --module all
+uv run python cli.py validate --module lyrics-eater
+uv run python cli.py validate --module all
 
 # Pipeline (module values: books, lyrics, poems, all)
-python cli.py pipeline --module lyrics
-python cli.py pipeline --module all --skip-scrape --model large
-python cli.py pipeline --module books --force
+uv run python cli.py pipeline --module lyrics
+uv run python cli.py pipeline --module all --skip-scrape --model large
+uv run python cli.py pipeline --module books --force
 
 Notes:
 - Use `--partial` for partial transcription (lyrics collection uses partial mode by default when using the `pipeline` command with `--module lyrics`).
-- To see help for any command: `python cli.py <command> --help`.
+- To see help for any command: `uv run python cli.py <command> --help`.
 ```
+
+## STT/TTS Benchmarking on Lyrics Dataset
+
+For UV-only reproducible ASR/TTS benchmarking on `lyrics-eater/audio` (including Genius-based ASR scoring and model ranking), see `testing/README.md`.
 
 Available Whisper models: `tiny`, `base`, `small`, `medium`, `large`, `large-v2`, `large-v3`. Use `--partial` for partial transcriptions (lyrics use partial mode during collection by default).
 
