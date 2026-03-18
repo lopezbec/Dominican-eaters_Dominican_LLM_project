@@ -29,9 +29,9 @@ from pathlib import Path
 import argparse
 import logging
 import json
+import os
 from typing import List, Optional
 from tqdm import tqdm
-import nemo.collections.asr as nemo_asr
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger("canary")
@@ -123,6 +123,13 @@ def main() -> None:
         action="store_true",
         help="Request timestamps from model if supported",
     )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="auto",
+        choices=["auto", "cpu", "cuda"],
+        help="Inference device (default: auto)",
+    )
     args = parser.parse_args()
     this_dir = Path(__file__).resolve().parent
     repo_root = this_dir.parent
@@ -136,14 +143,25 @@ def main() -> None:
     logger.info("Source lang: %s", args.source_lang)
     logger.info("Target lang: %s", args.target_lang)
     logger.info("Timestamps: %s", args.timestamps)
+    logger.info("Device: %s", args.device)
     files = find_audio_files(audio_dir, args.max)
     if not files:
         logger.error("No audio files found in %s", audio_dir)
         return
+
+    if args.device == "cpu":
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
+    import nemo.collections.asr as nemo_asr
+
     logger.info("Loading Canary 1B Flash model (this may take a while)...")
     model = nemo_asr.models.ASRModel.from_pretrained(
         model_name="nvidia/canary-1b-flash"
     )
+    if args.device == "cpu":
+        model = model.cpu()
+    elif args.device == "cuda":
+        model = model.cuda()
     saved = []
     for audio_path in tqdm(files, desc="Processing", unit="file"):
         json_path = transcribe_and_save(

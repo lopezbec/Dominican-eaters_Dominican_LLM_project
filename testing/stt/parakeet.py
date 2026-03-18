@@ -32,10 +32,10 @@ from pathlib import Path
 import argparse
 import logging
 import json
+import os
 from typing import List, Optional
 
 from tqdm import tqdm
-import nemo.collections.asr as nemo_asr
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger("parakeet")
@@ -99,6 +99,13 @@ def main() -> None:
         default=None,
         help="Output directory for JSONs (default: testing/transcriptions/parakeet/)",
     )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="auto",
+        choices=["auto", "cpu", "cuda"],
+        help="Inference device (default: auto)",
+    )
     args = parser.parse_args()
 
     # Resolve repo and default dirs
@@ -115,16 +122,26 @@ def main() -> None:
     logger.info("Audio dir: %s", audio_dir)
     logger.info("Output dir: %s", out_dir)
     logger.info("Max files: %d", args.max)
+    logger.info("Device: %s", args.device)
 
     files = find_audio_files(audio_dir, args.max)
     if not files:
         logger.error("No .m4a files found in %s", audio_dir)
         return
 
+    if args.device == "cpu":
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
+    import nemo.collections.asr as nemo_asr
+
     logger.info("Loading Parakeet TDT 0.6B V3 model (may take a moment)...")
     model = nemo_asr.models.ASRModel.from_pretrained(
         model_name="nvidia/parakeet-tdt-0.6b-v3"
     )
+    if args.device == "cpu":
+        model = model.cpu()
+    elif args.device == "cuda":
+        model = model.cuda()
 
     saved = []
     for audio_path in tqdm(files, desc="Transcribing", unit="file"):
