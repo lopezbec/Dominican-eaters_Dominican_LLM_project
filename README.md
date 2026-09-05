@@ -2,7 +2,8 @@
 
 **Dominican Eaters** is a pipeline for collecting Dominican books, lyrics, and poetry metadata and for evaluating Dominican Spanish speech systems used in language-model research. The project is moving to a clean, installable Python architecture with one canonical package, one CLI, strict versioned data contracts, restartable collection workflows, and isolated model environments.
 
-The supported runtime lives in `src/dominican_eaters`. Historical top-level modules and the old root `cli.py` remain migration inputs and are not supported interfaces for new development.
+The supported runtime lives in `src/dominican_eaters`; model-specific workers live under
+`workers`. The replaced top-level pipeline and collector implementations have been removed.
 
 ## Platform Requirements
 
@@ -155,10 +156,6 @@ Run either backend through its absolute worker interpreter:
 ```
 
 Defaults are `nvidia/parakeet-tdt-0.6b-v3` and `nvidia/canary-1b-v2`. Both workers currently accept Spanish only.
-
-## STT/TTS Benchmarking
-
-Standalone research scripts and their model-specific environments remain under `testing/stt` and `testing/tts`. They are intentionally separate from the installed production package. See `testing/README.md` for Whisper, Parakeet, Canary, XTTS, F5, Kokoro, acta preparation, and poem benchmark instructions.
 
 ## Output Structure
 

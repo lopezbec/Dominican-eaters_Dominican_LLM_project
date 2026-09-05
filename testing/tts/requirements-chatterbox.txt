@@ -1,4 +1,0 @@
-chatterbox-tts
-torch>=2.0.0
-torchaudio>=2.0.0
-transformers==4.46.3

@@ -1,4 +1,0 @@
-qwen-tts
-torch>=2.0.0
-transformers==4.57.3
-soundfile>=0.12.1

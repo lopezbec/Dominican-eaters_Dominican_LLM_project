@@ -1,3 +1,0 @@
-nemo-toolkit[asr]
-torch>=2.0.0
-tqdm>=4.66.0

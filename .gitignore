@@ -1,160 +1,63 @@
-# ============================================================================
-# Python
-# ============================================================================
+# Python bytecode and build artifacts
 __pycache__/
-**/__pycache__/
 *.py[cod]
-*.pyc
-*.pyo
-*.pyd
 *$py.class
 *.so
 .Python
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
+.eggs/
 *.egg
 MANIFEST
 
-# ============================================================================
-# Virtual Environment
-# ============================================================================
+# Virtual environments and version managers
+.venv/
+.venv-*/
 venv/
 env/
 ENV/
-.venv/
-.venv-*/
-testing/**/.venv*/
-testing/**/.venvs/
-
-# ============================================================================
-# Python Version Management
-# ============================================================================
 .python-version
 
-# ============================================================================
-# IDE
-# ============================================================================
+# Test, type-check, and lint caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editors and operating systems
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
-
-# ============================================================================
-# OS
-# ============================================================================
 .DS_Store
 Thumbs.db
 
-# ============================================================================
-# Audio files (large, downloaded from YouTube)
-# ============================================================================
-*/audio/*.m4a
-*/audio/*.mp3
-*/audio/*.wav
-audio_processing/audio/
-audio_processing/test_samples/
-
-# ============================================================================
-# Transcription outputs
-# ============================================================================
-*/transcriptions/*.json
-*/transcriptions/*.txt
-audio_processing/transcriptions/
-
-# Testing transcriptions (experimental outputs)
-testing/stt/transcriptions/
-testing/tts/outputs/
-
-# ============================================================================
-# Reference texts (generated from lyrics scraping)
-# ============================================================================
-audio_processing/reference_texts/
-
-# ============================================================================
-# Alignment outputs
-# ============================================================================
-*/alignments/*.json
-
-# ============================================================================
-# Reports and metrics
-# ============================================================================
-*/reports/*.json
-*/reports/*.csv
-audio_processing/reports/
-
-# ============================================================================
-# Data files
-# ============================================================================
+# Canonical local data and runtime artifacts
 /data/
 /artifacts/
-audio_processing/data/
-
-# ============================================================================
-# Processed data outputs
-# ============================================================================
-audio_processing/dominican_songs_clean.jsonl
-audio_processing/exported_lyrics/
-
-# ============================================================================
-# Logs
-# ============================================================================
 *.log
 logs/
 
-# ============================================================================
-# Environment variables
-# ============================================================================
+# Secrets and local environment overrides
 .env
 .env.local
 *.env
 !.env.example
 
-# ============================================================================
-# Temporary files
-# ============================================================================
+# Large source and tabular data kept outside Git
+*.pdf
+*.xlsx
+*.xls
+
+# Temporary and local agent files
 *.tmp
 *.bak
 *~
 .atl/
-.venv-llm-eval/
-outputs/llm_eval/**/*.pt
 .ai/
 context/
 .context/
-cleanup_*.py
-
-# ============================================================================
-# PDFs and data files (large files, should not be in git)
-# ============================================================================
-*.pdf
-*.xlsx
-*.xls
-books-eater/scraped_books/pdfs/
-books-eater/scraped_books/markdowns/
-books-eater/scraped_books/*.xlsx
-books-eater/scraped_books/*.xls
-
-# ============================================================================
-# Module-specific requirements (use root requirements.txt only)
-# ============================================================================
-*/requirements.txt
-!requirements.txt
-
-# ============================================================================
-# AGENTS.md Files (Local contributor guides - not for public repo)
-# ============================================================================
 AGENTS.md
 **/AGENTS.md

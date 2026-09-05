@@ -1,8 +1,8 @@
 # Architecture review and incremental refactoring plan
 
 **Status:** accepted clean-break plan; the canonical STT and collection architectures are
-implemented with offline coverage. The imported server snapshot remains evidence for the later
-processing migration and one-time data conversion.
+implemented with offline coverage. Replaced application code has been removed from the working
+architecture; the preserved external snapshot remains historical evidence for later data conversion.
 
 ## Implementation progress
 
@@ -209,7 +209,7 @@ Each row is a bounded change or small series of changes. Do not combine dependen
 | 4. Implement collectors by capability | **In progress:** books, lyrics, and poems now have named packages, explicit providers, identity-preserving outcomes, atomic resume state, and CLI execution. Derived CSV/XLSX exports remain. | Offline provider, identity, retry, interruption, secret, and CLI tests pass. Approve and test the derived tabular schema before completing this phase. |
 | 5. Implement production audio and other evaluations | Build production download/transcribe/align/validate workflows without importing benchmark runners. Split pure LLM helpers from Torch and TTS dataset preparation from synthesis. | Task-specific tests pass, imports stay light, isolated backend environments install reproducibly, and resource lifecycle is verified per backend. |
 | 6. Convert data and cut over once | Stop writes, rerun the validated converter, verify counts/hashes, install the new package/environments, run smoke tests, and switch operational documentation to the new CLI. | New workflows pass on the server; converted data is reconciled; rollback means restoring the data snapshot and prior Git revision, not maintaining dual runtime behavior. |
-| 7. Delete replaced architecture | Remove `*-eater` code directories, root `cli.py`, replaced `audio_processing/shared/testing/scripts` implementations, obsolete requirements, path hacks and old config. Archive old results/code outside import and test paths if needed for research provenance. | Repository search finds no old imports/commands; only the new package is installed and tested; architecture contracts pass across the full package. |
+| 7. Delete replaced architecture | **Complete:** removed the `*-eater` directories, root `cli.py`, `audio_processing`, `shared`, standalone `testing` and `scripts` implementations, obsolete tests, requirements, and path-based launchers. Historical source remains outside the tracked runtime. | Repository search finds no supported old imports or commands; only the new package and isolated worker are installed and tested. |
 
 Development remains vertical and reviewable, but only the new architecture is supported at cutover. Old behavior is evidence for identifying defects, not an acceptance criterion. The STT milestone can be completed before collector work without adding compatibility layers between them.
 
