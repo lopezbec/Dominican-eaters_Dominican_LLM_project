@@ -51,13 +51,7 @@ logs/
 *.xlsx
 *.xls
 
-# Temporary and local agent files
+# Temporary files
 *.tmp
 *.bak
 *~
-.atl/
-.ai/
-context/
-.context/
-AGENTS.md
-**/AGENTS.md
