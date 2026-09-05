@@ -38,12 +38,102 @@ Reference:
     https://huggingface.co/coqui/XTTS-v2
 """
 
+import json
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional, Tuple, Union
 
 logger = logging.getLogger(__name__)
+
+
+def register_xtts_safe_globals() -> None:
+    """Register XTTS config classes required by PyTorch 2.6+ safe loading."""
+
+    try:
+        import torch
+        from TTS.config.shared_configs import BaseDatasetConfig
+        from TTS.tts.configs.xtts_config import XttsConfig
+        from TTS.tts.models.xtts import XttsAudioConfig, XttsArgs
+
+        torch.serialization.add_safe_globals(
+            [XttsConfig, XttsAudioConfig, XttsArgs, BaseDatasetConfig]
+        )
+        logger.info("Registered XTTS safe globals for PyTorch checkpoint loading")
+    except Exception as exc:
+        logger.warning("Could not register XTTS safe globals automatically: %s", exc)
+
+
+def resolve_local_model_artifacts(model_name: str) -> Optional[Tuple[Path, Path, bool]]:
+    """Return checkpoint/config paths when model_name points to a local model.
+
+    Supports either a model directory containing `config.json` plus a checkpoint file,
+    or a direct checkpoint path with a sibling `config.json`.
+
+    Returns `(model_target, config_path, use_directory_target)`.
+    """
+
+    raw_path = Path(model_name).expanduser()
+    if not raw_path.exists():
+        return None
+
+    if raw_path.is_file():
+        config_path = raw_path.with_name("config.json")
+        if not config_path.exists():
+            raise FileNotFoundError(
+                f"Local checkpoint provided but sibling config.json was not found: {config_path}"
+            )
+        return raw_path.resolve(), config_path.resolve(), False
+
+    config_path = raw_path / "config.json"
+    if not config_path.exists():
+        raise FileNotFoundError(
+            f"Local model directory does not contain config.json: {config_path}"
+        )
+
+    checkpoint_candidates = [
+        raw_path / "model.pth",
+        raw_path / "best_model.pth",
+        raw_path / "model_file.pth",
+        raw_path / "checkpoint.pth",
+        raw_path / "model.pth.tar",
+    ]
+    for candidate in checkpoint_candidates:
+        if candidate.exists():
+            use_directory_target = (raw_path / "vocab.json").exists() and (
+                raw_path / "speakers_xtts.pth"
+            ).exists()
+            if use_directory_target:
+                return raw_path.resolve(), config_path.resolve(), True
+            return candidate.resolve(), config_path.resolve(), False
+
+    raise FileNotFoundError(
+        "Local model directory does not contain a recognized checkpoint file. "
+        f"Checked: {[str(p.name) for p in checkpoint_candidates]}"
+    )
+
+
+def validate_config_json(config_path: Path) -> None:
+    """Fail early with a clear message for empty/corrupt config files."""
+
+    if not config_path.exists():
+        raise FileNotFoundError(f"Model config not found: {config_path}")
+
+    if config_path.stat().st_size == 0:
+        raise RuntimeError(
+            "Model config.json exists but is empty. This usually means the Coqui "
+            "model download/cache is corrupted. Delete the cached model directory "
+            "and retry, or use a manually downloaded local model dir."
+        )
+
+    try:
+        with config_path.open("r", encoding="utf-8") as file_obj:
+            json.load(file_obj)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(
+            f"Model config.json is not valid JSON: {config_path}. "
+            "The cached download appears incomplete or corrupted."
+        ) from exc
 
 
 class XTTSv2Model:
@@ -120,15 +210,49 @@ class XTTSv2Model:
         try:
             from TTS.api import TTS
 
+            register_xtts_safe_globals()
+
             logger.info(f"Loading {self.model_name} on {self.device}")
 
-            # Initialize TTS with model name and GPU flag
             gpu = self.device == "cuda"
-            self.tts = TTS(self.model_name, gpu=gpu)
+            local_artifacts = resolve_local_model_artifacts(self.model_name)
+            if local_artifacts is not None:
+                model_target, config_path, use_directory_target = local_artifacts
+                validate_config_json(config_path)
+                logger.info(
+                    "Loading XTTS from local artifacts target=%s config=%s dir_target=%s",
+                    model_target,
+                    config_path,
+                    use_directory_target,
+                )
+                self.tts = TTS(
+                    model_path=str(model_target),
+                    config_path=str(config_path),
+                    gpu=gpu,
+                )
+            else:
+                logger.info("Loading XTTS from registry name: %s", self.model_name)
+                self.tts = TTS(self.model_name, gpu=gpu)
 
             logger.info("Model loaded successfully")
             logger.info(f"Using device: {self.device}")
 
+        except FileNotFoundError as exc:
+            logger.error("Model artifact error: %s", exc)
+            raise
+        except RuntimeError as exc:
+            logger.error("Model validation error: %s", exc)
+            raise
+        except KeyError as exc:
+            logger.error(
+                "The requested model name '%s' is not resolvable by this TTS installation. "
+                "If the registry is inconsistent, try a local model directory instead.",
+                self.model_name,
+            )
+            raise RuntimeError(
+                f"TTS registry could not resolve model '{self.model_name}'. "
+                "Use a valid registry model name or pass a local model directory/checkpoint."
+            ) from exc
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
             raise
@@ -137,7 +261,7 @@ class XTTSv2Model:
         self,
         text: str,
         file_path: str,
-        speaker_wav: Optional[str] = None,
+        speaker_wav: Optional[Union[str, List[str]]] = None,
         language: str = "es",
     ) -> str:
         """Generate speech and save to file.
@@ -184,22 +308,31 @@ class XTTSv2Model:
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Generate with or without voice cloning
-            if speaker_wav and Path(speaker_wav).exists():
-                logger.info(f"Cloning voice from: {speaker_wav}")
-                self.tts.tts_to_file(
-                    text=text,
-                    file_path=str(output_path),
-                    speaker_wav=speaker_wav,
-                    language=language,
-                )
-            else:
-                if speaker_wav:
+            valid_speaker_input: Optional[Union[str, List[str]]] = None
+            if isinstance(speaker_wav, list):
+                valid_refs = [str(p) for p in speaker_wav if Path(p).exists()]
+                if valid_refs:
+                    logger.info(
+                        "Cloning voice from %s reference files", len(valid_refs)
+                    )
+                    valid_speaker_input = valid_refs
+                else:
+                    logger.warning("No valid speaker wav files found in list")
+            elif isinstance(speaker_wav, str):
+                if Path(speaker_wav).exists():
+                    logger.info(f"Cloning voice from: {speaker_wav}")
+                    valid_speaker_input = speaker_wav
+                elif speaker_wav:
                     logger.warning(f"Speaker wav not found: {speaker_wav}")
-                self.tts.tts_to_file(
-                    text=text,
-                    file_path=str(output_path),
-                    language=language,
-                )
+
+            kwargs: dict[str, object] = {
+                "text": text,
+                "file_path": str(output_path),
+                "language": language,
+            }
+            if valid_speaker_input is not None:
+                kwargs["speaker_wav"] = valid_speaker_input
+            self.tts.tts_to_file(**kwargs)
 
             logger.info(f"Audio saved to: {output_path.absolute()}")
             return str(output_path)
@@ -272,15 +405,7 @@ def main():
     import argparse
     import os
 
-    # Fix PyTorch 2.6+ weights_only issue for XTTS-v2 checkpoints
-    import torch
-    from TTS.tts.configs.xtts_config import XttsConfig
-    from TTS.tts.models.xtts import XttsAudioConfig, XttsArgs
-    from TTS.config.shared_configs import BaseDatasetConfig
-
-    torch.serialization.add_safe_globals(
-        [XttsConfig, XttsAudioConfig, XttsArgs, BaseDatasetConfig]
-    )
+    register_xtts_safe_globals()
 
     parser = argparse.ArgumentParser(
         description="Test XTTS-v2 TTS on Dominican Spanish text"
@@ -318,6 +443,11 @@ def main():
         "Provide a 6-30 second audio clip of the voice to clone.",
     )
     parser.add_argument(
+        "--speaker-wavs",
+        default=None,
+        help="Comma-separated reference audio files for multi-reference cloning.",
+    )
+    parser.add_argument(
         "--agree-license",
         action="store_true",
         help="Agree to Coqui Public Model License (CPML). Required for first use. "
@@ -352,13 +482,16 @@ def main():
         sys.exit(1)
 
     # XTTS-v2 requires a speaker reference for voice cloning
-    if not args.speaker_wav:
+    if not args.speaker_wav and not args.speaker_wavs:
         logger.error("XTTS-v2 requires a speaker reference audio file.")
-        print("\n❌ ERROR: --speaker-wav is required for XTTS-v2")
+        print("\n❌ ERROR: --speaker-wav or --speaker-wavs is required for XTTS-v2")
         print("\nXTTS-v2 is a voice cloning model that requires a reference audio.")
         print("Usage examples:")
         print(
             '  python xtts_v2.py --text "Hola" --language es --speaker-wav ref.wav --agree-license'
+        )
+        print(
+            '  python xtts_v2.py --text "Hola" --language es --speaker-wavs ref1.wav,ref2.wav --agree-license'
         )
         print("\nThe reference audio should be:")
         print("  - 6-30 seconds of clear speech")
@@ -366,9 +499,19 @@ def main():
         print("  - Clean, noise-free audio")
         sys.exit(1)
 
-    if not Path(args.speaker_wav).exists():
-        logger.error(f"Speaker reference not found: {args.speaker_wav}")
-        sys.exit(1)
+    speaker_input: Union[str, List[str]]
+    if args.speaker_wavs:
+        refs = [p.strip() for p in args.speaker_wavs.split(",") if p.strip()]
+        valid_refs = [p for p in refs if Path(p).exists()]
+        if not valid_refs:
+            logger.error("No valid files found in --speaker-wavs")
+            sys.exit(1)
+        speaker_input = valid_refs
+    else:
+        if not Path(args.speaker_wav).exists():
+            logger.error(f"Speaker reference not found: {args.speaker_wav}")
+            sys.exit(1)
+        speaker_input = args.speaker_wav
 
     try:
         # Initialize and load model
@@ -385,7 +528,7 @@ def main():
         output_path = model.tts_to_file(
             text=args.text,
             file_path=args.output,
-            speaker_wav=args.speaker_wav,
+            speaker_wav=speaker_input,
             language=args.language,
         )
 
