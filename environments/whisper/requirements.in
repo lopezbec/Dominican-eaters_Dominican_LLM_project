@@ -1,0 +1,4 @@
+# Compile this input into a platform-specific lock inside the target worker environment.
+-e ../..
+openai-whisper>=20231117
+torch>=2.2,<3
