@@ -8,14 +8,14 @@ Build one canonical `src/dominican_eaters` package with one installed
 `dominican-eaters` CLI. The supported package floor is Python 3.11, pending server validation.
 Model backends may retain separate environments but communicate through the canonical contracts.
 
-There will be no compatibility wrappers, import aliases, deprecated command aliases, dual readers,
-or dual writers. Replaced code is deleted at cutover. Historical data that remains useful is moved
-by a checksummed one-time converter and validated before the old data snapshot is retired.
+There are no compatibility wrappers, import aliases, deprecated command aliases, dual readers,
+or dual writers. Replaced source and its local archive were deleted at cutover. Any future data
+conversion must be explicit, checksummed, and kept outside the application runtime.
 
 ## Consequences
 
-- New behavior and schemas are tested directly rather than constrained by old quirks.
+- Behavior and schemas are tested directly against the canonical contracts.
 - Packaging, imports, CLI help, configuration, and pure evaluation work without ML dependencies.
 - Operational rollback restores Git, environment, and data snapshots instead of supporting two
   architectures.
-- The root `AGENTS.md` compatibility rule is explicitly overridden for this migration by the user.
+- Repository guidance routes changes only through the maintained package and worker boundaries.

@@ -113,4 +113,5 @@ comparison, strict punctuation scores, model revision pinning, and additional au
 remain future extensions. Runtime measurements are stored with raw transcription records; they
 are not inferred from historical transcription JSON files that lack measurements.
 
-The source-only ZIP does not supply a benchmark dataset or measured server results. Unit and mocked integration tests are not evidence of transcription quality or hardware feasibility. No real dataset inference result has been verified in this stage.
+Unit and mocked integration tests are not evidence of transcription quality or hardware
+feasibility. No real dataset inference result has been verified in this stage.
