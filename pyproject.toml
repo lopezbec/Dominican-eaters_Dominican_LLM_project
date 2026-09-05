@@ -1,25 +1,66 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "dominican-eaters-dominican-llm-project"
-version = "0.1.0"
-description = "Add your description here"
+name = "dominican-eaters"
+version = "0.2.0"
+description = "Dominican Spanish dataset collection and speech evaluation workflows"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
+authors = [{ name = "Dominican Eaters contributors" }]
 dependencies = [
-    "beautifulsoup4>=4.12.2",
-    "click>=8.1.0",
-    "ffmpeg-python>=0.2.0",
-    "html5lib>=1.1",
-    "mega-py>=1.0.8",
-    "numpy>=1.24.0",
-    "openai-whisper>=20231117",
-    "openpyxl>=3.1.0",
-    "pandas>=2.0.0",
-    "pdfplumber>=0.11.0",
-    "python-dotenv>=1.0.0",
-    "pyyaml>=6.0.0",
-    "requests>=2.31.0",
-    "scrapetube>=2.5.1",
-    "torch>=2.0.0",
-    "tqdm>=4.66.0",
-    "yt-dlp>=2023.12.30",
+    "click>=8.1,<9",
+    "psutil>=5.9,<8",
+    "PyYAML>=6,<7",
 ]
+
+[project.optional-dependencies]
+whisper = [
+    "openai-whisper>=20231117",
+    "torch>=2.2,<3",
+]
+providers = [
+    "httpx>=0.27,<1",
+]
+
+[project.scripts]
+dominican-eaters = "dominican_eaters.cli:main"
+
+[dependency-groups]
+dev = [
+    "build>=1.2,<2",
+    "mypy>=1.15,<2",
+    "pytest>=8.3,<9",
+    "ruff>=0.11,<1",
+    "types-PyYAML>=6.0,<7",
+    "types-psutil>=5.9,<8",
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["dominican_eaters*"]
+
+[tool.setuptools.package-data]
+dominican_eaters = ["py.typed"]
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib", "--strict-config", "--strict-markers"]
+testpaths = ["tests/core"]
+pythonpath = ["src"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests/core"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src/dominican_eaters"]
