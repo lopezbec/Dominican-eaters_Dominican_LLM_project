@@ -14,6 +14,7 @@ from dominican_eaters.speech.asr.subprocess_backend import (
     WorkerProcessError,
     WorkerRemoteError,
     WorkerTimeoutError,
+    _descriptor_from_payload,
     _SubprocessLineTransport,
 )
 from dominican_eaters.speech.asr.worker_protocol import (
@@ -52,16 +53,18 @@ class FakeTransport:
         request = self.requests[-1]
         if request.method == "describe":
             payload = {
-                "backend_id": "nemo/parakeet",
-                "model": "parakeet",
-                "model_revision": "abc123",
-                "language": "es",
-                "requested_device": "auto",
-                "requested_precision": "auto",
-                "effective_device": "cuda",
-                "effective_precision": "fp16",
-                "runtime_versions": {"python": "3.11", "nemo_toolkit": "2.0"},
-                "options": {"batch_size": 1},
+                "descriptor": {
+                    "backend_id": "nemo/parakeet",
+                    "model": "parakeet",
+                    "model_revision": "abc123",
+                    "language": "es",
+                    "requested_device": "auto",
+                    "requested_precision": "auto",
+                    "effective_device": "cuda",
+                    "effective_precision": "fp16",
+                    "runtime_versions": {"python": "3.11", "nemo_toolkit": "2.0"},
+                    "options": {"batch_size": 1},
+                }
             }
         elif request.method == "transcribe":
             payload = {
@@ -84,9 +87,9 @@ class FakeTransport:
 def settings(tmp_path: Path) -> SubprocessBackendSettings:
     return SubprocessBackendSettings(
         interpreter=tmp_path / "venv" / "bin" / "python",
-        worker_module="dominican_eaters.workers.nemo",
-        backend="nemo",
-        model="parakeet",
+        worker_module="dominican_eaters_nemo",
+        backend="parakeet",
+        model="nvidia/parakeet-tdt-0.6b-v3",
     )
 
 
@@ -108,7 +111,7 @@ def test_lifecycle_uses_list_argv_unique_ids_and_converts_transcript(tmp_path: P
     assert transport.argv == (
         str(tmp_path / "venv" / "bin" / "python"),
         "-m",
-        "dominican_eaters.workers.nemo",
+        "dominican_eaters_nemo",
     )
     assert [request.request_id for request in transport.requests] == [
         "load-1",
@@ -129,6 +132,49 @@ def test_lifecycle_uses_list_argv_unique_ids_and_converts_transcript(tmp_path: P
     assert backend.descriptor.effective_device == "cuda"
     assert backend.descriptor.model_revision == "abc123"
     assert transport.closed == 1
+
+
+@pytest.mark.parametrize(
+    "payload, message",
+    [
+        ({}, "missing fields: descriptor"),
+        ({"backend_id": "unwrapped"}, "missing fields: descriptor"),
+        ({"descriptor": {}}, "missing fields"),
+        ({"descriptor": {}, "extra": True}, "unknown fields: extra"),
+    ],
+)
+def test_descriptor_requires_the_single_canonical_shape(
+    payload: dict[str, object], message: str
+) -> None:
+    with pytest.raises(WorkerProcessError, match=message):
+        _descriptor_from_payload(payload)  # type: ignore[arg-type]
+
+
+def test_transcript_requires_all_canonical_fields(tmp_path: Path) -> None:
+    class MissingMetadataTransport(FakeTransport):
+        def read(self, timeout_seconds: float) -> bytes:
+            if self.requests[-1].method != "transcribe":
+                return super().read(timeout_seconds)
+            request = self.requests[-1]
+            return encode_message(
+                success_response(
+                    request,
+                    {
+                        "text": "Hola mundo",
+                        "language": "es",
+                        "audio_duration_seconds": 2.5,
+                        "gpu_peak_allocated_bytes": None,
+                        "gpu_peak_reserved_bytes": None,
+                    },
+                )
+            )
+
+    transport = MissingMetadataTransport()
+    backend = JsonlSubprocessBackend(settings(tmp_path), transport_factory=lambda: transport)
+    backend.load()
+
+    with pytest.raises(WorkerProcessError, match="missing fields: metadata"):
+        backend.transcribe(tmp_path / "sample.wav")
 
 
 def test_timeout_aborts_worker_and_close_remains_idempotent(tmp_path: Path) -> None:
@@ -206,7 +252,7 @@ def test_settings_require_absolute_interpreter() -> None:
         SubprocessBackendSettings(
             interpreter=Path(".venv/bin/python"),
             worker_module="worker",
-            backend="nemo",
+            backend="parakeet",
             model="parakeet",
         )
 

@@ -151,7 +151,7 @@ class JsonlSubprocessBackend:
                 )
             )
             payload = self._exchange(make_request("describe", request_id=self._new_request_id()))
-            self._descriptor = _descriptor_from_payload(payload, fallback=self._descriptor)
+            self._descriptor = _descriptor_from_payload(payload)
             self._loaded = True
         except Exception:
             self._abort()
@@ -171,13 +171,22 @@ class JsonlSubprocessBackend:
                 request_id=self._new_request_id(),
             )
         )
-        text = payload.get("text")
+        expected_fields = {
+            "text",
+            "language",
+            "audio_duration_seconds",
+            "gpu_peak_allocated_bytes",
+            "gpu_peak_reserved_bytes",
+            "metadata",
+        }
+        _require_exact_fields(payload, expected_fields, "worker transcript payload")
+        text = payload["text"]
         if not isinstance(text, str):
             raise WorkerProcessError("worker transcript payload requires a string text field")
-        language = payload.get("language")
+        language = payload["language"]
         if language is not None and not isinstance(language, str):
             raise WorkerProcessError("worker transcript language must be a string or null")
-        metadata = payload.get("metadata", {})
+        metadata = payload["metadata"]
         if not isinstance(metadata, dict):
             raise WorkerProcessError("worker transcript metadata must be an object")
         duration = _optional_positive_number(payload, "audio_duration_seconds")
@@ -263,27 +272,39 @@ class JsonlSubprocessBackend:
                 pass
 
 
-def _descriptor_from_payload(
-    payload: Mapping[str, JSONValue], *, fallback: BackendDescriptor
-) -> BackendDescriptor:
-    raw = payload.get("descriptor", payload)
-    if not isinstance(raw, dict) or not raw:
-        return fallback
+def _descriptor_from_payload(payload: Mapping[str, JSONValue]) -> BackendDescriptor:
+    _require_exact_fields(payload, {"descriptor"}, "worker describe payload")
+    raw = payload["descriptor"]
+    if not isinstance(raw, dict):
+        raise WorkerProcessError("worker descriptor must be an object")
+    expected_fields = {
+        "backend_id",
+        "model",
+        "model_revision",
+        "language",
+        "requested_device",
+        "requested_precision",
+        "effective_device",
+        "effective_precision",
+        "runtime_versions",
+        "options",
+    }
+    _require_exact_fields(raw, expected_fields, "worker descriptor")
 
-    def required_string(name: str, default: str) -> str:
-        value = raw.get(name, default)
+    def required_string(name: str) -> str:
+        value = raw[name]
         if not isinstance(value, str) or not value:
             raise WorkerProcessError(f"worker descriptor {name} must be a non-empty string")
         return value
 
-    def optional_string(name: str, default: str | None) -> str | None:
-        value = raw.get(name, default)
+    def optional_string(name: str) -> str | None:
+        value = raw[name]
         if value is not None and not isinstance(value, str):
             raise WorkerProcessError(f"worker descriptor {name} must be a string or null")
         return value
 
-    versions = raw.get("runtime_versions", fallback.runtime_versions)
-    options = raw.get("options", fallback.options)
+    versions = raw["runtime_versions"]
+    options = raw["options"]
     if not isinstance(versions, dict) or not all(
         isinstance(key, str) and isinstance(value, str) for key, value in versions.items()
     ):
@@ -291,17 +312,28 @@ def _descriptor_from_payload(
     if not isinstance(options, dict):
         raise WorkerProcessError("worker descriptor options must be an object")
     return BackendDescriptor(
-        backend_id=required_string("backend_id", fallback.backend_id),
-        model=required_string("model", fallback.model),
-        model_revision=optional_string("model_revision", fallback.model_revision),
-        language=required_string("language", fallback.language),
-        requested_device=required_string("requested_device", fallback.requested_device),
-        requested_precision=required_string("requested_precision", fallback.requested_precision),
-        effective_device=optional_string("effective_device", fallback.effective_device),
-        effective_precision=optional_string("effective_precision", fallback.effective_precision),
+        backend_id=required_string("backend_id"),
+        model=required_string("model"),
+        model_revision=optional_string("model_revision"),
+        language=required_string("language"),
+        requested_device=required_string("requested_device"),
+        requested_precision=required_string("requested_precision"),
+        effective_device=optional_string("effective_device"),
+        effective_precision=optional_string("effective_precision"),
         runtime_versions=cast(dict[str, str], versions),
         options=cast(dict[str, object], options),
     )
+
+
+def _require_exact_fields(
+    payload: Mapping[str, JSONValue], expected: set[str], context: str
+) -> None:
+    missing = sorted(expected - payload.keys())
+    unknown = sorted(payload.keys() - expected)
+    if missing:
+        raise WorkerProcessError(f"{context} missing fields: {', '.join(missing)}")
+    if unknown:
+        raise WorkerProcessError(f"{context} unknown fields: {', '.join(unknown)}")
 
 
 def _optional_positive_number(payload: Mapping[str, JSONValue], field: str) -> float | None:

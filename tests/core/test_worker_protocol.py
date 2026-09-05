@@ -83,7 +83,7 @@ def test_success_and_error_responses_roundtrip_and_retain_request_id() -> None:
 @pytest.mark.parametrize(
     ("mutation", "match"),
     [
-        (lambda raw: raw.update(extra="legacy"), "unknown fields"),
+        (lambda raw: raw.update(extra="unexpected"), "unknown fields"),
         (lambda raw: raw.pop("params"), "missing fields"),
         (lambda raw: raw.update(protocol_version=2), "protocol_version"),
         (lambda raw: raw.update(protocol_version=True), "must be an integer"),
@@ -180,6 +180,6 @@ def test_wrong_python_message_type_is_rejected() -> None:
 
 
 def test_direct_dataclass_construction_is_validated_at_encoding() -> None:
-    request = WorkerRequest(PROTOCOL_VERSION, "id", "warmup", {"legacy": True})
+    request = WorkerRequest(PROTOCOL_VERSION, "id", "warmup", {"unexpected": True})
     with pytest.raises(MessageValidationError, match="unknown fields"):
         encode_message(request)

@@ -295,13 +295,11 @@ class ParakeetBackend(NeMoBackend):
 
     def __init__(
         self,
-        settings: NeMoSettings | None = None,
+        settings: NeMoSettings,
         *,
         runtime_loader: RuntimeLoader = load_nemo_runtime,
     ) -> None:
-        super().__init__(
-            settings or NeMoSettings(model="nvidia/parakeet-tdt-0.6b-v3"), runtime_loader
-        )
+        super().__init__(settings, runtime_loader)
 
 
 class CanaryBackend(NeMoBackend):
@@ -309,11 +307,11 @@ class CanaryBackend(NeMoBackend):
 
     def __init__(
         self,
-        settings: NeMoSettings | None = None,
+        settings: NeMoSettings,
         *,
         runtime_loader: RuntimeLoader = load_nemo_runtime,
     ) -> None:
-        super().__init__(settings or NeMoSettings(model="nvidia/canary-1b-v2"), runtime_loader)
+        super().__init__(settings, runtime_loader)
 
     def _descriptor_options(self) -> dict[str, object]:
         options = super()._descriptor_options()

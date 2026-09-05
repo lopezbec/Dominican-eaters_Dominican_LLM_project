@@ -92,7 +92,7 @@ def test_relative_declared_root_is_relative_to_manifest_not_working_directory(
         (lambda raw: raw.update(extra=True), "unknown fields"),
         (lambda raw: raw.pop("dataset_root"), "missing fields"),
         (lambda raw: raw.update(schema_version=2), "schema_version"),
-        (lambda raw: raw["samples"][0].update(legacy_audio_path="x"), "unknown fields"),
+        (lambda raw: raw["samples"][0].update(unexpected_audio_path="x"), "unknown fields"),
         (lambda raw: raw["samples"][0].pop("reference_text"), "missing fields"),
     ],
 )
@@ -180,7 +180,7 @@ def test_config_paths_have_explicit_config_and_override_bases(
     [
         ("schema_version: 1\ndata_root: data\n", "missing fields"),
         (
-            "schema_version: 1\ndata_root: data\nartifacts_root: artifacts\nlegacy: true\n",
+            "schema_version: 1\ndata_root: data\nartifacts_root: artifacts\nunexpected: true\n",
             "unknown fields",
         ),
         ("schema_version: 2\ndata_root: data\nartifacts_root: artifacts\n", "schema_version"),
