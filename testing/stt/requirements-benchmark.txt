@@ -1,0 +1,2 @@
+-r requirements-whisper.txt
+psutil>=5.9
