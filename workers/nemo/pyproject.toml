@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dominican-eaters-nemo"
+version = "0.2.0"
+description = "Isolated NVIDIA NeMo ASR worker for Dominican Eaters"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "dominican-eaters==0.2.0",
+    "nemo_toolkit[asr]>=2.4,<3",
+    "torch>=2.2,<3",
+]
+
+[project.scripts]
+dominican-eaters-nemo-worker = "dominican_eaters_nemo.app:main"
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.15,<2",
+    "pytest>=8.3,<9",
+    "ruff>=0.11,<1",
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["dominican_eaters_nemo*"]
+
+[tool.setuptools.package-data]
+dominican_eaters_nemo = ["py.typed"]
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib", "--strict-config", "--strict-markers"]
+testpaths = ["tests"]
+pythonpath = ["src", "../../src"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src/dominican_eaters_nemo"]
+mypy_path = "../../src"
