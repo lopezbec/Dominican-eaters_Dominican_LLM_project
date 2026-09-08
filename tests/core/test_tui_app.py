@@ -29,13 +29,11 @@ async def test_tui_reveals_benchmark_fields_and_builds_command() -> None:
 
     async with app.run_test(size=(110, 40)) as pilot:
         app.query_one("#workflow", Select).value = Workflow.STT_BENCHMARK
-        app.query_one("#source", Input).value = "manifest.json"
-        app.query_one("#output", Input).value = "artifacts/run"
         await pilot.pause()
 
         preview = str(app.query_one("#preview", Static).content)
-        assert preview.startswith("dominican-eaters stt benchmark manifest.json")
-        assert "--output-dir artifacts/run" in preview
+        assert preview.startswith("dominican-eaters stt benchmark data/manifests/stt.json")
+        assert "--output-dir artifacts/stt-run" in preview
         assert "--backend whisper" in preview
         assert not app.query_one("#backend-fields").has_class("hidden")
         assert app.query_one("#worker-field").has_class("hidden")
@@ -46,6 +44,18 @@ async def test_tui_reveals_benchmark_fields_and_builds_command() -> None:
         assert "Select the isolated worker Python executable" in str(
             app.query_one("#preview", Static).content
         )
+
+
+@pytest.mark.asyncio
+async def test_tui_selects_domain_specific_manifest_defaults() -> None:
+    app = DominicanEatersApp()
+
+    async with app.run_test(size=(110, 40)) as pilot:
+        app.query_one("#workflow", Select).value = Workflow.BOOKS_RUN
+        await pilot.pause()
+
+        assert app.query_one("#source", Input).value == "data/manifests/books.json"
+        assert app.query_one("#output", Input).value == "artifacts/books"
 
 
 @pytest.mark.asyncio

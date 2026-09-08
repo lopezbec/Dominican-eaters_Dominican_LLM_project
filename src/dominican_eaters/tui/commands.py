@@ -35,6 +35,25 @@ WORKFLOW_OPTIONS: tuple[tuple[str, Workflow], ...] = (
 COLLECTION_RUNS = {Workflow.BOOKS_RUN, Workflow.LYRICS_RUN, Workflow.POEMS_RUN}
 OUTPUT_WORKFLOWS = COLLECTION_RUNS | {Workflow.STT_BENCHMARK}
 
+DEFAULT_SOURCE_PATHS: dict[Workflow, str] = {
+    Workflow.CONFIG_VALIDATE: "config/default.yaml",
+    Workflow.BOOKS_PREFLIGHT: "data/manifests/books.json",
+    Workflow.BOOKS_RUN: "data/manifests/books.json",
+    Workflow.LYRICS_PREFLIGHT: "data/manifests/lyrics.json",
+    Workflow.LYRICS_RUN: "data/manifests/lyrics.json",
+    Workflow.POEMS_PREFLIGHT: "data/manifests/poems.json",
+    Workflow.POEMS_RUN: "data/manifests/poems.json",
+    Workflow.STT_PREFLIGHT: "data/manifests/stt.json",
+    Workflow.STT_BENCHMARK: "data/manifests/stt.json",
+}
+
+DEFAULT_OUTPUT_DIRS: dict[Workflow, str] = {
+    Workflow.BOOKS_RUN: "artifacts/books",
+    Workflow.LYRICS_RUN: "artifacts/lyrics",
+    Workflow.POEMS_RUN: "artifacts/poems",
+    Workflow.STT_BENCHMARK: "artifacts/stt-run",
+}
+
 
 class CommandValidationError(ValueError):
     """A required workflow field is missing or inconsistent."""

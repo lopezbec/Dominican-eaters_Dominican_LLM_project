@@ -23,6 +23,8 @@ from textual.widgets import (
 
 from .commands import (
     COLLECTION_RUNS,
+    DEFAULT_OUTPUT_DIRS,
+    DEFAULT_SOURCE_PATHS,
     OUTPUT_WORKFLOWS,
     WORKFLOW_OPTIONS,
     CommandValidationError,
@@ -47,6 +49,7 @@ class DominicanEatersApp(App[None]):
         super().__init__()
         self._process: asyncio.subprocess.Process | None = None
         self._cancel_requested = False
+        self._active_workflow = Workflow.CONFIG_VALIDATE
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -235,10 +238,14 @@ class DominicanEatersApp(App[None]):
         workflow = self._selected_workflow()
         benchmark = workflow is Workflow.STT_BENCHMARK
         source = self.query_one("#source", Input)
-        if workflow is Workflow.CONFIG_VALIDATE and not source.value.strip():
-            source.value = "config/default.yaml"
-        elif workflow is not Workflow.CONFIG_VALIDATE and source.value == "config/default.yaml":
-            source.clear()
+        output = self.query_one("#output", Input)
+        previous_source = DEFAULT_SOURCE_PATHS[self._active_workflow]
+        previous_output = DEFAULT_OUTPUT_DIRS.get(self._active_workflow, "")
+        if not source.value.strip() or source.value == previous_source:
+            source.value = DEFAULT_SOURCE_PATHS[workflow]
+        if not output.value.strip() or output.value == previous_output:
+            output.value = DEFAULT_OUTPUT_DIRS.get(workflow, "")
+        self._active_workflow = workflow
         self._show("#output-field", workflow in OUTPUT_WORKFLOWS)
         self._show(
             "#data-root-field", workflow in {Workflow.CONFIG_VALIDATE, Workflow.STT_PREFLIGHT}
