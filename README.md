@@ -69,10 +69,11 @@ for scripts and automation:
 .venv/bin/dominican-eaters config validate config/default.yaml
 ```
 
-The collection screens start with tracked manifests in `data/manifests`. They contain one small
-Dominican example each, so they can be validated immediately and copied or edited for a real run.
-The STT starter manifest points to the included one-second silence control; replace its sample list
-and `dataset_root` with the reviewed recordings used for an actual benchmark.
+The collection screens start with tracked manifests in `data/manifests`. The lyrics manifest
+contains 749 unique artist/song pairs imported from the project catalog; the books and poems
+manifests contain one small Dominican example each. The STT starter manifest points to the included
+one-second silence control; replace its sample list and `dataset_root` with the reviewed recordings
+used for an actual benchmark.
 
 ## Features
 

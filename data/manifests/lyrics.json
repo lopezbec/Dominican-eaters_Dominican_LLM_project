@@ -4,7 +4,4495 @@
       "expected_artist": "Juan Luis Guerra",
       "expected_title": "Bachata Rosa",
       "query": "Bachata Rosa Juan Luis Guerra",
-      "request_id": "bachata-rosa"
+      "request_id": "song-91f0f90c41d655088f5dcf7d"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Burbujas de Amor",
+      "query": "Burbujas de Amor Juan Luis Guerra",
+      "request_id": "song-b6047192d85f7c117eaf7982"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "El Niagara En Bicicleta",
+      "query": "El Niagara En Bicicleta Juan Luis Guerra",
+      "request_id": "song-d978fe8babf29f9a857b48a3"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "La Bilirrubina",
+      "query": "La Bilirrubina Juan Luis Guerra",
+      "request_id": "song-545f073ddf8bfc6ab9a0e41f"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Ojalá Que Llueva Café",
+      "query": "Ojalá Que Llueva Café Juan Luis Guerra",
+      "request_id": "song-2605334ef9c2bcd65debeabb"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Las Avispas",
+      "query": "Las Avispas Juan Luis Guerra",
+      "request_id": "song-c17a62c32b2a86f89ea02409"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Visa Para Un Sueño",
+      "query": "Visa Para Un Sueño Juan Luis Guerra",
+      "request_id": "song-0fb83357a1955e941707e686"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Kitipun",
+      "query": "Kitipun Juan Luis Guerra",
+      "request_id": "song-e98e341e90c958504fe09513"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Propuesta Indecente",
+      "query": "Propuesta Indecente Romeo Santos",
+      "request_id": "song-f0e2134cfb683aa93da29191"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Eres Mía",
+      "query": "Eres Mía Romeo Santos",
+      "request_id": "song-b03326367329b309ec9b98d2"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Centavito",
+      "query": "Centavito Romeo Santos",
+      "request_id": "song-6207b368cdde3ae58244b022"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Imitadora",
+      "query": "Imitadora Romeo Santos",
+      "request_id": "song-d3e1e95b3adff58112387180"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Sobredosis",
+      "query": "Sobredosis Romeo Santos",
+      "request_id": "song-04cec842e11ad09bca4148ec"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Héroe Favorito",
+      "query": "Héroe Favorito Romeo Santos",
+      "request_id": "song-38c51f6ccb5b119f35cfc1d8"
+    },
+    {
+      "expected_artist": "Aventura",
+      "expected_title": "Obsesión",
+      "query": "Obsesión Aventura",
+      "request_id": "song-8cd74a75d2044e082096df70"
+    },
+    {
+      "expected_artist": "Genius English Translations",
+      "expected_title": "Aventura - Dile Al Amor (English Translation)",
+      "query": "Aventura - Dile Al Amor (English Translation) Genius English Translations",
+      "request_id": "song-cb53a627540c7a9cbc6ed705"
+    },
+    {
+      "expected_artist": "Aventura",
+      "expected_title": "El Perdedor",
+      "query": "El Perdedor Aventura",
+      "request_id": "song-aa1e8beece2cd36b592e30b5"
+    },
+    {
+      "expected_artist": "Aventura",
+      "expected_title": "Un Beso",
+      "query": "Un Beso Aventura",
+      "request_id": "song-9db3d6ca5626b3349f2b06c9"
+    },
+    {
+      "expected_artist": "Aventura",
+      "expected_title": "Los Infieles",
+      "query": "Los Infieles Aventura",
+      "request_id": "song-dcb5b173c154e3419652398d"
+    },
+    {
+      "expected_artist": "Aventura",
+      "expected_title": "Inmortal",
+      "query": "Inmortal Aventura",
+      "request_id": "song-31476fd64e41a9aadef2b3c0"
+    },
+    {
+      "expected_artist": "Prince Royce",
+      "expected_title": "Darte un Beso",
+      "query": "Darte un Beso Prince Royce",
+      "request_id": "song-94bad263157b4c79ed38a7c6"
+    },
+    {
+      "expected_artist": "Prince Royce",
+      "expected_title": "Corazón Sin Cara",
+      "query": "Corazón Sin Cara Prince Royce",
+      "request_id": "song-33cc0d7514dca1ef307ef410"
+    },
+    {
+      "expected_artist": "Prince Royce",
+      "expected_title": "El Amor Que Perdimos",
+      "query": "El Amor Que Perdimos Prince Royce",
+      "request_id": "song-2c6c5b6dd315daab8cd94664"
+    },
+    {
+      "expected_artist": "Genius English Translations",
+      "expected_title": "Prince Royce - Recházame (English Translation)",
+      "query": "Prince Royce - Recházame (English Translation) Genius English Translations",
+      "request_id": "song-7e512b7545c592ad43cff9ec"
+    },
+    {
+      "expected_artist": "Prince Royce",
+      "expected_title": "Deja vu",
+      "query": "Deja vu Prince Royce",
+      "request_id": "song-1fe8dc8ed29897acfe6a26e2"
+    },
+    {
+      "expected_artist": "Anthony Santos",
+      "expected_title": "Voy Pa’llá",
+      "query": "Voy Pa’llá Anthony Santos",
+      "request_id": "song-60cb1775ab2d69e4d0c0f4cf"
+    },
+    {
+      "expected_artist": "Anthony Santos",
+      "expected_title": "Me Enamoré",
+      "query": "Me Enamoré Anthony Santos",
+      "request_id": "song-b1d8f45bed69200696298a24"
+    },
+    {
+      "expected_artist": "Anthony Santos",
+      "expected_title": "Dónde Estará",
+      "query": "Dónde Estará Anthony Santos",
+      "request_id": "song-5436ff4e72d0b29b8147cdb1"
+    },
+    {
+      "expected_artist": "Anthony Santos",
+      "expected_title": "Creiste",
+      "query": "Creiste Anthony Santos",
+      "request_id": "song-89b71f78e9050196f3a6fe13"
+    },
+    {
+      "expected_artist": "House of Repz",
+      "expected_title": "Hasta Yer (Spanish Remix)",
+      "query": "Hasta Yer (Spanish Remix) House of Repz",
+      "request_id": "song-76cf0bf76ff35a1ba036754f"
+    },
+    {
+      "expected_artist": "Frank Reyes",
+      "expected_title": "Princesa",
+      "query": "Princesa Frank Reyes",
+      "request_id": "song-0eb54c89c3d3d74c09d2ed2b"
+    },
+    {
+      "expected_artist": "Frank Reyes",
+      "expected_title": "Tú Eres Ajena",
+      "query": "Tú Eres Ajena Frank Reyes",
+      "request_id": "song-02ce504393a95754a0c2324d"
+    },
+    {
+      "expected_artist": "Frank Reyes",
+      "expected_title": "Quién Eres Tu",
+      "query": "Quién Eres Tu Frank Reyes",
+      "request_id": "song-f1b0d447e414d24bf3d448cf"
+    },
+    {
+      "expected_artist": "Frank Reyes",
+      "expected_title": "Nada De Nada",
+      "query": "Nada De Nada Frank Reyes",
+      "request_id": "song-3f57de8948a9b206c5f9d593"
+    },
+    {
+      "expected_artist": "Frank Reyes",
+      "expected_title": "Fecha De Vencimiento",
+      "query": "Fecha De Vencimiento Frank Reyes",
+      "request_id": "song-2282725e48f53c6224aad2e3"
+    },
+    {
+      "expected_artist": "Raulin Rodriguez",
+      "expected_title": "Esta noche",
+      "query": "Esta noche Raulin Rodriguez",
+      "request_id": "song-6592bc5dade02a51165fedcd"
+    },
+    {
+      "expected_artist": "Raulin Rodriguez",
+      "expected_title": "Nereyda",
+      "query": "Nereyda Raulin Rodriguez",
+      "request_id": "song-36a7bc810446ebadc0a9bc07"
+    },
+    {
+      "expected_artist": "Raulin Rodriguez",
+      "expected_title": "Medicina de Amor",
+      "query": "Medicina de Amor Raulin Rodriguez",
+      "request_id": "song-b316c87325444c55ca66480c"
+    },
+    {
+      "expected_artist": "Raulin Rodriguez",
+      "expected_title": "Corazón Con Candado",
+      "query": "Corazón Con Candado Raulin Rodriguez",
+      "request_id": "song-2321b7083cb74113bdc18e9c"
+    },
+    {
+      "expected_artist": "Raulin Rodriguez",
+      "expected_title": "Fue Como el Viento",
+      "query": "Fue Como el Viento Raulin Rodriguez",
+      "request_id": "song-a7335a7dd1e16044ff68cd74"
+    },
+    {
+      "expected_artist": "Hector Acosta “El Torito”",
+      "expected_title": "Me Voy - Bachata",
+      "query": "Me Voy - Bachata Hector Acosta “El Torito”",
+      "request_id": "song-e2adb1d4c466faca4763a399"
+    },
+    {
+      "expected_artist": "Hector Acosta",
+      "expected_title": "Amorcito Enfermito",
+      "query": "Amorcito Enfermito Hector Acosta",
+      "request_id": "song-47d74adc94d6fb6fa9d16d07"
+    },
+    {
+      "expected_artist": "Hector Acosta “El Torito”",
+      "expected_title": "Sin Perdon",
+      "query": "Sin Perdon Hector Acosta “El Torito”",
+      "request_id": "song-f318278500a8ff20972382b8"
+    },
+    {
+      "expected_artist": "Zacarías Ferreira",
+      "expected_title": "Si Tu Me Dices Ven",
+      "query": "Si Tu Me Dices Ven Zacarías Ferreira",
+      "request_id": "song-106eea367a9bb36018bd9ce6"
+    },
+    {
+      "expected_artist": "Zacarías Ferreira",
+      "expected_title": "Asesina",
+      "query": "Asesina Zacarías Ferreira",
+      "request_id": "song-e59617fb7dddaa40d8a43e07"
+    },
+    {
+      "expected_artist": "Zacarías Ferreira",
+      "expected_title": "Me sobran las palabras",
+      "query": "Me sobran las palabras Zacarías Ferreira",
+      "request_id": "song-9edc15c5163a9c0592f978b3"
+    },
+    {
+      "expected_artist": "Zacarías Ferreira",
+      "expected_title": "El Intruso",
+      "query": "El Intruso Zacarías Ferreira",
+      "request_id": "song-40593f2dc40e1f6113a0c35a"
+    },
+    {
+      "expected_artist": "Zacarías Ferreira",
+      "expected_title": "Diez Segundos",
+      "query": "Diez Segundos Zacarías Ferreira",
+      "request_id": "song-3b928a1a908e7af8d5c28d2a"
+    },
+    {
+      "expected_artist": "Joe Veras",
+      "expected_title": "El Molde",
+      "query": "El Molde Joe Veras",
+      "request_id": "song-362e1109b14492a64215f694"
+    },
+    {
+      "expected_artist": "Joe Veras",
+      "expected_title": "Que Se Mueran De Envidia",
+      "query": "Que Se Mueran De Envidia Joe Veras",
+      "request_id": "song-8a40ead6a0c1d9829eeec8ec"
+    },
+    {
+      "expected_artist": "Makiza",
+      "expected_title": "La Vida Es Como Un Sueño",
+      "query": "La Vida Es Como Un Sueño Makiza",
+      "request_id": "song-ee579a23c802babbdc4bb741"
+    },
+    {
+      "expected_artist": "Elvis Martinez",
+      "expected_title": "Maestra",
+      "query": "Maestra Elvis Martinez",
+      "request_id": "song-76326dd26c1f9835b0c7adca"
+    },
+    {
+      "expected_artist": "Elvis Martinez",
+      "expected_title": "Asi Te Amo",
+      "query": "Asi Te Amo Elvis Martinez",
+      "request_id": "song-d19001273d2dd7c004f44a4a"
+    },
+    {
+      "expected_artist": "Luis Vargas",
+      "expected_title": "Loco de Amor (Con los crespos hechos)",
+      "query": "Loco de Amor (Con los crespos hechos) Luis Vargas",
+      "request_id": "song-ea183841e7a66dbccb1f1229"
+    },
+    {
+      "expected_artist": "Luis Vargas",
+      "expected_title": "Volvió el dolor",
+      "query": "Volvió el dolor Luis Vargas",
+      "request_id": "song-8ba53ef247c21601ce765e3c"
+    },
+    {
+      "expected_artist": "Luis Vargas",
+      "expected_title": "Yo Mismo La Vi",
+      "query": "Yo Mismo La Vi Luis Vargas",
+      "request_id": "song-78fb54c5bd4a26519ebfd3c8"
+    },
+    {
+      "expected_artist": "Sergio Vargas",
+      "expected_title": "La Ventanita",
+      "query": "La Ventanita Sergio Vargas",
+      "request_id": "song-c97fdf12017016b4805d0e15"
+    },
+    {
+      "expected_artist": "Sergio Vargas",
+      "expected_title": "Ni Tu Ni Yo",
+      "query": "Ni Tu Ni Yo Sergio Vargas",
+      "request_id": "song-f422d8b7f4d4dbf48f0bc34e"
+    },
+    {
+      "expected_artist": "Sergio Vargas",
+      "expected_title": "Dile",
+      "query": "Dile Sergio Vargas",
+      "request_id": "song-ac5b2cac8ca4aebe728c688f"
+    },
+    {
+      "expected_artist": "Sergio Vargas",
+      "expected_title": "Mala memoria",
+      "query": "Mala memoria Sergio Vargas",
+      "request_id": "song-3ad5a58c1795edbdf2231bd9"
+    },
+    {
+      "expected_artist": "Sergio Vargas",
+      "expected_title": "Vete Y Dile",
+      "query": "Vete Y Dile Sergio Vargas",
+      "request_id": "song-c809e5c401a39aa26ed2c1b3"
+    },
+    {
+      "expected_artist": "Los Hermanos Rosario",
+      "expected_title": "La Dueña del Swing",
+      "query": "La Dueña del Swing Los Hermanos Rosario",
+      "request_id": "song-185c4dc5c2cc499960eea2d1"
+    },
+    {
+      "expected_artist": "Los Hermanos Rosario",
+      "expected_title": "Morena Ven",
+      "query": "Morena Ven Los Hermanos Rosario",
+      "request_id": "song-2362d519f1ceaa98d3c05e93"
+    },
+    {
+      "expected_artist": "Lapiz Conciente",
+      "expected_title": "Carta De Dios",
+      "query": "Carta De Dios Lapiz Conciente",
+      "request_id": "song-f5ee8da2a030d8091badbf5c"
+    },
+    {
+      "expected_artist": "Toño Rosario",
+      "expected_title": "Dale Vieja Dale",
+      "query": "Dale Vieja Dale Toño Rosario",
+      "request_id": "song-b96dbfa3416901abecc4a0e3"
+    },
+    {
+      "expected_artist": "Toño Rosario",
+      "expected_title": "KULIKITAKA (En Vivo) / Mula (Mixed)",
+      "query": "KULIKITAKA (En Vivo) / Mula (Mixed) Toño Rosario",
+      "request_id": "song-1502b73bbbc674238e040880"
+    },
+    {
+      "expected_artist": "Toño Rosario",
+      "expected_title": "Jenny",
+      "query": "Jenny Toño Rosario",
+      "request_id": "song-9764bc2f2b245f42e044af04"
+    },
+    {
+      "expected_artist": "Toño Rosario",
+      "expected_title": "Beso A Beso",
+      "query": "Beso A Beso Toño Rosario",
+      "request_id": "song-5d17b34379378e15c8a74d76"
+    },
+    {
+      "expected_artist": "Milly Quezada,Los Vecinos",
+      "expected_title": "Entre Tu Cuerpo y el Mio",
+      "query": "Entre Tu Cuerpo y el Mio Milly Quezada,Los Vecinos",
+      "request_id": "song-6b2b397ab755c8c67977f44f"
+    },
+    {
+      "expected_artist": "Milly Quezada",
+      "expected_title": "Vive!",
+      "query": "Vive! Milly Quezada",
+      "request_id": "song-fea8fea97cc4ed9ef93c8d9c"
+    },
+    {
+      "expected_artist": "El Virtual",
+      "expected_title": "Paciencia Cero",
+      "query": "Paciencia Cero El Virtual",
+      "request_id": "song-51ebed8ec2e81ea14838ba7d"
+    },
+    {
+      "expected_artist": "JACKBOYS",
+      "expected_title": "WHAT TO DO?",
+      "query": "WHAT TO DO? JACKBOYS",
+      "request_id": "song-e3b9d222f3037c05de42a2f5"
+    },
+    {
+      "expected_artist": "Wilfrido Vargas",
+      "expected_title": "El Africano",
+      "query": "El Africano Wilfrido Vargas",
+      "request_id": "song-9be7b448e7ee98b354b37136"
+    },
+    {
+      "expected_artist": "Wilfrido Vargas",
+      "expected_title": "El Baile del Perrito",
+      "query": "El Baile del Perrito Wilfrido Vargas",
+      "request_id": "song-1919a774fe7b9e3caa7d52ba"
+    },
+    {
+      "expected_artist": "Wilfrido Vargas",
+      "expected_title": "Abusadora",
+      "query": "Abusadora Wilfrido Vargas",
+      "request_id": "song-ad240009956899dd5219c4f3"
+    },
+    {
+      "expected_artist": "Wilfrido Vargas",
+      "expected_title": "Volveré",
+      "query": "Volveré Wilfrido Vargas",
+      "request_id": "song-905b02fffefab8bbd9c15624"
+    },
+    {
+      "expected_artist": "Johnny Ventura",
+      "expected_title": "El Hombre Lloró",
+      "query": "El Hombre Lloró Johnny Ventura",
+      "request_id": "song-a701d3fa9081386e555b2183"
+    },
+    {
+      "expected_artist": "Johnny Ventura",
+      "expected_title": "¿Pitaste?",
+      "query": "¿Pitaste? Johnny Ventura",
+      "request_id": "song-6dc830629aedf825cbb4209a"
+    },
+    {
+      "expected_artist": "GNMzk",
+      "expected_title": "GNMZK CYPHER 2022",
+      "query": "GNMZK CYPHER 2022 GNMzk",
+      "request_id": "song-5288af5393660610244aff28"
+    },
+    {
+      "expected_artist": "Nico Clinico",
+      "expected_title": "Quisqueyano 4",
+      "query": "Quisqueyano 4 Nico Clinico",
+      "request_id": "song-4c9617ef4b87bb815924c44d"
+    },
+    {
+      "expected_artist": "Fernando Villalona",
+      "expected_title": "Amaneciendo",
+      "query": "Amaneciendo Fernando Villalona",
+      "request_id": "song-a9e1aea84e96142dd2c9c890"
+    },
+    {
+      "expected_artist": "Eddy Herrera",
+      "expected_title": "Pégame Tu Vicio",
+      "query": "Pégame Tu Vicio Eddy Herrera",
+      "request_id": "song-b9739e230cb321d3885afe79"
+    },
+    {
+      "expected_artist": "Eddy Herrera",
+      "expected_title": "Tú Eres Ajena",
+      "query": "Tú Eres Ajena Eddy Herrera",
+      "request_id": "song-6373f31417876ba306f12ca6"
+    },
+    {
+      "expected_artist": "Eddy Herrera",
+      "expected_title": "Demasiado Niña",
+      "query": "Demasiado Niña Eddy Herrera",
+      "request_id": "song-983f98fe1d5818c8d2290247"
+    },
+    {
+      "expected_artist": "Eddy Herrera",
+      "expected_title": "Carolina",
+      "query": "Carolina Eddy Herrera",
+      "request_id": "song-da704a13b6ea58d79e205ee6"
+    },
+    {
+      "expected_artist": "Miriam Cruz",
+      "expected_title": "La carnada",
+      "query": "La carnada Miriam Cruz",
+      "request_id": "song-362e13b93c240b32b1d19314"
+    },
+    {
+      "expected_artist": "Miriam Cruz",
+      "expected_title": "Es cosa de el",
+      "query": "Es cosa de el Miriam Cruz",
+      "request_id": "song-bc15c73812eb059b71f96cc6"
+    },
+    {
+      "expected_artist": "Jossie esteban & la patrulla 15",
+      "expected_title": "El tigueron",
+      "query": "El tigueron Jossie esteban & la patrulla 15",
+      "request_id": "song-861096d58050de19b1b033b6"
+    },
+    {
+      "expected_artist": "Jossie Esteban Y La Patrulla 15",
+      "expected_title": "El Can",
+      "query": "El Can Jossie Esteban Y La Patrulla 15",
+      "request_id": "song-4af3ce4636825c6bf28b5dc2"
+    },
+    {
+      "expected_artist": "Ozuna",
+      "expected_title": "Un Lío",
+      "query": "Un Lío Ozuna",
+      "request_id": "song-2d084740c1fd6425bcd67b2e"
+    },
+    {
+      "expected_artist": "Omega El Fuerte",
+      "expected_title": "Chambonea - Live Version",
+      "query": "Chambonea - Live Version Omega El Fuerte",
+      "request_id": "song-10d8c7a80e2e6ef6bc2b8c2a"
+    },
+    {
+      "expected_artist": "Elvis Crespo",
+      "expected_title": "Mi problema",
+      "query": "Mi problema Elvis Crespo",
+      "request_id": "song-6d8c8d65b20281481c2eea2a"
+    },
+    {
+      "expected_artist": "Omega El Fuerte",
+      "expected_title": "Merengue Electrónico",
+      "query": "Merengue Electrónico Omega El Fuerte",
+      "request_id": "song-456a4fe3b124e730e26855cb"
+    },
+    {
+      "expected_artist": "El Alfa",
+      "expected_title": "Gogo Dance",
+      "query": "Gogo Dance El Alfa",
+      "request_id": "song-da67fde3f48cab51b8d0d8c7"
+    },
+    {
+      "expected_artist": "El Alfa",
+      "expected_title": "La Mamá de la Mamá",
+      "query": "La Mamá de la Mamá El Alfa",
+      "request_id": "song-74eb2c1c3d784e35d09ad2f4"
+    },
+    {
+      "expected_artist": "El Alfa",
+      "expected_title": "Singapur (Remix)",
+      "query": "Singapur (Remix) El Alfa",
+      "request_id": "song-24045b40f14abfccb39f884f"
+    },
+    {
+      "expected_artist": "El Alfa",
+      "expected_title": "4K",
+      "query": "4K El Alfa",
+      "request_id": "song-2378a55e8b6f9b4e1d5e56d7"
+    },
+    {
+      "expected_artist": "El Alfa",
+      "expected_title": "Curazao",
+      "query": "Curazao El Alfa",
+      "request_id": "song-cc7093bda1f7b80280422ebf"
+    },
+    {
+      "expected_artist": "El Alfa",
+      "expected_title": "Coronao Now",
+      "query": "Coronao Now El Alfa",
+      "request_id": "song-b11dd20a0d945991a66a94ea"
+    },
+    {
+      "expected_artist": "Tokischa",
+      "expected_title": "Linda",
+      "query": "Linda Tokischa",
+      "request_id": "song-26271de9e8d32ede592ebc55"
+    },
+    {
+      "expected_artist": "Tokischa",
+      "expected_title": "Delincuente",
+      "query": "Delincuente Tokischa",
+      "request_id": "song-9d05a605756b2882ccaa85e0"
+    },
+    {
+      "expected_artist": "Leo RD",
+      "expected_title": "Desacato Escolar",
+      "query": "Desacato Escolar Leo RD",
+      "request_id": "song-21cbe9b42b54665e9a68aaa2"
+    },
+    {
+      "expected_artist": "Genius English Translations",
+      "expected_title": "Marshmello & Tokischa - ESTILAZO (English Translation)",
+      "query": "Marshmello & Tokischa - ESTILAZO (English Translation) Genius English Translations",
+      "request_id": "song-1e07ae7b638b580c45d2496a"
+    },
+    {
+      "expected_artist": "Rochy RD",
+      "expected_title": "Ella No Es Tuya (Remix)",
+      "query": "Ella No Es Tuya (Remix) Rochy RD",
+      "request_id": "song-2ed881aecb6c05d324b7d149"
+    },
+    {
+      "expected_artist": "Rochy RD",
+      "expected_title": "Mi Contacto",
+      "query": "Mi Contacto Rochy RD",
+      "request_id": "song-8066563b2699361b96676ca7"
+    },
+    {
+      "expected_artist": "Rochy RD",
+      "expected_title": "Rumba",
+      "query": "Rumba Rochy RD",
+      "request_id": "song-c730b81a76677ce689e40b9a"
+    },
+    {
+      "expected_artist": "Bulin 47",
+      "expected_title": "Bajo Mundo",
+      "query": "Bajo Mundo Bulin 47",
+      "request_id": "song-dff1b31f0bf60ba1fa73d687"
+    },
+    {
+      "expected_artist": "Chimbala",
+      "expected_title": "El Juidero",
+      "query": "El Juidero Chimbala",
+      "request_id": "song-cba4b4c487f2ff5c4daf04bd"
+    },
+    {
+      "expected_artist": "Ceky Viciny",
+      "expected_title": "Ta To’ (Remix)",
+      "query": "Ta To’ (Remix) Ceky Viciny",
+      "request_id": "song-56c9a744e1ecf1624ad8ea28"
+    },
+    {
+      "expected_artist": "Justin Quiles",
+      "expected_title": "Loco",
+      "query": "Loco Justin Quiles",
+      "request_id": "song-b5e6a342f27e2ed4bb7aa911"
+    },
+    {
+      "expected_artist": "Chimbala",
+      "expected_title": "El Boom",
+      "query": "El Boom Chimbala",
+      "request_id": "song-852628fa6ce34edff39c8def"
+    },
+    {
+      "expected_artist": "Chimbala",
+      "expected_title": "Rueda",
+      "query": "Rueda Chimbala",
+      "request_id": "song-7aec2bee0c9f2d5afce2f81d"
+    },
+    {
+      "expected_artist": "Kiko El Crazy",
+      "expected_title": "La Pampara",
+      "query": "La Pampara Kiko El Crazy",
+      "request_id": "song-beae226ffdabd9fd234d4eb7"
+    },
+    {
+      "expected_artist": "Jowell & Randy",
+      "expected_title": "Se Acabó La Cuarentena",
+      "query": "Se Acabó La Cuarentena Jowell & Randy",
+      "request_id": "song-395cc3d22507fa0f720b5471"
+    },
+    {
+      "expected_artist": "Secreto El Famoso Biberón",
+      "expected_title": "Real Guerrero",
+      "query": "Real Guerrero Secreto El Famoso Biberón",
+      "request_id": "song-0cb5e7ccf8e7787290416973"
+    },
+    {
+      "expected_artist": "Secreto El Famoso Biberón",
+      "expected_title": "Amanecí Contento",
+      "query": "Amanecí Contento Secreto El Famoso Biberón",
+      "request_id": "song-22948029c7ac4675fe60f4db"
+    },
+    {
+      "expected_artist": "Secreto El Famoso Biberón",
+      "expected_title": "De Amor Nadie Se Muere",
+      "query": "De Amor Nadie Se Muere Secreto El Famoso Biberón",
+      "request_id": "song-7444d6378169c91a5cfd1846"
+    },
+    {
+      "expected_artist": "Mozart La Para",
+      "expected_title": "Pa Gozar",
+      "query": "Pa Gozar Mozart La Para",
+      "request_id": "song-909b80328b1fb21d159ecf33"
+    },
+    {
+      "expected_artist": "Mozart La Para",
+      "expected_title": "Levantate",
+      "query": "Levantate Mozart La Para",
+      "request_id": "song-f7adea06dbe98d5aa498f44a"
+    },
+    {
+      "expected_artist": "Mozart La Para",
+      "expected_title": "Bye Bye",
+      "query": "Bye Bye Mozart La Para",
+      "request_id": "song-70787fa55a2b3738eb6b18e8"
+    },
+    {
+      "expected_artist": "Shadow Blow",
+      "expected_title": "Mensaje Directo (DM)",
+      "query": "Mensaje Directo (DM) Shadow Blow",
+      "request_id": "song-ed573b10cdd1a8f045a9fe49"
+    },
+    {
+      "expected_artist": "Shadow Blow",
+      "expected_title": "Tu Con El y Yo Con Ella",
+      "query": "Tu Con El y Yo Con Ella Shadow Blow",
+      "request_id": "song-c89e50213aabc25e8b814a8f"
+    },
+    {
+      "expected_artist": "Lapiz Conciente",
+      "expected_title": "Yo Soy Papá 2",
+      "query": "Yo Soy Papá 2 Lapiz Conciente",
+      "request_id": "song-a87a4ad0b9131babb572f1fc"
+    },
+    {
+      "expected_artist": "Lapiz Conciente",
+      "expected_title": "Amor por Accidente",
+      "query": "Amor por Accidente Lapiz Conciente",
+      "request_id": "song-62fd97ad3617a680f69bed0a"
+    },
+    {
+      "expected_artist": "Lapiz Conciente",
+      "expected_title": "Fuerza de Mujer",
+      "query": "Fuerza de Mujer Lapiz Conciente",
+      "request_id": "song-b0f14a365386c8770d68449c"
+    },
+    {
+      "expected_artist": "El Alfa",
+      "expected_title": "GALAPIN",
+      "query": "GALAPIN El Alfa",
+      "request_id": "song-586fcd738e0b46ea32b90d40"
+    },
+    {
+      "expected_artist": "El Mayor Clásico",
+      "expected_title": "Versace (Remix)",
+      "query": "Versace (Remix) El Mayor Clásico",
+      "request_id": "song-e9ca09462a552897ebd27a9a"
+    },
+    {
+      "expected_artist": "Slow Wave Sleep",
+      "expected_title": "Cortigiani, vil razza dannata (2020Mix)",
+      "query": "Cortigiani, vil razza dannata (2020Mix) Slow Wave Sleep",
+      "request_id": "song-5808c239153e86db1e804d2c"
+    },
+    {
+      "expected_artist": "Calos Malo y Gustavo Maestre",
+      "expected_title": "A Una Sirena",
+      "query": "A Una Sirena Calos Malo y Gustavo Maestre",
+      "request_id": "song-379278431310668130e9dfd5"
+    },
+    {
+      "expected_artist": "Don Miguelo",
+      "expected_title": "Pa Que Me Dan De Eso (Remix)",
+      "query": "Pa Que Me Dan De Eso (Remix) Don Miguelo",
+      "request_id": "song-bdc677f9e504a1dd3f86d709"
+    },
+    {
+      "expected_artist": "Yiyo Sarante",
+      "expected_title": "Corazón De Acero",
+      "query": "Corazón De Acero Yiyo Sarante",
+      "request_id": "song-3270f71ecb85366599f36c3a"
+    },
+    {
+      "expected_artist": "Yiyo Sarante",
+      "expected_title": "Probablemente",
+      "query": "Probablemente Yiyo Sarante",
+      "request_id": "song-080ecf38c6341084641264ff"
+    },
+    {
+      "expected_artist": "Yiyo Sarante",
+      "expected_title": "Salvame",
+      "query": "Salvame Yiyo Sarante",
+      "request_id": "song-31a386e2ed53c635fdff78e3"
+    },
+    {
+      "expected_artist": "Ambur Laineg & Javato Jones",
+      "expected_title": "TUTORIAL LA MIXTAPE",
+      "query": "TUTORIAL LA MIXTAPE Ambur Laineg & Javato Jones",
+      "request_id": "song-dcacd6da51177dfcc244f51f"
+    },
+    {
+      "expected_artist": "Chiquito Team Band",
+      "expected_title": "Lejos De Ti",
+      "query": "Lejos De Ti Chiquito Team Band",
+      "request_id": "song-a3e836ed5674b031f086b839"
+    },
+    {
+      "expected_artist": "Alex Matos",
+      "expected_title": "Si Entendieras",
+      "query": "Si Entendieras Alex Matos",
+      "request_id": "song-8121d282cb2922c02d2e0261"
+    },
+    {
+      "expected_artist": "KEYBLADE",
+      "expected_title": "R.I.P. (Rekt In Pieces)",
+      "query": "R.I.P. (Rekt In Pieces) KEYBLADE",
+      "request_id": "song-fcc6b5b5b509992f0458a6bc"
+    },
+    {
+      "expected_artist": "José Alberto “El Canario”",
+      "expected_title": "Bailemos otra vez",
+      "query": "Bailemos otra vez José Alberto “El Canario”",
+      "request_id": "song-814a76f60095dafdf7d80a4d"
+    },
+    {
+      "expected_artist": "José Alberto “El Canario”",
+      "expected_title": "Discúlpeme Señora",
+      "query": "Discúlpeme Señora José Alberto “El Canario”",
+      "request_id": "song-af158713932392e05baeb4cd"
+    },
+    {
+      "expected_artist": "DiegoLMC",
+      "expected_title": "Decepcion",
+      "query": "Decepcion DiegoLMC",
+      "request_id": "song-b13233ec927ee7b213f1f8ae"
+    },
+    {
+      "expected_artist": "Michel el Buenón",
+      "expected_title": "No Molestar",
+      "query": "No Molestar Michel el Buenón",
+      "request_id": "song-8aa4b74d9e6681d718dbae6d"
+    },
+    {
+      "expected_artist": "Vicente García",
+      "expected_title": "Carmesí",
+      "query": "Carmesí Vicente García",
+      "request_id": "song-f565279207dc20b37d6eca71"
+    },
+    {
+      "expected_artist": "Vicente García",
+      "expected_title": "Dulcito e Coco",
+      "query": "Dulcito e Coco Vicente García",
+      "request_id": "song-b0760700bb335d3efffd7946"
+    },
+    {
+      "expected_artist": "Vicente García",
+      "expected_title": "Te Soñé",
+      "query": "Te Soñé Vicente García",
+      "request_id": "song-dc1b291994a12596bdd32a0b"
+    },
+    {
+      "expected_artist": "Vicente García",
+      "expected_title": "Loma de Cayenas",
+      "query": "Loma de Cayenas Vicente García",
+      "request_id": "song-a842e96156a90864f9e236ba"
+    },
+    {
+      "expected_artist": "Rita Indiana",
+      "expected_title": "El Juidero",
+      "query": "El Juidero Rita Indiana",
+      "request_id": "song-9f16c914510a324850824c53"
+    },
+    {
+      "expected_artist": "Rita Indiana",
+      "expected_title": "La Hora de Volvé",
+      "query": "La Hora de Volvé Rita Indiana",
+      "request_id": "song-18ef73188bc075a9d7d218bd"
+    },
+    {
+      "expected_artist": "Machado de Assis",
+      "expected_title": "Memórias Póstumas de Brás Cubas",
+      "query": "Memórias Póstumas de Brás Cubas Machado de Assis",
+      "request_id": "song-130ad762b92577d9c1786339"
+    },
+    {
+      "expected_artist": "Riccie Oriach",
+      "expected_title": "Viaje Al Infinito",
+      "query": "Viaje Al Infinito Riccie Oriach",
+      "request_id": "song-d3f92ebee5c787adcd4be9c8"
+    },
+    {
+      "expected_artist": "Premier League",
+      "expected_title": "Summer Transfers 2015/16",
+      "query": "Summer Transfers 2015/16 Premier League",
+      "request_id": "song-abe94689bd3e830c55f829d8"
+    },
+    {
+      "expected_artist": "Mashine Kid",
+      "expected_title": "Johnny Soplo",
+      "query": "Johnny Soplo Mashine Kid",
+      "request_id": "song-875db4a1fe14690e7d2ff101"
+    },
+    {
+      "expected_artist": "Toque Profundo",
+      "expected_title": "Mi País",
+      "query": "Mi País Toque Profundo",
+      "request_id": "song-835891d044fcbf1801386609"
+    },
+    {
+      "expected_artist": "Toque Profundo",
+      "expected_title": "Viajero",
+      "query": "Viajero Toque Profundo",
+      "request_id": "song-72e712c61806a7e04529d0ec"
+    },
+    {
+      "expected_artist": "Aljadaqui",
+      "expected_title": "No me podrás olvidar",
+      "query": "No me podrás olvidar Aljadaqui",
+      "request_id": "song-ad938391ad2901bad07d0f76"
+    },
+    {
+      "expected_artist": "La Castañeda",
+      "expected_title": "La transfusion",
+      "query": "La transfusion La Castañeda",
+      "request_id": "song-e90264ac13cd15bf171cfed6"
+    },
+    {
+      "expected_artist": "Ilegales (RD)",
+      "expected_title": "La Morena",
+      "query": "La Morena Ilegales (RD)",
+      "request_id": "song-f4d4b50a299f7a13a8866118"
+    },
+    {
+      "expected_artist": "Ilegales (RD)",
+      "expected_title": "El Taqui Taqui",
+      "query": "El Taqui Taqui Ilegales (RD)",
+      "request_id": "song-a3b4bfdbbc9e7916c54fa67c"
+    },
+    {
+      "expected_artist": "Ilegales (RD)",
+      "expected_title": "Chucuchá",
+      "query": "Chucuchá Ilegales (RD)",
+      "request_id": "song-53da8ea4094a5f97fab3287c"
+    },
+    {
+      "expected_artist": "Ilegales (RD)",
+      "expected_title": "Pasarla Bien",
+      "query": "Pasarla Bien Ilegales (RD)",
+      "request_id": "song-87d4780eb99e7422fa3eb453"
+    },
+    {
+      "expected_artist": "Sandy And Papo",
+      "expected_title": "El alacran",
+      "query": "El alacran Sandy And Papo",
+      "request_id": "song-501b54c572439779f61b0238"
+    },
+    {
+      "expected_artist": "Sandy & Papo Mc",
+      "expected_title": "La Hora De Bailar",
+      "query": "La Hora De Bailar Sandy & Papo Mc",
+      "request_id": "song-f46b0a7cca8e6ee2ec86209c"
+    },
+    {
+      "expected_artist": "Sandy & Papo Mc",
+      "expected_title": "La Chica Sexy",
+      "query": "La Chica Sexy Sandy & Papo Mc",
+      "request_id": "song-e2c44af1303dabe4b1c87d34"
+    },
+    {
+      "expected_artist": "Proyecto Uno",
+      "expected_title": "El Tiburón",
+      "query": "El Tiburón Proyecto Uno",
+      "request_id": "song-9fecebce7abc743b146ffc98"
+    },
+    {
+      "expected_artist": "Proyecto Uno",
+      "expected_title": "Esta Pegao",
+      "query": "Esta Pegao Proyecto Uno",
+      "request_id": "song-665fa06266e548b76541ba05"
+    },
+    {
+      "expected_artist": "Darkiel",
+      "expected_title": "Me Dijeron",
+      "query": "Me Dijeron Darkiel",
+      "request_id": "song-d61cfb312e2d76b34e7924b0"
+    },
+    {
+      "expected_artist": "Mark B",
+      "expected_title": "Playa y Arena (Remix)",
+      "query": "Playa y Arena (Remix) Mark B",
+      "request_id": "song-7fe35ede90f048babd2c69ad"
+    },
+    {
+      "expected_artist": "Mark B",
+      "expected_title": "Vamos a Ponernos Locos",
+      "query": "Vamos a Ponernos Locos Mark B",
+      "request_id": "song-f570412d90f0004984386c56"
+    },
+    {
+      "expected_artist": "TYKING",
+      "expected_title": "DDPK",
+      "query": "DDPK TYKING",
+      "request_id": "song-1e50274e7e5cfc803aac96b9"
+    },
+    {
+      "expected_artist": "Seguí El Cirujano",
+      "expected_title": "AM a PM",
+      "query": "AM a PM Seguí El Cirujano",
+      "request_id": "song-425cfc3ca9a32c19c03d5c75"
+    },
+    {
+      "expected_artist": "Immortal Technique",
+      "expected_title": "Peruvian Cocaine",
+      "query": "Peruvian Cocaine Immortal Technique",
+      "request_id": "song-9715af43d972503f1f0f7d27"
+    },
+    {
+      "expected_artist": "Techy Fatule",
+      "expected_title": "Volveras",
+      "query": "Volveras Techy Fatule",
+      "request_id": "song-8358bbaecee6b0099c58b9dc"
+    },
+    {
+      "expected_artist": "Manny Cruz",
+      "expected_title": "Santo Domingo",
+      "query": "Santo Domingo Manny Cruz",
+      "request_id": "song-596e62a18ec213ef40f4607f"
+    },
+    {
+      "expected_artist": "Manny Cruz",
+      "expected_title": "Sabes Enamorarme",
+      "query": "Sabes Enamorarme Manny Cruz",
+      "request_id": "song-7346d7a879e31aee8a40e2d1"
+    },
+    {
+      "expected_artist": "Manny Cruz",
+      "expected_title": "Bailando Contigo",
+      "query": "Bailando Contigo Manny Cruz",
+      "request_id": "song-1c3f5900ee1fc9254314b2a0"
+    },
+    {
+      "expected_artist": "Daniel Santacruz",
+      "expected_title": "Lento",
+      "query": "Lento Daniel Santacruz",
+      "request_id": "song-b31eb5be6a9e6230d2c8a39f"
+    },
+    {
+      "expected_artist": "Pavel Nuñez",
+      "expected_title": "Te Dí",
+      "query": "Te Dí Pavel Nuñez",
+      "request_id": "song-913699d3dadab9c0bf7d707b"
+    },
+    {
+      "expected_artist": "Pavel Nuñez",
+      "expected_title": "Viene gente",
+      "query": "Viene gente Pavel Nuñez",
+      "request_id": "song-eeccfb9efaa05c3d5d359fcc"
+    },
+    {
+      "expected_artist": "Pacho El Antifeka",
+      "expected_title": "Acostao",
+      "query": "Acostao Pacho El Antifeka",
+      "request_id": "song-6080f8b224763013568611b4"
+    },
+    {
+      "expected_artist": "Kiubbah Malon",
+      "expected_title": "Quiero Ser",
+      "query": "Quiero Ser Kiubbah Malon",
+      "request_id": "song-3754ce78bb253f5e402eea8c"
+    },
+    {
+      "expected_artist": "Alex Bueno",
+      "expected_title": "Que Vuelva",
+      "query": "Que Vuelva Alex Bueno",
+      "request_id": "song-fadc74164396ad0bba0076ef"
+    },
+    {
+      "expected_artist": "Alex Bueno",
+      "expected_title": "Me Va, Me Va",
+      "query": "Me Va, Me Va Alex Bueno",
+      "request_id": "song-58ba20a86c3beb4d7598c6d1"
+    },
+    {
+      "expected_artist": "Alex Bueno",
+      "expected_title": "Colegiada",
+      "query": "Colegiada Alex Bueno",
+      "request_id": "song-c9ce61adc8227f0883b2b496"
+    },
+    {
+      "expected_artist": "Fefita La Grande",
+      "expected_title": "La chiflera",
+      "query": "La chiflera Fefita La Grande",
+      "request_id": "song-d08a3754f619fb58c8f26937"
+    },
+    {
+      "expected_artist": "Fefita La Grande",
+      "expected_title": "Vamos a Hablar Ingles",
+      "query": "Vamos a Hablar Ingles Fefita La Grande",
+      "request_id": "song-adb7291e6b55ff22e83d65bf"
+    },
+    {
+      "expected_artist": "Dogma Crew",
+      "expected_title": "Los Paisajes Cambian",
+      "query": "Los Paisajes Cambian Dogma Crew",
+      "request_id": "song-983aa1898190980f89f680f6"
+    },
+    {
+      "expected_artist": "Kinito Mendez",
+      "expected_title": "El baile del sua sua",
+      "query": "El baile del sua sua Kinito Mendez",
+      "request_id": "song-87edb6dc11e3117b75381fe4"
+    },
+    {
+      "expected_artist": "Kinito Mendez",
+      "expected_title": "Cachamba",
+      "query": "Cachamba Kinito Mendez",
+      "request_id": "song-1bffd55cac9c8ff42641143e"
+    },
+    {
+      "expected_artist": "Midas Alonso",
+      "expected_title": "Tyrion",
+      "query": "Tyrion Midas Alonso",
+      "request_id": "song-a6a9b58264249e1e156951c4"
+    },
+    {
+      "expected_artist": "Dr.Drer & CRC Posse",
+      "expected_title": "Generale",
+      "query": "Generale Dr.Drer & CRC Posse",
+      "request_id": "song-4b2818cb32df64390e74f376"
+    },
+    {
+      "expected_artist": "Rikarena",
+      "expected_title": "Ella Es Tan Bella",
+      "query": "Ella Es Tan Bella Rikarena",
+      "request_id": "song-cfeb36a73677b3fd7bfb13cd"
+    },
+    {
+      "expected_artist": "Rikarena",
+      "expected_title": "Era mentira",
+      "query": "Era mentira Rikarena",
+      "request_id": "song-20d1d7531ef1309073f8438d"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "El Farolito",
+      "query": "El Farolito Juan Luis Guerra",
+      "request_id": "song-27f325e1d1641982884af027"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "A Pedir Su Mano",
+      "query": "A Pedir Su Mano Juan Luis Guerra",
+      "request_id": "song-3f53541ad6c89fdc87e7afde"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "La Cosquillita",
+      "query": "La Cosquillita Juan Luis Guerra",
+      "request_id": "song-de6b9125c0e7eb29c1e776b7"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Bachata en Fukuoka",
+      "query": "Bachata en Fukuoka Juan Luis Guerra",
+      "request_id": "song-93149bc438ae98cb82de5e7d"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Todo Tiene Su Hora",
+      "query": "Todo Tiene Su Hora Juan Luis Guerra",
+      "request_id": "song-b37ef07a8818872feb5dee43"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Odio",
+      "query": "Odio Romeo Santos",
+      "request_id": "song-7bbfe5c037e218e5a7ec499c"
+    },
+    {
+      "expected_artist": "Yung Beef",
+      "expected_title": "SINGAMO REMIX",
+      "query": "SINGAMO REMIX Yung Beef",
+      "request_id": "song-e0566096ef814b68cf9a6825"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Sus Huellas",
+      "query": "Sus Huellas Romeo Santos",
+      "request_id": "song-56ff8425e043b5291b8f60c9"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Bebo",
+      "query": "Bebo Romeo Santos",
+      "request_id": "song-a38400f416c1a3ca52e044b3"
+    },
+    {
+      "expected_artist": "Aventura",
+      "expected_title": "La boda",
+      "query": "La boda Aventura",
+      "request_id": "song-ca81ee53d066ea96c99ee081"
+    },
+    {
+      "expected_artist": "Aventura",
+      "expected_title": "Hermanita",
+      "query": "Hermanita Aventura",
+      "request_id": "song-414de3525e001e5c57ba4f8a"
+    },
+    {
+      "expected_artist": "Aventura",
+      "expected_title": "Enséñame a Olvidar",
+      "query": "Enséñame a Olvidar Aventura",
+      "request_id": "song-a19af4d01322d506f8dfb622"
+    },
+    {
+      "expected_artist": "Aventura",
+      "expected_title": "Mi Corazoncito",
+      "query": "Mi Corazoncito Aventura",
+      "request_id": "song-47ae45fd0fa4d9a6d46ae324"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Trust",
+      "query": "Trust Romeo Santos",
+      "request_id": "song-da33cbe232d53c2312080a08"
+    },
+    {
+      "expected_artist": "Anthony Santos",
+      "expected_title": "La Jaula de Oro",
+      "query": "La Jaula de Oro Anthony Santos",
+      "request_id": "song-db3156a9e43884b45709d5be"
+    },
+    {
+      "expected_artist": "Anthony Santos",
+      "expected_title": "Ay Mujer",
+      "query": "Ay Mujer Anthony Santos",
+      "request_id": "song-bfa4cce17ad8c422a8d5f3a2"
+    },
+    {
+      "expected_artist": "Ozuna",
+      "expected_title": "Ibiza",
+      "query": "Ibiza Ozuna",
+      "request_id": "song-9cbf9a687aa000dd273c472a"
+    },
+    {
+      "expected_artist": "Frank Reyes",
+      "expected_title": "Quien De Los Dos",
+      "query": "Quien De Los Dos Frank Reyes",
+      "request_id": "song-dd0bb7e73f445cb097fbf9b1"
+    },
+    {
+      "expected_artist": "Frank Reyes",
+      "expected_title": "Sigo vivo",
+      "query": "Sigo vivo Frank Reyes",
+      "request_id": "song-cb1ac9fa180b70dde12dfc42"
+    },
+    {
+      "expected_artist": "Frank Reyes",
+      "expected_title": "El Alcohol",
+      "query": "El Alcohol Frank Reyes",
+      "request_id": "song-0142c780f05f029faee5e38a"
+    },
+    {
+      "expected_artist": "Raulin Rodriguez",
+      "expected_title": "Me la pusieron dificil",
+      "query": "Me la pusieron dificil Raulin Rodriguez",
+      "request_id": "song-168b22b5317e94d23adf0ce0"
+    },
+    {
+      "expected_artist": "Raulin Rodriguez",
+      "expected_title": "Quiereme",
+      "query": "Quiereme Raulin Rodriguez",
+      "request_id": "song-c027c9d7e64ca243acfcfec6"
+    },
+    {
+      "expected_artist": "Raulin Rodriguez",
+      "expected_title": "Piel sin alma",
+      "query": "Piel sin alma Raulin Rodriguez",
+      "request_id": "song-58c6bd39826739bdaa5f8e41"
+    },
+    {
+      "expected_artist": "Hector Acosta “El Torito”",
+      "expected_title": "Con que ojos",
+      "query": "Con que ojos Hector Acosta “El Torito”",
+      "request_id": "song-3ea2466955ea09207f475c05"
+    },
+    {
+      "expected_artist": "Zacarías Ferreira",
+      "expected_title": "Cuanto duele que te vas",
+      "query": "Cuanto duele que te vas Zacarías Ferreira",
+      "request_id": "song-8f24496b22382307776316db"
+    },
+    {
+      "expected_artist": "Zacarías Ferreira",
+      "expected_title": "Quedate conmigo",
+      "query": "Quedate conmigo Zacarías Ferreira",
+      "request_id": "song-3ae1e361deb29f6f6eee4771"
+    },
+    {
+      "expected_artist": "Zacarías Ferreira",
+      "expected_title": "Te lo pido a gritos",
+      "query": "Te lo pido a gritos Zacarías Ferreira",
+      "request_id": "song-49119c81a54f17da8e02f065"
+    },
+    {
+      "expected_artist": "Joe Veras",
+      "expected_title": "El Hombre De Tu Vida",
+      "query": "El Hombre De Tu Vida Joe Veras",
+      "request_id": "song-c56294ab50f1eb3b3a1a0668"
+    },
+    {
+      "expected_artist": "Joe Veras",
+      "expected_title": "Inténtalo Tú",
+      "query": "Inténtalo Tú Joe Veras",
+      "request_id": "song-773a0f2a5f31c9382e756372"
+    },
+    {
+      "expected_artist": "Elvis Martinez",
+      "expected_title": "La luz de mis ojos",
+      "query": "La luz de mis ojos Elvis Martinez",
+      "request_id": "song-7c3197064002cbf23160d05f"
+    },
+    {
+      "expected_artist": "Luis Vargas",
+      "expected_title": "Que Venga",
+      "query": "Que Venga Luis Vargas",
+      "request_id": "song-541fe9234c194d1b330017b1"
+    },
+    {
+      "expected_artist": "Luis Vargas",
+      "expected_title": "La Mortificadora",
+      "query": "La Mortificadora Luis Vargas",
+      "request_id": "song-7d105d7e7efd432edba39869"
+    },
+    {
+      "expected_artist": "Sergio Vargas",
+      "expected_title": "Magia",
+      "query": "Magia Sergio Vargas",
+      "request_id": "song-3e5d1a672609ae4f9eaf7878"
+    },
+    {
+      "expected_artist": "Sergio Vargas",
+      "expected_title": "Madre Mia",
+      "query": "Madre Mia Sergio Vargas",
+      "request_id": "song-18aaa640707bf1db3552fc2b"
+    },
+    {
+      "expected_artist": "Los Hermanos Rosario",
+      "expected_title": "Y Es Fácil!",
+      "query": "Y Es Fácil! Los Hermanos Rosario",
+      "request_id": "song-ef90fcb30d1a07ac5b1ce039"
+    },
+    {
+      "expected_artist": "Los Hermanos Rosario",
+      "expected_title": "La Dueña Del Swing (Cesar Mannix Remix)",
+      "query": "La Dueña Del Swing (Cesar Mannix Remix) Los Hermanos Rosario",
+      "request_id": "song-32d8f22994b659981293e9e3"
+    },
+    {
+      "expected_artist": "Toño Rosario",
+      "expected_title": "Resistire",
+      "query": "Resistire Toño Rosario",
+      "request_id": "song-c29f8fb386707cde9ee676d8"
+    },
+    {
+      "expected_artist": "Toño Rosario",
+      "expected_title": "Estupida",
+      "query": "Estupida Toño Rosario",
+      "request_id": "song-30bff2fa18e97eefd8d81eb2"
+    },
+    {
+      "expected_artist": "Milly Quezada,Los Vecinos",
+      "expected_title": "La Guacherna",
+      "query": "La Guacherna Milly Quezada,Los Vecinos",
+      "request_id": "song-981a4841625499f034342d19"
+    },
+    {
+      "expected_artist": "Virginia Woolf",
+      "expected_title": "Three Guineas (Chap. 1)",
+      "query": "Three Guineas (Chap. 1) Virginia Woolf",
+      "request_id": "song-74edb4d28d5941d61ac1b444"
+    },
+    {
+      "expected_artist": "James Joyce",
+      "expected_title": "Finnegans Wake (Chap. 2.3)",
+      "query": "Finnegans Wake (Chap. 2.3) James Joyce",
+      "request_id": "song-3b1cd28b9c2c999e5fb37bf5"
+    },
+    {
+      "expected_artist": "Johnny Ventura",
+      "expected_title": "Capullo y Sorrullo",
+      "query": "Capullo y Sorrullo Johnny Ventura",
+      "request_id": "song-647c2eca39a4387091a1b4d8"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "15,500 Noches",
+      "query": "15,500 Noches Romeo Santos",
+      "request_id": "song-9cc563c430bfc329e421216c"
+    },
+    {
+      "expected_artist": "Vico C",
+      "expected_title": "La Niña Modelo",
+      "query": "La Niña Modelo Vico C",
+      "request_id": "song-43cd99608120e50fb0364154"
+    },
+    {
+      "expected_artist": "El Alfa",
+      "expected_title": "Arrebatao",
+      "query": "Arrebatao El Alfa",
+      "request_id": "song-43a9d60cc882f4901307189a"
+    },
+    {
+      "expected_artist": "El Alfa",
+      "expected_title": "Suave (Remix)",
+      "query": "Suave (Remix) El Alfa",
+      "request_id": "song-8f9aa1c4f4316f080cda970b"
+    },
+    {
+      "expected_artist": "Genius English Translations",
+      "expected_title": "El Alfa - Mera Woo (English Translation)",
+      "query": "El Alfa - Mera Woo (English Translation) Genius English Translations",
+      "request_id": "song-7052cd45ea31c1187f0ac689"
+    },
+    {
+      "expected_artist": "Tokischa",
+      "expected_title": "Kilos de Amor",
+      "query": "Kilos de Amor Tokischa",
+      "request_id": "song-bcb41d68592b408f8b2124ee"
+    },
+    {
+      "expected_artist": "Rochy RD",
+      "expected_title": "Uva Bombom",
+      "query": "Uva Bombom Rochy RD",
+      "request_id": "song-595ca9ca97c243bbae49c515"
+    },
+    {
+      "expected_artist": "Rochy RD",
+      "expected_title": "Trucho",
+      "query": "Trucho Rochy RD",
+      "request_id": "song-78d73154654360fa3618a065"
+    },
+    {
+      "expected_artist": "Chimbala",
+      "expected_title": "Feliz",
+      "query": "Feliz Chimbala",
+      "request_id": "song-e27db2670ff9f024e3683923"
+    },
+    {
+      "expected_artist": "Chimbala",
+      "expected_title": "Maniquí",
+      "query": "Maniquí Chimbala",
+      "request_id": "song-8579314e3a5731a821b043dd"
+    },
+    {
+      "expected_artist": "Secreto El Famoso Biberón",
+      "expected_title": "Maldito Cúpido",
+      "query": "Maldito Cúpido Secreto El Famoso Biberón",
+      "request_id": "song-8e404ec8bc9ac1f6af24555b"
+    },
+    {
+      "expected_artist": "Mozart La Para",
+      "expected_title": "Mujeres",
+      "query": "Mujeres Mozart La Para",
+      "request_id": "song-afda4f6f9c93dd2b52f908a8"
+    },
+    {
+      "expected_artist": "Mozart La Para",
+      "expected_title": "Dáñalo",
+      "query": "Dáñalo Mozart La Para",
+      "request_id": "song-c83397999e0acb10483d96c2"
+    },
+    {
+      "expected_artist": "El Mayor Clásico",
+      "expected_title": "Como Antes",
+      "query": "Como Antes El Mayor Clásico",
+      "request_id": "song-767dbfc436eecd80d508634a"
+    },
+    {
+      "expected_artist": "AlexF13",
+      "expected_title": "PAL DE BARRAS VOL.1",
+      "query": "PAL DE BARRAS VOL.1 AlexF13",
+      "request_id": "song-e394d2e274c22fc259a6a8d3"
+    },
+    {
+      "expected_artist": "Lapiz Conciente",
+      "expected_title": "Pin Pun",
+      "query": "Pin Pun Lapiz Conciente",
+      "request_id": "song-e3a219c4ff5cb7d5be01e3df"
+    },
+    {
+      "expected_artist": "Batalla de los Dioses",
+      "expected_title": "God Level: La Batalla de los Dioses",
+      "query": "God Level: La Batalla de los Dioses Batalla de los Dioses",
+      "request_id": "song-a2c4e2c9c3c2c3d1421e0c34"
+    },
+    {
+      "expected_artist": "El Mayor Clásico",
+      "expected_title": "El Chiva",
+      "query": "El Chiva El Mayor Clásico",
+      "request_id": "song-38c2e098d1f5358c5a12d239"
+    },
+    {
+      "expected_artist": "Musicólogo The Libro",
+      "expected_title": "Dinero Fácil (Remix)",
+      "query": "Dinero Fácil (Remix) Musicólogo The Libro",
+      "request_id": "song-8ef4cbb336d9aca0e9e0b97d"
+    },
+    {
+      "expected_artist": "Jay Morales",
+      "expected_title": "Tus Huellas",
+      "query": "Tus Huellas Jay Morales",
+      "request_id": "song-bdca093aaaa50a5bb4f33f6f"
+    },
+    {
+      "expected_artist": "Yiyo Sarante",
+      "expected_title": "Un hombre normal",
+      "query": "Un hombre normal Yiyo Sarante",
+      "request_id": "song-bfd7a3a0529e145395e745b5"
+    },
+    {
+      "expected_artist": "Movie Scripts",
+      "expected_title": "Scarface (Script)",
+      "query": "Scarface (Script) Movie Scripts",
+      "request_id": "song-491e3526032a1b9efc9f91de"
+    },
+    {
+      "expected_artist": "Chiquito Team Band",
+      "expected_title": "Nos desacatamos",
+      "query": "Nos desacatamos Chiquito Team Band",
+      "request_id": "song-6dd18d65b80518c57a31c078"
+    },
+    {
+      "expected_artist": "Nova & Jory",
+      "expected_title": "Bienvenidos A Mi Mundo",
+      "query": "Bienvenidos A Mi Mundo Nova & Jory",
+      "request_id": "song-77d1e9b13b2299e27e4cbc4e"
+    },
+    {
+      "expected_artist": "Alex Matos",
+      "expected_title": "Amor Perfecto",
+      "query": "Amor Perfecto Alex Matos",
+      "request_id": "song-0f0ad3f8643ae0ceb511e881"
+    },
+    {
+      "expected_artist": "Vicente García",
+      "expected_title": "Bachata en Kingston",
+      "query": "Bachata en Kingston Vicente García",
+      "request_id": "song-c29fb2b6147ad0756166bfe1"
+    },
+    {
+      "expected_artist": "Vicente García",
+      "expected_title": "Mal de Amore",
+      "query": "Mal de Amore Vicente García",
+      "request_id": "song-9db212e0a50efd0f4edf86c5"
+    },
+    {
+      "expected_artist": "J Álvarez",
+      "expected_title": "Tú Quieres",
+      "query": "Tú Quieres J Álvarez",
+      "request_id": "song-dee12c4cbbdf03a6c6fe3ebd"
+    },
+    {
+      "expected_artist": "Genius Brasil",
+      "expected_title": "Awards 2016: Vencedores",
+      "query": "Awards 2016: Vencedores Genius Brasil",
+      "request_id": "song-cbea458f5607f0c02e502a63"
+    },
+    {
+      "expected_artist": "Toque Profundo",
+      "expected_title": "Dando Aco",
+      "query": "Dando Aco Toque Profundo",
+      "request_id": "song-890830e0f1888fe0e1ac0f3e"
+    },
+    {
+      "expected_artist": "Sho-Hai",
+      "expected_title": "La Bella Muerte",
+      "query": "La Bella Muerte Sho-Hai",
+      "request_id": "song-5fa45a8eae7f50e947e6c5f3"
+    },
+    {
+      "expected_artist": "Ilegales (RD)",
+      "expected_title": "Fiesta Caliente",
+      "query": "Fiesta Caliente Ilegales (RD)",
+      "request_id": "song-addaa82a057ab49fd5c012ab"
+    },
+    {
+      "expected_artist": "Ilegales (RD)",
+      "expected_title": "Enamorao",
+      "query": "Enamorao Ilegales (RD)",
+      "request_id": "song-e0921cea36dafe02bbbae70f"
+    },
+    {
+      "expected_artist": "Sandy & Papo Mc",
+      "expected_title": "Mueve Mueve (I Like To Move It)",
+      "query": "Mueve Mueve (I Like To Move It) Sandy & Papo Mc",
+      "request_id": "song-17ba2857ed4dd6d2c745341e"
+    },
+    {
+      "expected_artist": "Proyecto Uno",
+      "expected_title": "25 horas",
+      "query": "25 horas Proyecto Uno",
+      "request_id": "song-668926d7ddc58e7201348764"
+    },
+    {
+      "expected_artist": "Techy Fatule",
+      "expected_title": "Tú Me Quieres Más",
+      "query": "Tú Me Quieres Más Techy Fatule",
+      "request_id": "song-0d96525b01637d0fc95a26df"
+    },
+    {
+      "expected_artist": "Manny Cruz",
+      "expected_title": "Estoy Completo",
+      "query": "Estoy Completo Manny Cruz",
+      "request_id": "song-53a8c3925f738a22ea584e66"
+    },
+    {
+      "expected_artist": "Alex Bueno",
+      "expected_title": "Jardin Prohibido",
+      "query": "Jardin Prohibido Alex Bueno",
+      "request_id": "song-ef4546c0cae72ccb1f6f62b9"
+    },
+    {
+      "expected_artist": "Ñejo",
+      "expected_title": "Querida Vieja",
+      "query": "Querida Vieja Ñejo",
+      "request_id": "song-ab146252f500910355f2da09"
+    },
+    {
+      "expected_artist": "Versoterismo",
+      "expected_title": "Paseo en el Delorean",
+      "query": "Paseo en el Delorean Versoterismo",
+      "request_id": "song-6e640b70a87d22bad6dd2339"
+    },
+    {
+      "expected_artist": "Kinito Mendez",
+      "expected_title": "Suero de amor",
+      "query": "Suero de amor Kinito Mendez",
+      "request_id": "song-5839da896a31b6ac3efcb15f"
+    },
+    {
+      "expected_artist": "Whitest Taino Alive",
+      "expected_title": "Duran Duran Duran",
+      "query": "Duran Duran Duran Whitest Taino Alive",
+      "request_id": "song-2b0e72c3050516b23e366da8"
+    },
+    {
+      "expected_artist": "El Chaval de la Bachata",
+      "expected_title": "Donde Estan Esos Amigos",
+      "query": "Donde Estan Esos Amigos El Chaval de la Bachata",
+      "request_id": "song-76004cef0082783c3ef2a126"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Canalla",
+      "query": "Canalla Romeo Santos",
+      "request_id": "song-9c92c4ac421e519f8c8562f3"
+    },
+    {
+      "expected_artist": "Yoskar Sarante",
+      "expected_title": "Llora Alma Mia",
+      "query": "Llora Alma Mia Yoskar Sarante",
+      "request_id": "song-7ae2ce4003d420ae488f2105"
+    },
+    {
+      "expected_artist": "Yoskar Sarante",
+      "expected_title": "No Tengo Suerte En El Amor",
+      "query": "No Tengo Suerte En El Amor Yoskar Sarante",
+      "request_id": "song-d9a172b559904809d1dcc7b7"
+    },
+    {
+      "expected_artist": "Yoskar Sarante",
+      "expected_title": "Guitarra",
+      "query": "Guitarra Yoskar Sarante",
+      "request_id": "song-7c1c53bd895d4147bf306ded"
+    },
+    {
+      "expected_artist": "Monchy & Alexandra",
+      "expected_title": "Hoja En Blanco",
+      "query": "Hoja En Blanco Monchy & Alexandra",
+      "request_id": "song-0c0a5bf1870df8e8e8a27e37"
+    },
+    {
+      "expected_artist": "Monchy & Alexandra",
+      "expected_title": "Dos Locos",
+      "query": "Dos Locos Monchy & Alexandra",
+      "request_id": "song-f3da16ec5b41c01c06ef95e4"
+    },
+    {
+      "expected_artist": "Monchy & Alexandra",
+      "expected_title": "Perdidos",
+      "query": "Perdidos Monchy & Alexandra",
+      "request_id": "song-6ad6f97eb8c985ff1c964483"
+    },
+    {
+      "expected_artist": "Eladio Romero Santos",
+      "expected_title": "Juan En La Ciudad",
+      "query": "Juan En La Ciudad Eladio Romero Santos",
+      "request_id": "song-e067c8511ecca1b6f54a5be8"
+    },
+    {
+      "expected_artist": "Eladio Romero Santos",
+      "expected_title": "La Mujer Policía",
+      "query": "La Mujer Policía Eladio Romero Santos",
+      "request_id": "song-ddca958e616e3cee8d16da65"
+    },
+    {
+      "expected_artist": "Natalio Alberto Nisman",
+      "expected_title": "Denuncia Nisman",
+      "query": "Denuncia Nisman Natalio Alberto Nisman",
+      "request_id": "song-ecf091eb80c878e4c3e4d945"
+    },
+    {
+      "expected_artist": "Blas Duran JR",
+      "expected_title": "El Conejo",
+      "query": "El Conejo Blas Duran JR",
+      "request_id": "song-2c9dddf89e7d388a71323225"
+    },
+    {
+      "expected_artist": "Teodoro Reyes",
+      "expected_title": "Vuelve Con Tu Papá",
+      "query": "Vuelve Con Tu Papá Teodoro Reyes",
+      "request_id": "song-2d1ca566e4e6b2b54a989d57"
+    },
+    {
+      "expected_artist": "Teodoro Reyes",
+      "expected_title": "Los pobres también aman",
+      "query": "Los pobres también aman Teodoro Reyes",
+      "request_id": "song-9865c2c39e5dfc6704550bcf"
+    },
+    {
+      "expected_artist": "El Chaval de la Bachata",
+      "expected_title": "Homenaje a Luis Segura - Live",
+      "query": "Homenaje a Luis Segura - Live El Chaval de la Bachata",
+      "request_id": "song-d203a27c7a2f60885e5a094f"
+    },
+    {
+      "expected_artist": "Luis Segura",
+      "expected_title": "Traicionera",
+      "query": "Traicionera Luis Segura",
+      "request_id": "song-47075e2e4e76272a20e111b9"
+    },
+    {
+      "expected_artist": "José Manuel Calderón",
+      "expected_title": "Borracho de amor",
+      "query": "Borracho de amor José Manuel Calderón",
+      "request_id": "song-55f8117b9e6ab92abb2d15b0"
+    },
+    {
+      "expected_artist": "Lopes",
+      "expected_title": "Rangos",
+      "query": "Rangos Lopes",
+      "request_id": "song-48d518aa1503bce234b28674"
+    },
+    {
+      "expected_artist": "Ébano",
+      "expected_title": "Plaza Roma",
+      "query": "Plaza Roma Ébano",
+      "request_id": "song-7da51f5ae1737b26c8658956"
+    },
+    {
+      "expected_artist": "Angel Canales",
+      "expected_title": "Quisquella",
+      "query": "Quisquella Angel Canales",
+      "request_id": "song-d452b3035b04fb8c1ef0df11"
+    },
+    {
+      "expected_artist": "DJ Scuff",
+      "expected_title": "Freestyle #019",
+      "query": "Freestyle #019 DJ Scuff",
+      "request_id": "song-787c3d19bfa271777ea81598"
+    },
+    {
+      "expected_artist": "DLG (Dark Latin Groove)",
+      "expected_title": "Juliana",
+      "query": "Juliana DLG (Dark Latin Groove)",
+      "request_id": "song-f079c894a5ca68faff5f23d9"
+    },
+    {
+      "expected_artist": "Arturo Mercado Jr",
+      "expected_title": "Noches de Arabia (2019)",
+      "query": "Noches de Arabia (2019) Arturo Mercado Jr",
+      "request_id": "song-56c4d5fd439155f7afcd1b7e"
+    },
+    {
+      "expected_artist": "Tekay",
+      "expected_title": "Lyrics",
+      "query": "Lyrics Tekay",
+      "request_id": "song-149ea28cd7ee036d9237cd9f"
+    },
+    {
+      "expected_artist": "OPYI, Cross MX, Lee Kartiér, Over Hill$ & Birat Bitz",
+      "expected_title": "Allá Afuera",
+      "query": "Allá Afuera OPYI, Cross MX, Lee Kartiér, Over Hill$ & Birat Bitz",
+      "request_id": "song-737ad98eb3355215a78443b9"
+    },
+    {
+      "expected_artist": "Bonny Cepeda",
+      "expected_title": "Una Fotografia",
+      "query": "Una Fotografia Bonny Cepeda",
+      "request_id": "song-c8627c4c0eba207feeaa4f1d"
+    },
+    {
+      "expected_artist": "Bonny Cepeda",
+      "expected_title": "Asesina",
+      "query": "Asesina Bonny Cepeda",
+      "request_id": "song-f0aeb262d88e27d3dbe4a295"
+    },
+    {
+      "expected_artist": "Bonny Cepeda",
+      "expected_title": "¡ay doctor!",
+      "query": "¡ay doctor! Bonny Cepeda",
+      "request_id": "song-b15e9af075dacc29a2d18a80"
+    },
+    {
+      "expected_artist": "Neo Pistea",
+      "expected_title": "CIANURO",
+      "query": "CIANURO Neo Pistea",
+      "request_id": "song-de32386d213015494acb3435"
+    },
+    {
+      "expected_artist": "Cri-Cri",
+      "expected_title": "Caminito de la Escuela",
+      "query": "Caminito de la Escuela Cri-Cri",
+      "request_id": "song-456317d578528b8865019a14"
+    },
+    {
+      "expected_artist": "Elvis Crespo",
+      "expected_title": "Lluvia y Samba",
+      "query": "Lluvia y Samba Elvis Crespo",
+      "request_id": "song-abdf589178f92096adbc6aa6"
+    },
+    {
+      "expected_artist": "Vico C",
+      "expected_title": "Blanca",
+      "query": "Blanca Vico C",
+      "request_id": "song-780344746228aa1ae33dc903"
+    },
+    {
+      "expected_artist": "Héctor “El Father”",
+      "expected_title": "Caseria",
+      "query": "Caseria Héctor “El Father”",
+      "request_id": "song-9e8892b011caf77801cfd427"
+    },
+    {
+      "expected_artist": "Las Chicas Del Can",
+      "expected_title": "Juana La Cubana",
+      "query": "Juana La Cubana Las Chicas Del Can",
+      "request_id": "song-5ee5668baab6004f589cd8d8"
+    },
+    {
+      "expected_artist": "Las Chicas Del Can",
+      "expected_title": "El Negro No Puede",
+      "query": "El Negro No Puede Las Chicas Del Can",
+      "request_id": "song-3e00572a12096d619572fc5b"
+    },
+    {
+      "expected_artist": "Proyecto Uno",
+      "expected_title": "Latinos",
+      "query": "Latinos Proyecto Uno",
+      "request_id": "song-9268f9c14f8b9bd0040e3c24"
+    },
+    {
+      "expected_artist": "Sokez",
+      "expected_title": "Los Niños del Afromarket 11",
+      "query": "Los Niños del Afromarket 11 Sokez",
+      "request_id": "song-8ea1b80835bdc21e40d377dc"
+    },
+    {
+      "expected_artist": "Rubby Pérez",
+      "expected_title": "Volveré",
+      "query": "Volveré Rubby Pérez",
+      "request_id": "song-1eb17d6b2aa17e6e70389b66"
+    },
+    {
+      "expected_artist": "Rubby Pérez",
+      "expected_title": "El perro ajeno",
+      "query": "El perro ajeno Rubby Pérez",
+      "request_id": "song-6e9767697ac401e6bcbd1939"
+    },
+    {
+      "expected_artist": "Rubby Pérez",
+      "expected_title": "Buscando Tus Besos",
+      "query": "Buscando Tus Besos Rubby Pérez",
+      "request_id": "song-636a3b4ea2870f6c3aead68e"
+    },
+    {
+      "expected_artist": "Sergio Vargas",
+      "expected_title": "La quiero a morir",
+      "query": "La quiero a morir Sergio Vargas",
+      "request_id": "song-f5baf0ee270b741b4d69a376"
+    },
+    {
+      "expected_artist": "Sergio Vargas",
+      "expected_title": "Te Va A Doler",
+      "query": "Te Va A Doler Sergio Vargas",
+      "request_id": "song-85e5316463d6cfcce66195b0"
+    },
+    {
+      "expected_artist": "Inglaterra",
+      "expected_title": "Inglaterra",
+      "query": "Inglaterra Inglaterra",
+      "request_id": "song-c7397450f5a34f5584cf8e08"
+    },
+    {
+      "expected_artist": "Klasico",
+      "expected_title": "Los Carros Y Los Clubs",
+      "query": "Los Carros Y Los Clubs Klasico",
+      "request_id": "song-f314f061be8e0c260b27fb7c"
+    },
+    {
+      "expected_artist": "Envidia Kotxina",
+      "expected_title": "Pa Ke Koño Vale Una Lombriz",
+      "query": "Pa Ke Koño Vale Una Lombriz Envidia Kotxina",
+      "request_id": "song-fc77d2d61ea05cc407bdd9fd"
+    },
+    {
+      "expected_artist": "Aramis Camilo & La Organización Secreta",
+      "expected_title": "El Motor",
+      "query": "El Motor Aramis Camilo & La Organización Secreta",
+      "request_id": "song-929fd6014b4f170002a2d5f4"
+    },
+    {
+      "expected_artist": "Gianni Morandi",
+      "expected_title": "In Cambio Che Mi Dai?",
+      "query": "In Cambio Che Mi Dai? Gianni Morandi",
+      "request_id": "song-7189d87c4a21ac2fde6af415"
+    },
+    {
+      "expected_artist": "Benny Sadel",
+      "expected_title": "Que Pasara",
+      "query": "Que Pasara Benny Sadel",
+      "request_id": "song-a97ac1443897c69e196ce36c"
+    },
+    {
+      "expected_artist": "El Jeffrey",
+      "expected_title": "Mi Tierra",
+      "query": "Mi Tierra El Jeffrey",
+      "request_id": "song-1a9c8280540e1604c410e685"
+    },
+    {
+      "expected_artist": "Chicoes3",
+      "expected_title": "Otro cliente más",
+      "query": "Otro cliente más Chicoes3",
+      "request_id": "song-9def2704e6e3889325a3ed27"
+    },
+    {
+      "expected_artist": "JQ “The #1 Contender”",
+      "expected_title": "Gracias A La Suegra VS Dale Pal Piso [Mix]",
+      "query": "Gracias A La Suegra VS Dale Pal Piso [Mix] JQ “The #1 Contender”",
+      "request_id": "song-9b71af41907dc075f24f4b24"
+    },
+    {
+      "expected_artist": "KRISTY V",
+      "expected_title": "Pimpinela",
+      "query": "Pimpinela KRISTY V",
+      "request_id": "song-9acbe18bd99efcb00945eae4"
+    },
+    {
+      "expected_artist": "Leo Mattioli",
+      "expected_title": "María",
+      "query": "María Leo Mattioli",
+      "request_id": "song-b16ff29ca9383a5f319f4b55"
+    },
+    {
+      "expected_artist": "AKI",
+      "expected_title": "Colores",
+      "query": "Colores AKI",
+      "request_id": "song-c271c6a90b2689902ac376ab"
+    },
+    {
+      "expected_artist": "Miguel de Cervantes",
+      "expected_title": "Don Quijote, Primera Parte: Capítulos 1-5",
+      "query": "Don Quijote, Primera Parte: Capítulos 1-5 Miguel de Cervantes",
+      "request_id": "song-4e07ee5508d99f2abd8a346f"
+    },
+    {
+      "expected_artist": "Praxis",
+      "expected_title": "Himno Nacional Mexicano",
+      "query": "Himno Nacional Mexicano Praxis",
+      "request_id": "song-4e2b22c858fc6918067e3fb0"
+    },
+    {
+      "expected_artist": "Geovanny Polanco",
+      "expected_title": "La Historia De Un Gran Amor",
+      "query": "La Historia De Un Gran Amor Geovanny Polanco",
+      "request_id": "song-b2086b4a3a47da09682915eb"
+    },
+    {
+      "expected_artist": "Adickta Sinfonía",
+      "expected_title": "Contextos",
+      "query": "Contextos Adickta Sinfonía",
+      "request_id": "song-2040d607359948c0ce9b629a"
+    },
+    {
+      "expected_artist": "Future",
+      "expected_title": "Never There",
+      "query": "Never There Future",
+      "request_id": "song-20dda5814769d270cda4ac49"
+    },
+    {
+      "expected_artist": "Elphomega",
+      "expected_title": "Please Welcome",
+      "query": "Please Welcome Elphomega",
+      "request_id": "song-65eeca003dd01895d82ac75b"
+    },
+    {
+      "expected_artist": "Circo Urbano",
+      "expected_title": "Me Voy Pa´ La Playa / Concha e’ Coco (Remix Muerto en Choroni)",
+      "query": "Me Voy Pa´ La Playa / Concha e’ Coco (Remix Muerto en Choroni) Circo Urbano",
+      "request_id": "song-82f9bfe39f2c421a67cad93d"
+    },
+    {
+      "expected_artist": "Mac Myc",
+      "expected_title": "Classe 1983",
+      "query": "Classe 1983 Mac Myc",
+      "request_id": "song-5d88925c146586233b54cafe"
+    },
+    {
+      "expected_artist": "Mora",
+      "expected_title": "Desaparecer",
+      "query": "Desaparecer Mora",
+      "request_id": "song-d836499953da709e8d445402"
+    },
+    {
+      "expected_artist": "Bebe (PR)",
+      "expected_title": "The Noise 9 (Radio Version)",
+      "query": "The Noise 9 (Radio Version) Bebe (PR)",
+      "request_id": "song-6334eba61fb60e2a1d197f88"
+    },
+    {
+      "expected_artist": "Omega El Fuerte",
+      "expected_title": "Tu No Ta Pa Mi",
+      "query": "Tu No Ta Pa Mi Omega El Fuerte",
+      "request_id": "song-b9ea7db57f297ab873d2ffb9"
+    },
+    {
+      "expected_artist": "Grupo Manía",
+      "expected_title": "Chorro E’ Locos",
+      "query": "Chorro E’ Locos Grupo Manía",
+      "request_id": "song-7acb4ff9e592a985ee5113ad"
+    },
+    {
+      "expected_artist": "El Cata",
+      "expected_title": "Loca Con Su Tiguere (Remix)",
+      "query": "Loca Con Su Tiguere (Remix) El Cata",
+      "request_id": "song-e14ec7ec509bd208c22ce92e"
+    },
+    {
+      "expected_artist": "El Cata",
+      "expected_title": "Rabiosa",
+      "query": "Rabiosa El Cata",
+      "request_id": "song-51b207a604e43c4b95c0092c"
+    },
+    {
+      "expected_artist": "Grossomodo",
+      "expected_title": "Clásico",
+      "query": "Clásico Grossomodo",
+      "request_id": "song-59fb33cfcde345fe6233b8ef"
+    },
+    {
+      "expected_artist": "Dooz Kawa",
+      "expected_title": "Trop jeune pour dormir",
+      "query": "Trop jeune pour dormir Dooz Kawa",
+      "request_id": "song-0e9dc7dc6a9502708fd86db4"
+    },
+    {
+      "expected_artist": "Memo & Vale",
+      "expected_title": "Música y Letra",
+      "query": "Música y Letra Memo & Vale",
+      "request_id": "song-932da9a7358b3f3289dbd629"
+    },
+    {
+      "expected_artist": "Ala Jaza",
+      "expected_title": "Mi Forma De Ser",
+      "query": "Mi Forma De Ser Ala Jaza",
+      "request_id": "song-1d59b9c2b1e9c499ace3845d"
+    },
+    {
+      "expected_artist": "Ala Jaza",
+      "expected_title": "Nadie Se Meta",
+      "query": "Nadie Se Meta Ala Jaza",
+      "request_id": "song-65e6c6e9dd7516622094a4e1"
+    },
+    {
+      "expected_artist": "Genius France",
+      "expected_title": "Singles rap - 2022",
+      "query": "Singles rap - 2022 Genius France",
+      "request_id": "song-dde04a19916ab78d7397b0c8"
+    },
+    {
+      "expected_artist": "Ergo Pro",
+      "expected_title": "El Manual",
+      "query": "El Manual Ergo Pro",
+      "request_id": "song-08331da8c6d3f1c3484a1918"
+    },
+    {
+      "expected_artist": "Haraca Kiko",
+      "expected_title": "Los Bobo Son Mio",
+      "query": "Los Bobo Son Mio Haraca Kiko",
+      "request_id": "song-e3f1291a2c46e4b785167d43"
+    },
+    {
+      "expected_artist": "xtinto",
+      "expected_title": "Quentin Miller",
+      "query": "Quentin Miller xtinto",
+      "request_id": "song-f97845cd22b494e94e03eeb3"
+    },
+    {
+      "expected_artist": "Amenazzy",
+      "expected_title": "Rukutu (Remix)",
+      "query": "Rukutu (Remix) Amenazzy",
+      "request_id": "song-3fb16646bf9e97ff03335f87"
+    },
+    {
+      "expected_artist": "J NOA",
+      "expected_title": "Autodidacta",
+      "query": "Autodidacta J NOA",
+      "request_id": "song-1099786d05bb5b08d378f7e7"
+    },
+    {
+      "expected_artist": "Angel Dior",
+      "expected_title": "Piropi",
+      "query": "Piropi Angel Dior",
+      "request_id": "song-ea07319ef3be4ef366febe82"
+    },
+    {
+      "expected_artist": "El Villano RD",
+      "expected_title": "Chivirika",
+      "query": "Chivirika El Villano RD",
+      "request_id": "song-85bfebcff76d4d3e58552f91"
+    },
+    {
+      "expected_artist": "La Materialista",
+      "expected_title": "La Chapa Que Vibran",
+      "query": "La Chapa Que Vibran La Materialista",
+      "request_id": "song-4cc92f260445deb34231fd17"
+    },
+    {
+      "expected_artist": "Nino Freestyle",
+      "expected_title": "Aficia De Un Chucky (Remix)",
+      "query": "Aficia De Un Chucky (Remix) Nino Freestyle",
+      "request_id": "song-590d511927af173fca6679d6"
+    },
+    {
+      "expected_artist": "J Pérez Official",
+      "expected_title": "Llegamos",
+      "query": "Llegamos J Pérez Official",
+      "request_id": "song-ec27cebed3673e9035b526b9"
+    },
+    {
+      "expected_artist": "Milka La Mas Dura",
+      "expected_title": "Dale Ven Ven",
+      "query": "Dale Ven Ven Milka La Mas Dura",
+      "request_id": "song-10ab61d69d9f8653e53ad2c3"
+    },
+    {
+      "expected_artist": "Nico Clinico",
+      "expected_title": "Capea el Dough 2k14",
+      "query": "Capea el Dough 2k14 Nico Clinico",
+      "request_id": "song-1659f27e8dbff2e4dd88fb54"
+    },
+    {
+      "expected_artist": "Monkey Black",
+      "expected_title": "El Sol y La Playa",
+      "query": "El Sol y La Playa Monkey Black",
+      "request_id": "song-6ca5ca89f35a483f3a02c67a"
+    },
+    {
+      "expected_artist": "Gianni Morandi",
+      "expected_title": "Marina",
+      "query": "Marina Gianni Morandi",
+      "request_id": "song-beb637b3f9e52d64686ad550"
+    },
+    {
+      "expected_artist": "Don Miguelo",
+      "expected_title": "Como Yo Le Doy (Remix)",
+      "query": "Como Yo Le Doy (Remix) Don Miguelo",
+      "request_id": "song-950c1670731585893236ec44"
+    },
+    {
+      "expected_artist": "Kiubbah Malon",
+      "expected_title": "Llámame Kiubbah",
+      "query": "Llámame Kiubbah Kiubbah Malon",
+      "request_id": "song-f25cde3f31da85ab175a2a2d"
+    },
+    {
+      "expected_artist": "Don Miguelo",
+      "expected_title": "Nota de Pasión",
+      "query": "Nota de Pasión Don Miguelo",
+      "request_id": "song-ce08823a8cec247487078008"
+    },
+    {
+      "expected_artist": "Don Miguelo",
+      "expected_title": "Pa Que Me Dan De Eso",
+      "query": "Pa Que Me Dan De Eso Don Miguelo",
+      "request_id": "song-d9c1dfdc66be6ec96ff4b784"
+    },
+    {
+      "expected_artist": "ギャロ (THE GALLO)",
+      "expected_title": "Dainippon Kokkei Shugisha Renmei Koushinkyoku ho Tanchou",
+      "query": "Dainippon Kokkei Shugisha Renmei Koushinkyoku ho Tanchou ギャロ (THE GALLO)",
+      "request_id": "song-42864048c39540d38f7cf48b"
+    },
+    {
+      "expected_artist": "El Mayor Clásico",
+      "expected_title": "El Maíz",
+      "query": "El Maíz El Mayor Clásico",
+      "request_id": "song-41a1ea7aa86718edffb5f722"
+    },
+    {
+      "expected_artist": "Bulin 47",
+      "expected_title": "7 Pollo",
+      "query": "7 Pollo Bulin 47",
+      "request_id": "song-285bde1fb3f2caedc8fc9184"
+    },
+    {
+      "expected_artist": "Ezzy R",
+      "expected_title": "Se Dejo Del Novio",
+      "query": "Se Dejo Del Novio Ezzy R",
+      "request_id": "song-4bd7dfaef13d9b65d9ec77d6"
+    },
+    {
+      "expected_artist": "Ronny GTA",
+      "expected_title": "Rumores",
+      "query": "Rumores Ronny GTA",
+      "request_id": "song-f0749033d3e3e9dd7f2c9a82"
+    },
+    {
+      "expected_artist": "Lil Naay",
+      "expected_title": "Pasao De Famarcia",
+      "query": "Pasao De Famarcia Lil Naay",
+      "request_id": "song-4b1d3d29409d7c0bc0569c8e"
+    },
+    {
+      "expected_artist": "Jey One",
+      "expected_title": "Onana",
+      "query": "Onana Jey One",
+      "request_id": "song-c536019699fc0ebfc5512bbe"
+    },
+    {
+      "expected_artist": "Chimbala",
+      "expected_title": "Delincuente",
+      "query": "Delincuente Chimbala",
+      "request_id": "song-3c2b0796e21e549a9f22c0a1"
+    },
+    {
+      "expected_artist": "Lomiiel",
+      "expected_title": "HAY LUPITA",
+      "query": "HAY LUPITA Lomiiel",
+      "request_id": "song-91a12beb7e4a7ca33f9e7eab"
+    },
+    {
+      "expected_artist": "Angel Dior",
+      "expected_title": "A I O",
+      "query": "A I O Angel Dior",
+      "request_id": "song-41a158abadacf78448e1b43f"
+    },
+    {
+      "expected_artist": "Bulin 47",
+      "expected_title": "Po Po Po",
+      "query": "Po Po Po Bulin 47",
+      "request_id": "song-a874a1ac87b95b91dee77734"
+    },
+    {
+      "expected_artist": "Harryson",
+      "expected_title": "Hoy Sí",
+      "query": "Hoy Sí Harryson",
+      "request_id": "song-819f32ed92ecd2598eead9a3"
+    },
+    {
+      "expected_artist": "Yk It’s Junaa",
+      "expected_title": "Envenenau",
+      "query": "Envenenau Yk It’s Junaa",
+      "request_id": "song-9aad154ebebe2aca1dd01dee"
+    },
+    {
+      "expected_artist": "Yk It’s Junaa",
+      "expected_title": "DIGITAL15",
+      "query": "DIGITAL15 Yk It’s Junaa",
+      "request_id": "song-5e3973eb4c885b103eb3c6c3"
+    },
+    {
+      "expected_artist": "Donaty",
+      "expected_title": "Lo Que Pueda",
+      "query": "Lo Que Pueda Donaty",
+      "request_id": "song-75cc379fbe54c42b5273d446"
+    },
+    {
+      "expected_artist": "Donaty",
+      "expected_title": "Empaquetate",
+      "query": "Empaquetate Donaty",
+      "request_id": "song-5d5f21a3b78090d92d90d2f6"
+    },
+    {
+      "expected_artist": "Angel Dior",
+      "expected_title": "Zuculento",
+      "query": "Zuculento Angel Dior",
+      "request_id": "song-0eb89c46d5bd6fbd8fe1eeba"
+    },
+    {
+      "expected_artist": "Yaisel LM",
+      "expected_title": "Ma Buena",
+      "query": "Ma Buena Yaisel LM",
+      "request_id": "song-65ad4dbee9c0d20c31144188"
+    },
+    {
+      "expected_artist": "Yaisel LM",
+      "expected_title": "Boy Boy",
+      "query": "Boy Boy Yaisel LM",
+      "request_id": "song-0948c275b39c323358a130d3"
+    },
+    {
+      "expected_artist": "Ceky Viciny",
+      "expected_title": "Nataly",
+      "query": "Nataly Ceky Viciny",
+      "request_id": "song-0b4db9d42b38c258a7a58135"
+    },
+    {
+      "expected_artist": "La Nueva Escuela (DO)",
+      "expected_title": "Mi Papi Es Mio (Remix)",
+      "query": "Mi Papi Es Mio (Remix) La Nueva Escuela (DO)",
+      "request_id": "song-521595fe7c7cb96bb30c4264"
+    },
+    {
+      "expected_artist": "Bad Gyal",
+      "expected_title": "Chulo pt.2",
+      "query": "Chulo pt.2 Bad Gyal",
+      "request_id": "song-956dc5cf003cf762ca0616ba"
+    },
+    {
+      "expected_artist": "Sevdaliza",
+      "expected_title": "Ride Or Die, Pt. 2",
+      "query": "Ride Or Die, Pt. 2 Sevdaliza",
+      "request_id": "song-978024d14e02e30e176cb1dd"
+    },
+    {
+      "expected_artist": "NATTI NATASHA",
+      "expected_title": "Mayor Que Usted",
+      "query": "Mayor Que Usted NATTI NATASHA",
+      "request_id": "song-570bfb4a0cafdf70696ecf68"
+    },
+    {
+      "expected_artist": "NATTI NATASHA",
+      "expected_title": "Criminal",
+      "query": "Criminal NATTI NATASHA",
+      "request_id": "song-be94a5d50cf88f5db3b0ef41"
+    },
+    {
+      "expected_artist": "Genius English Translations",
+      "expected_title": "Becky G & NATTI NATASHA - Sin Pijama (English Translation)",
+      "query": "Becky G & NATTI NATASHA - Sin Pijama (English Translation) Genius English Translations",
+      "request_id": "song-5dc9a05ea44c4a8b2a72aa3b"
+    },
+    {
+      "expected_artist": "NATTI NATASHA",
+      "expected_title": "La Mejor Versión De Mí (Remix)",
+      "query": "La Mejor Versión De Mí (Remix) NATTI NATASHA",
+      "request_id": "song-44efc95250100c505f800140"
+    },
+    {
+      "expected_artist": "Chris Lebron",
+      "expected_title": "Mesero",
+      "query": "Mesero Chris Lebron",
+      "request_id": "song-41a4b5f4186059469eb9e932"
+    },
+    {
+      "expected_artist": "Chris Lebron",
+      "expected_title": "Desde Mis Ojos (Remix)",
+      "query": "Desde Mis Ojos (Remix) Chris Lebron",
+      "request_id": "song-68a838c4f1529fc7c9ceb75e"
+    },
+    {
+      "expected_artist": "Chris Lebron",
+      "expected_title": "La Pieza",
+      "query": "La Pieza Chris Lebron",
+      "request_id": "song-030721fad9d8593d3a430724"
+    },
+    {
+      "expected_artist": "Covi Quintana",
+      "expected_title": "Soy Dominicana",
+      "query": "Soy Dominicana Covi Quintana",
+      "request_id": "song-ea89ab137f5101d081506235"
+    },
+    {
+      "expected_artist": "Covi Quintana",
+      "expected_title": "Café de Las Ocho",
+      "query": "Café de Las Ocho Covi Quintana",
+      "request_id": "song-f54c1049df0e411042f0915f"
+    },
+    {
+      "expected_artist": "Techy Fatule",
+      "expected_title": "Entregarte Todo",
+      "query": "Entregarte Todo Techy Fatule",
+      "request_id": "song-d2e7bee7e660f5d1293411a3"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Payasos",
+      "query": "Payasos Romeo Santos",
+      "request_id": "song-b776a334a5a3adc245c93ea0"
+    },
+    {
+      "expected_artist": "Genius Traducciones al Español",
+      "expected_title": "Frank Ocean - Come On World, You Can’t Go! (Traducción al Español)",
+      "query": "Frank Ocean - Come On World, You Can’t Go! (Traducción al Español) Genius Traducciones al Español",
+      "request_id": "song-71af99739abeb7e2a2605583"
+    },
+    {
+      "expected_artist": "Lucky Bossi",
+      "expected_title": "Brujeria Remix",
+      "query": "Brujeria Remix Lucky Bossi",
+      "request_id": "song-83eaaaa10c3bbd15380d6d07"
+    },
+    {
+      "expected_artist": "MelyMel",
+      "expected_title": "Me Gusta Mi Feo",
+      "query": "Me Gusta Mi Feo MelyMel",
+      "request_id": "song-b51fe8817d5c079e5ad55000"
+    },
+    {
+      "expected_artist": "MelyMel",
+      "expected_title": "IDGAF",
+      "query": "IDGAF MelyMel",
+      "request_id": "song-7010f6fdbe91cd3ef3d5e15d"
+    },
+    {
+      "expected_artist": "Vakero",
+      "expected_title": "Los Zapatos",
+      "query": "Los Zapatos Vakero",
+      "request_id": "song-9d4d950014afc71e07eb053b"
+    },
+    {
+      "expected_artist": "Lapiz Conciente",
+      "expected_title": "Atento a Mi 10",
+      "query": "Atento a Mi 10 Lapiz Conciente",
+      "request_id": "song-8167203fb7207d7078c8bd5f"
+    },
+    {
+      "expected_artist": "Toxic Crow",
+      "expected_title": "Capea El Dough Feminas",
+      "query": "Capea El Dough Feminas Toxic Crow",
+      "request_id": "song-f470ece318acaafe67542c67"
+    },
+    {
+      "expected_artist": "Químico Ultra Mega",
+      "expected_title": "Por El Respeto",
+      "query": "Por El Respeto Químico Ultra Mega",
+      "request_id": "song-2f31408a2f80219c9b2ab86f"
+    },
+    {
+      "expected_artist": "Químico Ultra Mega",
+      "expected_title": "Limonada Coco No",
+      "query": "Limonada Coco No Químico Ultra Mega",
+      "request_id": "song-94124caac80269ef0ba9a5cd"
+    },
+    {
+      "expected_artist": "Black Jonas Point",
+      "expected_title": "Solo Grita",
+      "query": "Solo Grita Black Jonas Point",
+      "request_id": "song-cf53d8a346c1b2c6ad43ce3b"
+    },
+    {
+      "expected_artist": "Black Jonas Point",
+      "expected_title": "Lo Que Quieras",
+      "query": "Lo Que Quieras Black Jonas Point",
+      "request_id": "song-a0901bb6dbd41a5afbbbb04e"
+    },
+    {
+      "expected_artist": "Musicólogo The Libro",
+      "expected_title": "Limonada Coco (Remix)",
+      "query": "Limonada Coco (Remix) Musicólogo The Libro",
+      "request_id": "song-4cc6779131cc14635ad792e0"
+    },
+    {
+      "expected_artist": "Musicólogo The Libro",
+      "expected_title": "Wou Que Movie",
+      "query": "Wou Que Movie Musicólogo The Libro",
+      "request_id": "song-228d655d07182cfd85235278"
+    },
+    {
+      "expected_artist": "Tito “El Bambino”",
+      "expected_title": "Dónde Están",
+      "query": "Dónde Están Tito “El Bambino”",
+      "request_id": "song-2d3ed43235b5201a4d3f8b8b"
+    },
+    {
+      "expected_artist": "Shelow Shaq",
+      "expected_title": "Calentate Girl",
+      "query": "Calentate Girl Shelow Shaq",
+      "request_id": "song-41ecb16be7b447849fbf52f7"
+    },
+    {
+      "expected_artist": "Ceky Viciny",
+      "expected_title": "Klok Con Klok",
+      "query": "Klok Con Klok Ceky Viciny",
+      "request_id": "song-e412c4522704599fac38450b"
+    },
+    {
+      "expected_artist": "Ceky Viciny",
+      "expected_title": "Ellos",
+      "query": "Ellos Ceky Viciny",
+      "request_id": "song-777542dde7f74d060888815e"
+    },
+    {
+      "expected_artist": "KARBeats",
+      "expected_title": "Donde CRJ (Remix)",
+      "query": "Donde CRJ (Remix) KARBeats",
+      "request_id": "song-4d1bbfa5bc81fc9409acc5fc"
+    },
+    {
+      "expected_artist": "El Super Nuevo",
+      "expected_title": "Vete Con Él",
+      "query": "Vete Con Él El Super Nuevo",
+      "request_id": "song-7e3b93f598f69926dec30a77"
+    },
+    {
+      "expected_artist": "El Chuape",
+      "expected_title": "Ponme To Eso Palante",
+      "query": "Ponme To Eso Palante El Chuape",
+      "request_id": "song-6ff939336e1431b2dbc1388e"
+    },
+    {
+      "expected_artist": "Tiagz",
+      "expected_title": "Tacata (Remix)",
+      "query": "Tacata (Remix) Tiagz",
+      "request_id": "song-a5463745752c83affeedb591"
+    },
+    {
+      "expected_artist": "El Alfa",
+      "expected_title": "LOS APARATOS",
+      "query": "LOS APARATOS El Alfa",
+      "request_id": "song-b3a468c3feec1379511e551c"
+    },
+    {
+      "expected_artist": "El Alfa",
+      "expected_title": "PLEBADA",
+      "query": "PLEBADA El Alfa",
+      "request_id": "song-6b2367a7937986628040526f"
+    },
+    {
+      "expected_artist": "Dash Shamash",
+      "expected_title": "Freedom",
+      "query": "Freedom Dash Shamash",
+      "request_id": "song-0cf85fcdd20d7ec82550d9a8"
+    },
+    {
+      "expected_artist": "Jotapê",
+      "expected_title": "Poetas no Topo 4",
+      "query": "Poetas no Topo 4 Jotapê",
+      "request_id": "song-3fd2b1c49b9d378465f59b70"
+    },
+    {
+      "expected_artist": "Point Breakers",
+      "expected_title": "No Son Dementes",
+      "query": "No Son Dementes Point Breakers",
+      "request_id": "song-af184b83cae6c123c85e6c64"
+    },
+    {
+      "expected_artist": "Calero LDN",
+      "expected_title": "Sin miedo a morir",
+      "query": "Sin miedo a morir Calero LDN",
+      "request_id": "song-09870707a761f430a4acc52d"
+    },
+    {
+      "expected_artist": "Francesco Magni",
+      "expected_title": "Giuanin Tulin",
+      "query": "Giuanin Tulin Francesco Magni",
+      "request_id": "song-d90637eac7ac93d3bdf6b12d"
+    },
+    {
+      "expected_artist": "Mr. Yosie Locote",
+      "expected_title": "Venimos De Abajo",
+      "query": "Venimos De Abajo Mr. Yosie Locote",
+      "request_id": "song-32c342654cba68a4baafcfb6"
+    },
+    {
+      "expected_artist": "Spotify",
+      "expected_title": "New Music Friday 03/03/23",
+      "query": "New Music Friday 03/03/23 Spotify",
+      "request_id": "song-7a77c942fb3a53a8d57dbbac"
+    },
+    {
+      "expected_artist": "M.J. Hibbett & The Validators",
+      "expected_title": "Tell Me Something You Do Like",
+      "query": "Tell Me Something You Do Like M.J. Hibbett & The Validators",
+      "request_id": "song-88f172bfa72e536ce6c423ef"
+    },
+    {
+      "expected_artist": "Antwan MC",
+      "expected_title": "Tiempo",
+      "query": "Tiempo Antwan MC",
+      "request_id": "song-a9e3e821ed26a5001ddbfe67"
+    },
+    {
+      "expected_artist": "Tron Dosh & E. Tárraga",
+      "expected_title": "Bridas",
+      "query": "Bridas Tron Dosh & E. Tárraga",
+      "request_id": "song-e056ace64b119e2a63f413ea"
+    },
+    {
+      "expected_artist": "Mala Fe",
+      "expected_title": "La Vaca",
+      "query": "La Vaca Mala Fe",
+      "request_id": "song-b58fa3ae76458dd2d05d425b"
+    },
+    {
+      "expected_artist": "Oro Sólido",
+      "expected_title": "La Tanga",
+      "query": "La Tanga Oro Sólido",
+      "request_id": "song-833a2e9798d9157b7084cd9b"
+    },
+    {
+      "expected_artist": "Los Toros Band",
+      "expected_title": "Mi Niña",
+      "query": "Mi Niña Los Toros Band",
+      "request_id": "song-3b52cb7ab3746bc153375e31"
+    },
+    {
+      "expected_artist": "Los Toros Band",
+      "expected_title": "Si Estuvieras Aquí",
+      "query": "Si Estuvieras Aquí Los Toros Band",
+      "request_id": "song-1b75c5eb420359ff47e5f17d"
+    },
+    {
+      "expected_artist": "Memo ATR",
+      "expected_title": "Why you show up?",
+      "query": "Why you show up? Memo ATR",
+      "request_id": "song-a11ef0de4ac3396734b6cbb9"
+    },
+    {
+      "expected_artist": "Monchy & Alexandra",
+      "expected_title": "Hasta El Fin",
+      "query": "Hasta El Fin Monchy & Alexandra",
+      "request_id": "song-bddf42b9142e19309ee64239"
+    },
+    {
+      "expected_artist": "Monchy & Alexandra",
+      "expected_title": "Te Quiero Igual Que Ayer",
+      "query": "Te Quiero Igual Que Ayer Monchy & Alexandra",
+      "request_id": "song-22df3b5c8c089747b3d9ab22"
+    },
+    {
+      "expected_artist": "Prince Royce",
+      "expected_title": "Incondicional",
+      "query": "Incondicional Prince Royce",
+      "request_id": "song-e4d80bcfda8d96c852c52ccb"
+    },
+    {
+      "expected_artist": "Prince Royce",
+      "expected_title": "Las Cosas Pequeñas",
+      "query": "Las Cosas Pequeñas Prince Royce",
+      "request_id": "song-b46b6317ae2aba7a59a9af9c"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Solo Conmigo",
+      "query": "Solo Conmigo Romeo Santos",
+      "request_id": "song-560ca0b00e9afd22609d57fc"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "MAMBO 23",
+      "query": "MAMBO 23 Juan Luis Guerra",
+      "request_id": "song-8f92dab7018d03968d944301"
+    },
+    {
+      "expected_artist": "Spotify",
+      "expected_title": "New Music Friday 05/19/23",
+      "query": "New Music Friday 05/19/23 Spotify",
+      "request_id": "song-b0988ee5c9470404e6445bc9"
+    },
+    {
+      "expected_artist": "Vicente García",
+      "expected_title": "She Prays",
+      "query": "She Prays Vicente García",
+      "request_id": "song-b424b177aa8369b3bf6bd58c"
+    },
+    {
+      "expected_artist": "Vicente García",
+      "expected_title": "Caramelo",
+      "query": "Caramelo Vicente García",
+      "request_id": "song-5ed03796f9d1443627821b97"
+    },
+    {
+      "expected_artist": "Rita Indiana",
+      "expected_title": "Como un Dragón",
+      "query": "Como un Dragón Rita Indiana",
+      "request_id": "song-1791110f62b550d61ba7872a"
+    },
+    {
+      "expected_artist": "Esham",
+      "expected_title": "Private Hotel Party",
+      "query": "Private Hotel Party Esham",
+      "request_id": "song-164b8920651ad270d2075285"
+    },
+    {
+      "expected_artist": "Marcel Proust",
+      "expected_title": "Names of People (Chapter 1)",
+      "query": "Names of People (Chapter 1) Marcel Proust",
+      "request_id": "song-14e8da75889dad95eef80d16"
+    },
+    {
+      "expected_artist": "Genius Traducciones al Español",
+      "expected_title": "Baby Keem & Kendrick Lamar - The Hillbillies (Traducción al Español)",
+      "query": "Baby Keem & Kendrick Lamar - The Hillbillies (Traducción al Español) Genius Traducciones al Español",
+      "request_id": "song-56758da05f890069abe9fe7e"
+    },
+    {
+      "expected_artist": "El Momo",
+      "expected_title": "Vermú Torero",
+      "query": "Vermú Torero El Momo",
+      "request_id": "song-8ecdf0ef930f018f32e1fe9b"
+    },
+    {
+      "expected_artist": "Locoplaya",
+      "expected_title": "Mujer o diosa",
+      "query": "Mujer o diosa Locoplaya",
+      "request_id": "song-f3209f20c26512a85df77c6b"
+    },
+    {
+      "expected_artist": "Tercer Cielo",
+      "expected_title": "Yo Te Extrañaré",
+      "query": "Yo Te Extrañaré Tercer Cielo",
+      "request_id": "song-ac4c6077574f849afbc1c701"
+    },
+    {
+      "expected_artist": "Tercer Cielo",
+      "expected_title": "Creeré",
+      "query": "Creeré Tercer Cielo",
+      "request_id": "song-5c33ae94f948498b2a700fa0"
+    },
+    {
+      "expected_artist": "Tercer Cielo",
+      "expected_title": "No Crezcas Más",
+      "query": "No Crezcas Más Tercer Cielo",
+      "request_id": "song-36edb837a40dcde063c422c2"
+    },
+    {
+      "expected_artist": "Lilly Goodman",
+      "expected_title": "Al Final",
+      "query": "Al Final Lilly Goodman",
+      "request_id": "song-0d149cbfd07318398ec4caaa"
+    },
+    {
+      "expected_artist": "Lilly Goodman",
+      "expected_title": "La Noticia",
+      "query": "La Noticia Lilly Goodman",
+      "request_id": "song-1fe5cd73fd496037cd74b8a3"
+    },
+    {
+      "expected_artist": "Redimi2",
+      "expected_title": "El Nombre de Jesús",
+      "query": "El Nombre de Jesús Redimi2",
+      "request_id": "song-e6ce63d07b8dd78ccf17a6e3"
+    },
+    {
+      "expected_artist": "Redimi2",
+      "expected_title": "Bonita",
+      "query": "Bonita Redimi2",
+      "request_id": "song-b017a6486f44be9717c97003"
+    },
+    {
+      "expected_artist": "Marcos Yaroide",
+      "expected_title": "Todo Se Lo Debo A El",
+      "query": "Todo Se Lo Debo A El Marcos Yaroide",
+      "request_id": "song-1ef95f47283b4f2cb48f5c4c"
+    },
+    {
+      "expected_artist": "Marcos Yaroide",
+      "expected_title": "Déjame Entrar",
+      "query": "Déjame Entrar Marcos Yaroide",
+      "request_id": "song-749c44a0801cf71d6506eef6"
+    },
+    {
+      "expected_artist": "Grupo Barak",
+      "expected_title": "Ven Espíritu Santo",
+      "query": "Ven Espíritu Santo Grupo Barak",
+      "request_id": "song-3f3db1ddd1d85f3aec9369f4"
+    },
+    {
+      "expected_artist": "Majin Shiro",
+      "expected_title": "Restless Dreams // Paincast",
+      "query": "Restless Dreams // Paincast Majin Shiro",
+      "request_id": "song-0e2d24632add774292cfa934"
+    },
+    {
+      "expected_artist": "Oasis Ministry",
+      "expected_title": "Yahweh Se Manifestará (Hijos Live)",
+      "query": "Yahweh Se Manifestará (Hijos Live) Oasis Ministry",
+      "request_id": "song-cda5509cf4ee7e5bcdaafaa0"
+    },
+    {
+      "expected_artist": "Farruko",
+      "expected_title": "Hermoso Momento (Remix)",
+      "query": "Hermoso Momento (Remix) Farruko",
+      "request_id": "song-5422c4416d98ac86863e4772"
+    },
+    {
+      "expected_artist": "Nancy Amancio",
+      "expected_title": "Arrebato",
+      "query": "Arrebato Nancy Amancio",
+      "request_id": "song-9079d5fbe629b9a97682e187"
+    },
+    {
+      "expected_artist": "Babo",
+      "expected_title": "Los Jefes - Banda Sonora de la Película (Gift Track)",
+      "query": "Los Jefes - Banda Sonora de la Película (Gift Track) Babo",
+      "request_id": "song-df88cb093976df5f8bfa6ac8"
+    },
+    {
+      "expected_artist": "Kiko Rodriguez",
+      "expected_title": "El verde de tus ojos",
+      "query": "El verde de tus ojos Kiko Rodriguez",
+      "request_id": "song-8df57c0177698e2c2e2f1d3e"
+    },
+    {
+      "expected_artist": "Kiko Rodriguez",
+      "expected_title": "Vagabundo, Borracho y Loco",
+      "query": "Vagabundo, Borracho y Loco Kiko Rodriguez",
+      "request_id": "song-e553e10a8edf1ecf15805866"
+    },
+    {
+      "expected_artist": "Luis Miguel Del Amargue",
+      "expected_title": "No notas",
+      "query": "No notas Luis Miguel Del Amargue",
+      "request_id": "song-887ee8b287ee837bf88422b7"
+    },
+    {
+      "expected_artist": "Teodoro Reyes",
+      "expected_title": "Moriré Bebiendo",
+      "query": "Moriré Bebiendo Teodoro Reyes",
+      "request_id": "song-c26c6fb7af7202ed05a40612"
+    },
+    {
+      "expected_artist": "Raulin rosendo",
+      "expected_title": "Uno se cura",
+      "query": "Uno se cura Raulin rosendo",
+      "request_id": "song-521c79a39c312c86c21a3ca0"
+    },
+    {
+      "expected_artist": "James Burke",
+      "expected_title": "08 - Separate Ways",
+      "query": "08 - Separate Ways James Burke",
+      "request_id": "song-0dc6753febf9c0ffe65644de"
+    },
+    {
+      "expected_artist": "Michel el Buenón",
+      "expected_title": "Maldito El Tiempo",
+      "query": "Maldito El Tiempo Michel el Buenón",
+      "request_id": "song-5c6830a486b270a47c78ca4d"
+    },
+    {
+      "expected_artist": "José Alberto “El Canario”",
+      "expected_title": "Sueño contigo",
+      "query": "Sueño contigo José Alberto “El Canario”",
+      "request_id": "song-9813a66df54eef5c96ee9a17"
+    },
+    {
+      "expected_artist": "José Alberto “El Canario”",
+      "expected_title": "Hoy quiero confesar",
+      "query": "Hoy quiero confesar José Alberto “El Canario”",
+      "request_id": "song-883658627be2bb056d2c75ae"
+    },
+    {
+      "expected_artist": "Xtreme (Band)",
+      "expected_title": "Te Extraño (Bachata Version)",
+      "query": "Te Extraño (Bachata Version) Xtreme (Band)",
+      "request_id": "song-20310b6e1964b219e001bc82"
+    },
+    {
+      "expected_artist": "Luis Miguel Del Amargue",
+      "expected_title": "Niña Coqueta",
+      "query": "Niña Coqueta Luis Miguel Del Amargue",
+      "request_id": "song-747a93a1cffd9791327f0070"
+    },
+    {
+      "expected_artist": "El Alfa",
+      "expected_title": "Probadita",
+      "query": "Probadita El Alfa",
+      "request_id": "song-e9091bc66d6dacaac29f0e48"
+    },
+    {
+      "expected_artist": "Monchy & Alexandra",
+      "expected_title": "No Es Una Novela",
+      "query": "No Es Una Novela Monchy & Alexandra",
+      "request_id": "song-9a5b45d14c75d5c994bf6c00"
+    },
+    {
+      "expected_artist": "Rochy RD",
+      "expected_title": "Alta Gama",
+      "query": "Alta Gama Rochy RD",
+      "request_id": "song-c6f186c480c5ba83b4190742"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Estrellitas Y Duendes",
+      "query": "Estrellitas Y Duendes Juan Luis Guerra",
+      "request_id": "song-4af56c0498171a3a3425b4af"
+    },
+    {
+      "expected_artist": "Anthony Santos",
+      "expected_title": "No Te Puedo Olvidar",
+      "query": "No Te Puedo Olvidar Anthony Santos",
+      "request_id": "song-37b9dcef6243bc1c81b3ac8b"
+    },
+    {
+      "expected_artist": "Xtreme (Band)",
+      "expected_title": "Te Extraño",
+      "query": "Te Extraño Xtreme (Band)",
+      "request_id": "song-8167dabc8614e791842f7e6b"
+    },
+    {
+      "expected_artist": "Hector Acosta",
+      "expected_title": "Con Que Ojos",
+      "query": "Con Que Ojos Hector Acosta",
+      "request_id": "song-b23a297dbea248892b42715b"
+    },
+    {
+      "expected_artist": "Wilfrido Vargas",
+      "expected_title": "El Jardinero",
+      "query": "El Jardinero Wilfrido Vargas",
+      "request_id": "song-a0e7bf63c50e905eeaf39ac9"
+    },
+    {
+      "expected_artist": "Milly Quezada",
+      "expected_title": "De Colores",
+      "query": "De Colores Milly Quezada",
+      "request_id": "song-1e1f23cd5fb013c08dce104a"
+    },
+    {
+      "expected_artist": "Genius France",
+      "expected_title": "Discographie - Zed",
+      "query": "Discographie - Zed Genius France",
+      "request_id": "song-ef80abd8579ee1daba166925"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Señorita",
+      "query": "Señorita Juan Luis Guerra",
+      "request_id": "song-e9c3fcfb7b9a9cf8de93484c"
+    },
+    {
+      "expected_artist": "Pitbull",
+      "expected_title": "Como Yo Le Doy",
+      "query": "Como Yo Le Doy Pitbull",
+      "request_id": "song-4b20084f8ae053e3f5eb6529"
+    },
+    {
+      "expected_artist": "Aventura",
+      "expected_title": "Por Un Segundo",
+      "query": "Por Un Segundo Aventura",
+      "request_id": "song-1ae1f2a43cd0472f813a88c9"
+    },
+    {
+      "expected_artist": "Gerald Haywood",
+      "expected_title": "2018 haywoodindahood Listening Log",
+      "query": "2018 haywoodindahood Listening Log Gerald Haywood",
+      "request_id": "song-0462f380904c8d3c6e82eb85"
+    },
+    {
+      "expected_artist": "Genius France",
+      "expected_title": "Singles rap - 2021",
+      "query": "Singles rap - 2021 Genius France",
+      "request_id": "song-fd7664acabcb02feb779f8ed"
+    },
+    {
+      "expected_artist": "Zacarías Ferreira",
+      "expected_title": "Dime que falto",
+      "query": "Dime que falto Zacarías Ferreira",
+      "request_id": "song-83f025796de1d5af9247783d"
+    },
+    {
+      "expected_artist": "Monchy & Alexandra",
+      "expected_title": "Polos Opuestos",
+      "query": "Polos Opuestos Monchy & Alexandra",
+      "request_id": "song-93d378055750e7e717af18ef"
+    },
+    {
+      "expected_artist": "José Luis Perales",
+      "expected_title": "La carcel del amor - con la participación de ana gabriel",
+      "query": "La carcel del amor - con la participación de ana gabriel José Luis Perales",
+      "request_id": "song-dfaa9e33fce7a8c06c8022f4"
+    },
+    {
+      "expected_artist": "Xtreme (Band)",
+      "expected_title": "¿Adónde Se Fue?",
+      "query": "¿Adónde Se Fue? Xtreme (Band)",
+      "request_id": "song-4ff779c0419d8e2c39897564"
+    },
+    {
+      "expected_artist": "Nas",
+      "expected_title": "The genesis - explicit album version",
+      "query": "The genesis - explicit album version Nas",
+      "request_id": "song-c28316ee3b1be2461af7a8a1"
+    },
+    {
+      "expected_artist": "Johnny Ventura",
+      "expected_title": "Patacón Pisao",
+      "query": "Patacón Pisao Johnny Ventura",
+      "request_id": "song-21fc7d6017d4a4968c8ca4e8"
+    },
+    {
+      "expected_artist": "Rodolfo y Su Tipica RA7",
+      "expected_title": "Tabaco y Ron",
+      "query": "Tabaco y Ron Rodolfo y Su Tipica RA7",
+      "request_id": "song-47ac397aa731b8eb2d97cc66"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Bella y Sensual",
+      "query": "Bella y Sensual Romeo Santos",
+      "request_id": "song-df0e00ea987ccdde6ef3f19f"
+    },
+    {
+      "expected_artist": "Macha Y El Bloque Depresivo",
+      "expected_title": "Procuro Olvidarte / Pásalo Bien",
+      "query": "Procuro Olvidarte / Pásalo Bien Macha Y El Bloque Depresivo",
+      "request_id": "song-c1be8dc305de42a86c235a60"
+    },
+    {
+      "expected_artist": "Black Honey",
+      "expected_title": "I Don’t Ever Wanna Love",
+      "query": "I Don’t Ever Wanna Love Black Honey",
+      "request_id": "song-cdae2329d96d05b5f38111b7"
+    },
+    {
+      "expected_artist": "Sergio Vargas",
+      "expected_title": "Aquello Que Me Diste",
+      "query": "Aquello Que Me Diste Sergio Vargas",
+      "request_id": "song-da238d984ba88e82dd5a6d21"
+    },
+    {
+      "expected_artist": "Genius",
+      "expected_title": "March 2022 Singles Release Calendar",
+      "query": "March 2022 Singles Release Calendar Genius",
+      "request_id": "song-291731bf735d407e3b846627"
+    },
+    {
+      "expected_artist": "Toño Rosario",
+      "expected_title": "Alegria",
+      "query": "Alegria Toño Rosario",
+      "request_id": "song-c4a964359caaee5c61d19e6c"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Rosalía (Live)",
+      "query": "Rosalía (Live) Juan Luis Guerra",
+      "request_id": "song-781335997b854746c53466e9"
+    },
+    {
+      "expected_artist": "Juhn",
+      "expected_title": "WYA REMIX WHITE",
+      "query": "WYA REMIX WHITE Juhn",
+      "request_id": "song-65b4a2b0f697586cf6ded3cb"
+    },
+    {
+      "expected_artist": "Raulin Rodriguez",
+      "expected_title": "Ay Hombe",
+      "query": "Ay Hombe Raulin Rodriguez",
+      "request_id": "song-7b5f5d63666899e3064d9d27"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "La Llave De Mi Corazón",
+      "query": "La Llave De Mi Corazón Juan Luis Guerra",
+      "request_id": "song-26d54ac67c54b1b04a8de487"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Cancioncitas de Amor",
+      "query": "Cancioncitas de Amor Romeo Santos",
+      "request_id": "song-649da70c3d694df0c6ba7bfa"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Rosalía",
+      "query": "Rosalía Juan Luis Guerra",
+      "request_id": "song-8a09b19d6929495f6a90d965"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Frío Frío",
+      "query": "Frío Frío Juan Luis Guerra",
+      "request_id": "song-211bcf3d58c6d14104b6d635"
+    },
+    {
+      "expected_artist": "Zacarías Ferreira",
+      "expected_title": "Chica De Mi Barrio",
+      "query": "Chica De Mi Barrio Zacarías Ferreira",
+      "request_id": "song-e9bbb0ab288ef399ccb21961"
+    },
+    {
+      "expected_artist": "Ovi",
+      "expected_title": "Te Extraño",
+      "query": "Te Extraño Ovi",
+      "request_id": "song-1e438fcb4668696747896bfb"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Woman Del Callao",
+      "query": "Woman Del Callao Juan Luis Guerra",
+      "request_id": "song-1e3918a1f2326acd41e5d3f3"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "You",
+      "query": "You Romeo Santos",
+      "request_id": "song-45b5635f15d66c5ca776cf1f"
+    },
+    {
+      "expected_artist": "Xtreme (Band)",
+      "expected_title": "Shorty, Shorty",
+      "query": "Shorty, Shorty Xtreme (Band)",
+      "request_id": "song-716cdc0c9566a5e3ea067c39"
+    },
+    {
+      "expected_artist": "Aventura",
+      "expected_title": "Todavía Me Amas",
+      "query": "Todavía Me Amas Aventura",
+      "request_id": "song-23bcc098a815949aefae2d23"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Como Abeja Al Panal",
+      "query": "Como Abeja Al Panal Juan Luis Guerra",
+      "request_id": "song-b15cd605739f1b8fe40fdb6f"
+    },
+    {
+      "expected_artist": "Fernando Villalona",
+      "expected_title": "Fernando Villalona-Te Amo Demasiado",
+      "query": "Fernando Villalona-Te Amo Demasiado Fernando Villalona",
+      "request_id": "song-adc3a776240f11460cfd7ab2"
+    },
+    {
+      "expected_artist": "Racionais MC’s",
+      "expected_title": "Capítulo 4, Versículo 3",
+      "query": "Capítulo 4, Versículo 3 Racionais MC’s",
+      "request_id": "song-9216858092af25e750509ca9"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Mi Bendición",
+      "query": "Mi Bendición Juan Luis Guerra",
+      "request_id": "song-29c97732663cd15c9d811641"
+    },
+    {
+      "expected_artist": "Xtreme (Band)",
+      "expected_title": "Si la Ves",
+      "query": "Si la Ves Xtreme (Band)",
+      "request_id": "song-62b958e2e633fcb722e9e13b"
+    },
+    {
+      "expected_artist": "Hombres G",
+      "expected_title": "Devuélveme a Mi Chica",
+      "query": "Devuélveme a Mi Chica Hombres G",
+      "request_id": "song-7768052b1d94affe574cdf07"
+    },
+    {
+      "expected_artist": "El Chaval de la Bachata",
+      "expected_title": "Devuélveme Todo",
+      "query": "Devuélveme Todo El Chaval de la Bachata",
+      "request_id": "song-a21074790abc363c67b24faf"
+    },
+    {
+      "expected_artist": "Aventura",
+      "expected_title": "Amor de Madre",
+      "query": "Amor de Madre Aventura",
+      "request_id": "song-44ebda1ee93f73aef5ef6e66"
+    },
+    {
+      "expected_artist": "Jennifer Lopez",
+      "expected_title": "Ni Tú Ni Yo",
+      "query": "Ni Tú Ni Yo Jennifer Lopez",
+      "request_id": "song-c1a556d243f1d947708dbce3"
+    },
+    {
+      "expected_artist": "Spotify",
+      "expected_title": "Today’s Top Hits 3/26/21 (feat. Cardi B)",
+      "query": "Today’s Top Hits 3/26/21 (feat. Cardi B) Spotify",
+      "request_id": "song-91c435f920254d78992c37fe"
+    },
+    {
+      "expected_artist": "Joe Veras",
+      "expected_title": "Ella volvio",
+      "query": "Ella volvio Joe Veras",
+      "request_id": "song-e9ad1ff9a438215be1942e53"
+    },
+    {
+      "expected_artist": "Leonardo Paniagua",
+      "expected_title": "Ella Se Llamaba Marta",
+      "query": "Ella Se Llamaba Marta Leonardo Paniagua",
+      "request_id": "song-a7d06ba901a4535c3198671b"
+    },
+    {
+      "expected_artist": "Doble El Elegido",
+      "expected_title": "Intro: MEIN LEBEN",
+      "query": "Intro: MEIN LEBEN Doble El Elegido",
+      "request_id": "song-72f92f240cd7882d85a07662"
+    },
+    {
+      "expected_artist": "Monchy & Alexandra",
+      "expected_title": "En el Muelle De San Blas",
+      "query": "En el Muelle De San Blas Monchy & Alexandra",
+      "request_id": "song-e0d59ceb208241c714d274a1"
+    },
+    {
+      "expected_artist": "Genius en Español",
+      "expected_title": "Álbumes de Música En Español 2021",
+      "query": "Álbumes de Música En Español 2021 Genius en Español",
+      "request_id": "song-7ddd7c45824f9c9cecaf6f8a"
+    },
+    {
+      "expected_artist": "El Pekeño",
+      "expected_title": "Volvió Juanita Con la Pampara Prendia",
+      "query": "Volvió Juanita Con la Pampara Prendia El Pekeño",
+      "request_id": "song-808eebf229b5a2c9ac23d61b"
+    },
+    {
+      "expected_artist": "Zacarías Ferreira",
+      "expected_title": "El Amor",
+      "query": "El Amor Zacarías Ferreira",
+      "request_id": "song-8cffbc1e8460ff205137d3a5"
+    },
+    {
+      "expected_artist": "Alacranes Musical",
+      "expected_title": "Por tu amor (Duranguense)",
+      "query": "Por tu amor (Duranguense) Alacranes Musical",
+      "request_id": "song-523efeb04bb11a834d38bab6"
+    },
+    {
+      "expected_artist": "El Alfa",
+      "expected_title": "Banda de Camión (Remix)",
+      "query": "Banda de Camión (Remix) El Alfa",
+      "request_id": "song-55606d22396d8d530be3d5b3"
+    },
+    {
+      "expected_artist": "Hector Acosta",
+      "expected_title": "Sin Perdon",
+      "query": "Sin Perdon Hector Acosta",
+      "request_id": "song-3663462cbe995912012715f1"
+    },
+    {
+      "expected_artist": "Don Miguelo",
+      "expected_title": "El Mario de Tu Mujer",
+      "query": "El Mario de Tu Mujer Don Miguelo",
+      "request_id": "song-139d49d26506b12ab5f92793"
+    },
+    {
+      "expected_artist": "Los Campesinos de Bambamarca",
+      "expected_title": "Mujer Interesada",
+      "query": "Mujer Interesada Los Campesinos de Bambamarca",
+      "request_id": "song-17c391b51bb3f6ef7b39dad0"
+    },
+    {
+      "expected_artist": "Rochy RD",
+      "expected_title": "Millonario Real",
+      "query": "Millonario Real Rochy RD",
+      "request_id": "song-46c860f9860d539d8007729e"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Hilito",
+      "query": "Hilito Romeo Santos",
+      "request_id": "song-23298b088ceef5c0d19da526"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Frío, Frío (Live)",
+      "query": "Frío, Frío (Live) Juan Luis Guerra",
+      "request_id": "song-bd0f019e1dbd598da039cc51"
+    },
+    {
+      "expected_artist": "Hector Acosta",
+      "expected_title": "Me Duele la Cabeza",
+      "query": "Me Duele la Cabeza Hector Acosta",
+      "request_id": "song-0bd9e5f217376c6a85083cb0"
+    },
+    {
+      "expected_artist": "Genius English Translations",
+      "expected_title": "Romeo Santos & ROSALÍA - El Pañuelo (English Translation)",
+      "query": "Romeo Santos & ROSALÍA - El Pañuelo (English Translation) Genius English Translations",
+      "request_id": "song-a34236311489b14d65fb6446"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Me Extraño",
+      "query": "Me Extraño Romeo Santos",
+      "request_id": "song-c7b597b0173bf0d914fb3c69"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Sin Fin",
+      "query": "Sin Fin Romeo Santos",
+      "request_id": "song-f63851823cada8ee1baf96ec"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "SIRI",
+      "query": "SIRI Romeo Santos",
+      "request_id": "song-0899e15161cc2794199bc5a4"
+    },
+    {
+      "expected_artist": "Genius English Translations",
+      "expected_title": "Aventura & Bad Bunny - Volví (English Translation)",
+      "query": "Aventura & Bad Bunny - Volví (English Translation) Genius English Translations",
+      "request_id": "song-e09c9b51bdffff8e40c52e3f"
+    },
+    {
+      "expected_artist": "Prince Royce",
+      "expected_title": "Morir Solo",
+      "query": "Morir Solo Prince Royce",
+      "request_id": "song-88fab3b9e706f0a1d9ab17e0"
+    },
+    {
+      "expected_artist": "Prince Royce",
+      "expected_title": "Adicto",
+      "query": "Adicto Prince Royce",
+      "request_id": "song-b0aa8208e4a0252fd58136b7"
+    },
+    {
+      "expected_artist": "Prince Royce",
+      "expected_title": "Cita",
+      "query": "Cita Prince Royce",
+      "request_id": "song-1e32dd36519f30d09d002534"
+    },
+    {
+      "expected_artist": "Prince Royce",
+      "expected_title": "Trampa",
+      "query": "Trampa Prince Royce",
+      "request_id": "song-eef13062d5a452f8e6399d84"
+    },
+    {
+      "expected_artist": "Anthony Santos",
+      "expected_title": "Corazón Culpable",
+      "query": "Corazón Culpable Anthony Santos",
+      "request_id": "song-5369ff862b6af383a9fcb6f9"
+    },
+    {
+      "expected_artist": "Tito “El Bambino”",
+      "expected_title": "Mienteme",
+      "query": "Mienteme Tito “El Bambino”",
+      "request_id": "song-8fc27521820c93d3a47a4e9c"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "El Papel, Pt. 2 (Versión Marido)",
+      "query": "El Papel, Pt. 2 (Versión Marido) Romeo Santos",
+      "request_id": "song-7e8258597360bec418608fd9"
+    },
+    {
+      "expected_artist": "Frank Reyes",
+      "expected_title": "Mujer De Mil Batallas",
+      "query": "Mujer De Mil Batallas Frank Reyes",
+      "request_id": "song-0cbfc21dd5dcabedabcf686f"
+    },
+    {
+      "expected_artist": "Frank Reyes",
+      "expected_title": "Devuélveme Mi Libertad",
+      "query": "Devuélveme Mi Libertad Frank Reyes",
+      "request_id": "song-b19fa1df0b9760d19bd7c4df"
+    },
+    {
+      "expected_artist": "Frank Reyes",
+      "expected_title": "Se Te Olvidó",
+      "query": "Se Te Olvidó Frank Reyes",
+      "request_id": "song-7c22710033ef8de117140ea6"
+    },
+    {
+      "expected_artist": "Frank Reyes",
+      "expected_title": "Cómo Sanar",
+      "query": "Cómo Sanar Frank Reyes",
+      "request_id": "song-736baba2d8bcaedd345d7246"
+    },
+    {
+      "expected_artist": "Raulin Rodriguez",
+      "expected_title": "Si Supieras",
+      "query": "Si Supieras Raulin Rodriguez",
+      "request_id": "song-3e3d0e07e24a2e69f686e21b"
+    },
+    {
+      "expected_artist": "Kiko Rodriguez",
+      "expected_title": "Ya Te Olvidé",
+      "query": "Ya Te Olvidé Kiko Rodriguez",
+      "request_id": "song-95538614556b06e4ab4379c8"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Me Quedo",
+      "query": "Me Quedo Romeo Santos",
+      "request_id": "song-b202031a99a2215826069bf4"
+    },
+    {
+      "expected_artist": "Zacarías Ferreira",
+      "expected_title": "Amiga Veneno",
+      "query": "Amiga Veneno Zacarías Ferreira",
+      "request_id": "song-60c772d3bc7df584e7b7ed82"
+    },
+    {
+      "expected_artist": "Vic Deal",
+      "expected_title": "6 Horas",
+      "query": "6 Horas Vic Deal",
+      "request_id": "song-b7fca389ed9fede8c2bee364"
+    },
+    {
+      "expected_artist": "Elvis Martinez",
+      "expected_title": "Saco e Sal",
+      "query": "Saco e Sal Elvis Martinez",
+      "request_id": "song-74a31525acd964a8302fe297"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Millionario",
+      "query": "Millionario Romeo Santos",
+      "request_id": "song-8a261bebed2d9df58e898ec0"
+    },
+    {
+      "expected_artist": "Joe Veras",
+      "expected_title": "Carta De Verano",
+      "query": "Carta De Verano Joe Veras",
+      "request_id": "song-9199f2a01b1c3b4293cb7ad4"
+    },
+    {
+      "expected_artist": "L’Alchimie",
+      "expected_title": "Demi-expert et faux-sachant",
+      "query": "Demi-expert et faux-sachant L’Alchimie",
+      "request_id": "song-bd3b6c8ef1d8c9cef0423d71"
+    },
+    {
+      "expected_artist": "Luis Vargas",
+      "expected_title": "La Mesa Del Rincón",
+      "query": "La Mesa Del Rincón Luis Vargas",
+      "request_id": "song-f26338b88cb25d4e4521d803"
+    },
+    {
+      "expected_artist": "Luis Vargas",
+      "expected_title": "Ceniza Fría",
+      "query": "Ceniza Fría Luis Vargas",
+      "request_id": "song-87acda59e07710261f96de7f"
+    },
+    {
+      "expected_artist": "Luis Vargas",
+      "expected_title": "Esa Mujer",
+      "query": "Esa Mujer Luis Vargas",
+      "request_id": "song-6a5490ab35a86df063792342"
+    },
+    {
+      "expected_artist": "El Chaval de la Bachata",
+      "expected_title": "Sufriendo Una Pena",
+      "query": "Sufriendo Una Pena El Chaval de la Bachata",
+      "request_id": "song-f1666d7525cceda131495859"
+    },
+    {
+      "expected_artist": "El Chaval de la Bachata",
+      "expected_title": "Dile a El",
+      "query": "Dile a El El Chaval de la Bachata",
+      "request_id": "song-93735ba1c62609e2e9f8f7a6"
+    },
+    {
+      "expected_artist": "Luis Miguel",
+      "expected_title": "Romance Popurri",
+      "query": "Romance Popurri Luis Miguel",
+      "request_id": "song-0052099b0c85584e2275e22d"
+    },
+    {
+      "expected_artist": "Jarfaiter",
+      "expected_title": "TEKKEN",
+      "query": "TEKKEN Jarfaiter",
+      "request_id": "song-372a1a33b355493a9f285d72"
+    },
+    {
+      "expected_artist": "Kiko Rodriguez",
+      "expected_title": "Bandida",
+      "query": "Bandida Kiko Rodriguez",
+      "request_id": "song-4882c8d31b716ad5277b6bb1"
+    },
+    {
+      "expected_artist": "Yoskar Sarante",
+      "expected_title": "Ay Amor",
+      "query": "Ay Amor Yoskar Sarante",
+      "request_id": "song-e6d3fa6e4f1817d5657d7c03"
+    },
+    {
+      "expected_artist": "Yoskar Sarante",
+      "expected_title": "Vale la pena",
+      "query": "Vale la pena Yoskar Sarante",
+      "request_id": "song-08f0d5da4090e21f1567bbf0"
+    },
+    {
+      "expected_artist": "Yoskar Sarante",
+      "expected_title": "Tres Veces",
+      "query": "Tres Veces Yoskar Sarante",
+      "request_id": "song-28b3d83acd202a5eb9bbbdce"
+    },
+    {
+      "expected_artist": "KEVVO",
+      "expected_title": "Te Va Bien",
+      "query": "Te Va Bien KEVVO",
+      "request_id": "song-1b9560dd354f77e3f54a49a9"
+    },
+    {
+      "expected_artist": "Karlos rose",
+      "expected_title": "Infiel",
+      "query": "Infiel Karlos rose",
+      "request_id": "song-106145bbfcd6ee917721a52d"
+    },
+    {
+      "expected_artist": "Toby Love",
+      "expected_title": "Tengo Un Amor (English Version)",
+      "query": "Tengo Un Amor (English Version) Toby Love",
+      "request_id": "song-bf15b7b3a808ff51c979064d"
+    },
+    {
+      "expected_artist": "Toby Love",
+      "expected_title": "Llorar Lloviendo",
+      "query": "Llorar Lloviendo Toby Love",
+      "request_id": "song-edb095d463bf2da1cf6298dd"
+    },
+    {
+      "expected_artist": "Leslie Grace",
+      "expected_title": "Be My Baby",
+      "query": "Be My Baby Leslie Grace",
+      "request_id": "song-1fb95f5c60b61d1c33619dcc"
+    },
+    {
+      "expected_artist": "VENA",
+      "expected_title": "Sangre de mis venas",
+      "query": "Sangre de mis venas VENA",
+      "request_id": "song-5964c15cbd8ba0d4b7919ddc"
+    },
+    {
+      "expected_artist": "Johnny sky",
+      "expected_title": "Quiereme",
+      "query": "Quiereme Johnny sky",
+      "request_id": "song-a6284a6cd35828932cd9822d"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Como Yo",
+      "query": "Como Yo Juan Luis Guerra",
+      "request_id": "song-bf1897db752ba0eb16dfd8c1"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Fogarate",
+      "query": "Fogarate Juan Luis Guerra",
+      "request_id": "song-c7f59c12a4e8ab702f8a58ba"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "¡Ay! Mujer",
+      "query": "¡Ay! Mujer Juan Luis Guerra",
+      "request_id": "song-6c225d29fea92dcfe97a4c9d"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Razones",
+      "query": "Razones Juan Luis Guerra",
+      "request_id": "song-d22f71d849cd6b40b648dc17"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Carta de Amor",
+      "query": "Carta de Amor Juan Luis Guerra",
+      "request_id": "song-a8269d1270b8ad40f0cb7cd5"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Guavaberry",
+      "query": "Guavaberry Juan Luis Guerra",
+      "request_id": "song-519d6cb51d862ebed3978600"
+    },
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Son al Rey",
+      "query": "Son al Rey Juan Luis Guerra",
+      "request_id": "song-4b8cded41d658f118406abdf"
+    },
+    {
+      "expected_artist": "Sergio Vargas",
+      "expected_title": "La Celosa",
+      "query": "La Celosa Sergio Vargas",
+      "request_id": "song-f1bf1016bf6a84b9c5c09ef1"
+    },
+    {
+      "expected_artist": "Juan Gabriel Vásquez",
+      "expected_title": "El ruido de las cosas al caer (capítulo 1)",
+      "query": "El ruido de las cosas al caer (capítulo 1) Juan Gabriel Vásquez",
+      "request_id": "song-36d5751f3b54eec0672fbc6e"
+    },
+    {
+      "expected_artist": "ELIZALDE",
+      "expected_title": "Fotos",
+      "query": "Fotos ELIZALDE",
+      "request_id": "song-7e3d9f6ea8b6060b2dd95ba6"
+    },
+    {
+      "expected_artist": "Los Hermanos Rosario",
+      "expected_title": "Rompecintura",
+      "query": "Rompecintura Los Hermanos Rosario",
+      "request_id": "song-cc708ccf059a09b50f218c99"
+    },
+    {
+      "expected_artist": "Los Hermanos Rosario",
+      "expected_title": "Video Clip",
+      "query": "Video Clip Los Hermanos Rosario",
+      "request_id": "song-7d21ed065dd1e7a5ad46f829"
+    },
+    {
+      "expected_artist": "Ezdo Marchito & lo rial paris",
+      "expected_title": "Don",
+      "query": "Don Ezdo Marchito & lo rial paris",
+      "request_id": "song-bd0c286434f8e05c60a198c4"
+    },
+    {
+      "expected_artist": "Toño Rosario",
+      "expected_title": "Quiero Volver A Empezar",
+      "query": "Quiero Volver A Empezar Toño Rosario",
+      "request_id": "song-5de23e6f25b8159d82cc7b84"
+    },
+    {
+      "expected_artist": "Toño Rosario",
+      "expected_title": "Culiquitaca",
+      "query": "Culiquitaca Toño Rosario",
+      "request_id": "song-930d63568f3aff2bd01239e7"
+    },
+    {
+      "expected_artist": "Fernando Villalona",
+      "expected_title": "Delirante amor",
+      "query": "Delirante amor Fernando Villalona",
+      "request_id": "song-d8ef07c6d8fab3eed8a6b5ae"
+    },
+    {
+      "expected_artist": "Fernando Villalona",
+      "expected_title": "Cama y mesa",
+      "query": "Cama y mesa Fernando Villalona",
+      "request_id": "song-809b9a3b5f12c653b684df9c"
+    },
+    {
+      "expected_artist": "Wilfrido Vargas",
+      "expected_title": "El Hombre Divertido",
+      "query": "El Hombre Divertido Wilfrido Vargas",
+      "request_id": "song-32a062d229351ecdbf0e32c4"
+    },
+    {
+      "expected_artist": "Los Razos",
+      "expected_title": "La Vacas Pintas de Negro",
+      "query": "La Vacas Pintas de Negro Los Razos",
+      "request_id": "song-37d112823b197cade1255aca"
+    },
+    {
+      "expected_artist": "Wilfrido Vargas",
+      "expected_title": "A Mover la Colita",
+      "query": "A Mover la Colita Wilfrido Vargas",
+      "request_id": "song-857d074725ae97f40d5bbcd8"
+    },
+    {
+      "expected_artist": "Los Hermanos Rosario",
+      "expected_title": "Que Vengan",
+      "query": "Que Vengan Los Hermanos Rosario",
+      "request_id": "song-cd50b987f8313b905bc922f9"
+    },
+    {
+      "expected_artist": "Eddy Herrera",
+      "expected_title": "Ahora soy yo",
+      "query": "Ahora soy yo Eddy Herrera",
+      "request_id": "song-f73276b5d74b46763342cb9f"
+    },
+    {
+      "expected_artist": "Milly Quezada",
+      "expected_title": "Toma Mi Vida",
+      "query": "Toma Mi Vida Milly Quezada",
+      "request_id": "song-657b545a094705110aecae49"
+    },
+    {
+      "expected_artist": "Genius en Español",
+      "expected_title": "Álbumes de Música En Español 2020",
+      "query": "Álbumes de Música En Español 2020 Genius en Español",
+      "request_id": "song-a1685157b2b5d8d25fcf2f03"
+    },
+    {
+      "expected_artist": "Hector Acosta",
+      "expected_title": "Que Vuelva Mi Morena",
+      "query": "Que Vuelva Mi Morena Hector Acosta",
+      "request_id": "song-d99d3169675a64b8e619d5bf"
+    },
+    {
+      "expected_artist": "RKM & Ken-Y",
+      "expected_title": "Vicio del Pecado",
+      "query": "Vicio del Pecado RKM & Ken-Y",
+      "request_id": "song-af674111f45718e2d1becb83"
+    },
+    {
+      "expected_artist": "Los Toros Band",
+      "expected_title": "No Pude Quitarte Las Espinas",
+      "query": "No Pude Quitarte Las Espinas Los Toros Band",
+      "request_id": "song-9e880afe152e22ae72f26d88"
+    },
+    {
+      "expected_artist": "Los Toros Band",
+      "expected_title": "Las mujeres lo bailan bien",
+      "query": "Las mujeres lo bailan bien Los Toros Band",
+      "request_id": "song-32420674605816884f119f87"
+    },
+    {
+      "expected_artist": "Mora",
+      "expected_title": "LA INOCENTE",
+      "query": "LA INOCENTE Mora",
+      "request_id": "song-503ef178f231f59cdfe81b64"
+    },
+    {
+      "expected_artist": "Manny Cruz",
+      "expected_title": "Dame Una Noche",
+      "query": "Dame Una Noche Manny Cruz",
+      "request_id": "song-5ad42adfebc36dbcccc835b5"
+    },
+    {
+      "expected_artist": "Elvis Crespo",
+      "expected_title": "Imaginarme Sin Ti",
+      "query": "Imaginarme Sin Ti Elvis Crespo",
+      "request_id": "song-3f32f828067bcfc310a480ae"
+    },
+    {
+      "expected_artist": "Rubby Pérez",
+      "expected_title": "Enamorado de ella",
+      "query": "Enamorado de ella Rubby Pérez",
+      "request_id": "song-bb312c6637c81cbb2b3e7245"
+    },
+    {
+      "expected_artist": "Rubby Pérez",
+      "expected_title": "Hazme olvidar",
+      "query": "Hazme olvidar Rubby Pérez",
+      "request_id": "song-ea74b14c345fdb3d53b09309"
+    },
+    {
+      "expected_artist": "Whitest Taino Alive",
+      "expected_title": "Cloudy Quisqueya",
+      "query": "Cloudy Quisqueya Whitest Taino Alive",
+      "request_id": "song-d9c1c6cdb80846dee1f3a10e"
+    },
+    {
+      "expected_artist": "Marcel Proust",
+      "expected_title": "The Verdurins Quarrel (Chap. 2)",
+      "query": "The Verdurins Quarrel (Chap. 2) Marcel Proust",
+      "request_id": "song-044806350a91f0eb58f81211"
+    },
+    {
+      "expected_artist": "Genius",
+      "expected_title": "August 2023 Singles Release Calendar",
+      "query": "August 2023 Singles Release Calendar Genius",
+      "request_id": "song-942e98f34363265fc51b8f80"
+    },
+    {
+      "expected_artist": "Alex Bueno",
+      "expected_title": "La Distancia",
+      "query": "La Distancia Alex Bueno",
+      "request_id": "song-4560bddddba453ddfffd8e60"
+    },
+    {
+      "expected_artist": "Alex Bueno",
+      "expected_title": "Quiereme",
+      "query": "Quiereme Alex Bueno",
+      "request_id": "song-73911c9f208625da51da17b2"
+    },
+    {
+      "expected_artist": "Kendo Kaponi",
+      "expected_title": "Amén",
+      "query": "Amén Kendo Kaponi",
+      "request_id": "song-71d395493c664665ee9aa9e5"
+    },
+    {
+      "expected_artist": "Arma Blanca",
+      "expected_title": "La Hoguera",
+      "query": "La Hoguera Arma Blanca",
+      "request_id": "song-479fd67c01094cc9e40ee97a"
+    },
+    {
+      "expected_artist": "J Balvin",
+      "expected_title": "Si Tu Novio Te Deja Sola",
+      "query": "Si Tu Novio Te Deja Sola J Balvin",
+      "request_id": "song-80ea3c30b103945e016d2527"
+    },
+    {
+      "expected_artist": "Kinito Mendez",
+      "expected_title": "El Pronóstico (feat Johnny Ventura)",
+      "query": "El Pronóstico (feat Johnny Ventura) Kinito Mendez",
+      "request_id": "song-75d2ae27e20053c4da7eaf0f"
+    },
+    {
+      "expected_artist": "Mark B",
+      "expected_title": "Llamado a La Patria",
+      "query": "Llamado a La Patria Mark B",
+      "request_id": "song-696385f12fccbfb8af875439"
+    },
+    {
+      "expected_artist": "Silvio Mora",
+      "expected_title": "Llego el Pavo",
+      "query": "Llego el Pavo Silvio Mora",
+      "request_id": "song-26ba475013008fd022ca6f8b"
+    },
+    {
+      "expected_artist": "Jombriel",
+      "expected_title": "VITAMINA",
+      "query": "VITAMINA Jombriel",
+      "request_id": "song-cda07d7d5fab8d0b8dd68b97"
+    },
+    {
+      "expected_artist": "Shotta",
+      "expected_title": "Sangre",
+      "query": "Sangre Shotta",
+      "request_id": "song-196f876dbcf79b1698f48679"
+    },
+    {
+      "expected_artist": "El Mayor Clásico",
+      "expected_title": "Ven Meneate (Remix)",
+      "query": "Ven Meneate (Remix) El Mayor Clásico",
+      "request_id": "song-f9b52cb285eb6fd1fa3aa0c4"
+    },
+    {
+      "expected_artist": "kevonito",
+      "expected_title": "El Niño Prodigio (Corrido)",
+      "query": "El Niño Prodigio (Corrido) kevonito",
+      "request_id": "song-5daa50ace025795858aea073"
+    },
+    {
+      "expected_artist": "Sor Juana Inés de la Cruz",
+      "expected_title": "Primero sueño",
+      "query": "Primero sueño Sor Juana Inés de la Cruz",
+      "request_id": "song-4b1739aa768f654c9bc6f60e"
+    },
+    {
+      "expected_artist": "Topboy TGR",
+      "expected_title": "DRIPPIN",
+      "query": "DRIPPIN Topboy TGR",
+      "request_id": "song-e8e8dd5fecd10e73282abd80"
+    },
+    {
+      "expected_artist": "Thalía",
+      "expected_title": "Como Tú No Hay Dos",
+      "query": "Como Tú No Hay Dos Thalía",
+      "request_id": "song-94f885c9f2f9f9a8efcced01"
+    },
+    {
+      "expected_artist": "Aqua VS",
+      "expected_title": "MI BANDIA",
+      "query": "MI BANDIA Aqua VS",
+      "request_id": "song-f25f0082a68c0d87ee346f95"
+    },
+    {
+      "expected_artist": "Yohann",
+      "expected_title": "Bacharel",
+      "query": "Bacharel Yohann",
+      "request_id": "song-a8a3b9d821c9caf930a3471a"
+    },
+    {
+      "expected_artist": "JKGenius75",
+      "expected_title": "Pro Wrestling Nicknames",
+      "query": "Pro Wrestling Nicknames JKGenius75",
+      "request_id": "song-c0cdc09562d7ea966529ab6e"
+    },
+    {
+      "expected_artist": "CNCO",
+      "expected_title": "Honey Boo",
+      "query": "Honey Boo CNCO",
+      "request_id": "song-a2151c5b74d1876591806b58"
+    },
+    {
+      "expected_artist": "NATTI NATASHA",
+      "expected_title": "Ram Pam Pam",
+      "query": "Ram Pam Pam NATTI NATASHA",
+      "request_id": "song-1cb1c8329e1cd9587db82426"
+    },
+    {
+      "expected_artist": "NATTI NATASHA",
+      "expected_title": "WOW BB",
+      "query": "WOW BB NATTI NATASHA",
+      "request_id": "song-2782a72797afcd6775bbc6a6"
+    },
+    {
+      "expected_artist": "Black Eyed Peas",
+      "expected_title": "NO MAÑANA",
+      "query": "NO MAÑANA Black Eyed Peas",
+      "request_id": "song-66972c01a1d86bcdba98b04d"
+    },
+    {
+      "expected_artist": "Lary Over",
+      "expected_title": "Súbete (Remix)",
+      "query": "Súbete (Remix) Lary Over",
+      "request_id": "song-3330d43ffd0161656cd5e464"
+    },
+    {
+      "expected_artist": "KEYBLADE",
+      "expected_title": "Godzilla vs Kong",
+      "query": "Godzilla vs Kong KEYBLADE",
+      "request_id": "song-9613ba0d27e35918300b0464"
+    },
+    {
+      "expected_artist": "Tokischa",
+      "expected_title": "Sistema De Patio",
+      "query": "Sistema De Patio Tokischa",
+      "request_id": "song-5afee06e7a9549afb3baacce"
+    },
+    {
+      "expected_artist": "Tokischa",
+      "expected_title": "Tukuntazo",
+      "query": "Tukuntazo Tokischa",
+      "request_id": "song-03e46c9bc123cd2faeed0594"
+    },
+    {
+      "expected_artist": "Rochy RD",
+      "expected_title": "Hay Santo",
+      "query": "Hay Santo Rochy RD",
+      "request_id": "song-fa85f5785d99936743ea58d7"
+    },
+    {
+      "expected_artist": "Rochy RD",
+      "expected_title": "Un Brindis",
+      "query": "Un Brindis Rochy RD",
+      "request_id": "song-1a8796744b6c993fe30d9e16"
+    },
+    {
+      "expected_artist": "Rochy RD",
+      "expected_title": "La Máxima",
+      "query": "La Máxima Rochy RD",
+      "request_id": "song-473043e11656a909d82de559"
+    },
+    {
+      "expected_artist": "Chimbala",
+      "expected_title": "Esta Sí",
+      "query": "Esta Sí Chimbala",
+      "request_id": "song-22bd27119c0e9f110bdc9bd5"
+    },
+    {
+      "expected_artist": "Chimbala",
+      "expected_title": "El Boom (Remix)",
+      "query": "El Boom (Remix) Chimbala",
+      "request_id": "song-1c00accf1c2c549e47cce8ed"
+    },
+    {
+      "expected_artist": "Bulin 47",
+      "expected_title": "Cuanto Te Tan Dando",
+      "query": "Cuanto Te Tan Dando Bulin 47",
+      "request_id": "song-99a73917e9a5c2b98e59df59"
+    },
+    {
+      "expected_artist": "Bulin 47",
+      "expected_title": "Comando",
+      "query": "Comando Bulin 47",
+      "request_id": "song-296bb15d60e25f0e0444619f"
+    },
+    {
+      "expected_artist": "Bulova",
+      "expected_title": "Vamo Pal Bronx",
+      "query": "Vamo Pal Bronx Bulova",
+      "request_id": "song-f07fa0b92d0420b57ff9613f"
+    },
+    {
+      "expected_artist": "GeezLy",
+      "expected_title": "Ruleteo",
+      "query": "Ruleteo GeezLy",
+      "request_id": "song-caeba7c73b76602874a17141"
+    },
+    {
+      "expected_artist": "Ceky Viciny",
+      "expected_title": "El Tiempo (Remix)",
+      "query": "El Tiempo (Remix) Ceky Viciny",
+      "request_id": "song-027da0e577d3fcca080441ae"
+    },
+    {
+      "expected_artist": "Secreto El Famoso Biberón",
+      "expected_title": "Mi Noche",
+      "query": "Mi Noche Secreto El Famoso Biberón",
+      "request_id": "song-05de1a63a5f959ea31ca6cb2"
+    },
+    {
+      "expected_artist": "Canibus",
+      "expected_title": "Poet Laureate Infinity",
+      "query": "Poet Laureate Infinity Canibus",
+      "request_id": "song-1d4f8caddb041a401ecde74c"
+    },
+    {
+      "expected_artist": "Mozart La Para",
+      "expected_title": "Fiesta y Vacilón",
+      "query": "Fiesta y Vacilón Mozart La Para",
+      "request_id": "song-be9a6da19acdc2b3dc4b3f43"
+    },
+    {
+      "expected_artist": "Lapiz Conciente",
+      "expected_title": "Dios No Se Equivoca",
+      "query": "Dios No Se Equivoca Lapiz Conciente",
+      "request_id": "song-2fafffce6af21658f8abdfb3"
+    },
+    {
+      "expected_artist": "Suicidio Adolescente",
+      "expected_title": "Porfavor Deja De Llorar",
+      "query": "Porfavor Deja De Llorar Suicidio Adolescente",
+      "request_id": "song-b089d5d3e68d124f2c34f98f"
+    },
+    {
+      "expected_artist": "Vakero",
+      "expected_title": "No Te Olvidaré",
+      "query": "No Te Olvidaré Vakero",
+      "request_id": "song-859f85a6ac4e9b9e57723405"
+    },
+    {
+      "expected_artist": "Genius en Español",
+      "expected_title": "Sencillos del Mes de Abril 2020",
+      "query": "Sencillos del Mes de Abril 2020 Genius en Español",
+      "request_id": "song-8ff88b1e8a1af1c5e60c871c"
+    },
+    {
+      "expected_artist": "Don Miguelo",
+      "expected_title": "La Cola de Motora",
+      "query": "La Cola de Motora Don Miguelo",
+      "request_id": "song-02f2ebab5322eac2bd662cd8"
+    },
+    {
+      "expected_artist": "Ovi",
+      "expected_title": "Tú Andas con Los Popó",
+      "query": "Tú Andas con Los Popó Ovi",
+      "request_id": "song-d548bed9708f08fc1939d382"
+    },
+    {
+      "expected_artist": "Shadow Blow",
+      "expected_title": "Desde Que Te Conocí",
+      "query": "Desde Que Te Conocí Shadow Blow",
+      "request_id": "song-3a2c8c81739c6fb2efe54ef0"
+    },
+    {
+      "expected_artist": "Shadow Blow",
+      "expected_title": "Cuando Te Vuelva A Ver",
+      "query": "Cuando Te Vuelva A Ver Shadow Blow",
+      "request_id": "song-ea69bb04c90551865e8bc9d3"
+    },
+    {
+      "expected_artist": "La Materialista",
+      "expected_title": "Corazón al Revés",
+      "query": "Corazón al Revés La Materialista",
+      "request_id": "song-2a40791d1ebb3e26f891d0c7"
+    },
+    {
+      "expected_artist": "Yailin la Mas Viral",
+      "expected_title": "Narcisista",
+      "query": "Narcisista Yailin la Mas Viral",
+      "request_id": "song-5eee54ef743605d5d7c996a7"
+    },
+    {
+      "expected_artist": "Yailin la Mas Viral",
+      "expected_title": "Mal De Amor",
+      "query": "Mal De Amor Yailin la Mas Viral",
+      "request_id": "song-22f7fd14fd3bdbbf7e2ab1b8"
+    },
+    {
+      "expected_artist": "Wilmer Roberts",
+      "expected_title": "Say My Name",
+      "query": "Say My Name Wilmer Roberts",
+      "request_id": "song-b58076af43d2bdc3ed00b30e"
+    },
+    {
+      "expected_artist": "Playero",
+      "expected_title": "Dance Hall Mix",
+      "query": "Dance Hall Mix Playero",
+      "request_id": "song-9242d0d84cfbdbf02865b1dd"
+    },
+    {
+      "expected_artist": "Jey One",
+      "expected_title": "Karola",
+      "query": "Karola Jey One",
+      "request_id": "song-504f8b405b721fcc5ca7d55e"
+    },
+    {
+      "expected_artist": "Nfasis",
+      "expected_title": "Un Chamaquito Exitoso",
+      "query": "Un Chamaquito Exitoso Nfasis",
+      "request_id": "song-8ae8b7c6216b924839227026"
+    },
+    {
+      "expected_artist": "Lomiiel",
+      "expected_title": "DOMI",
+      "query": "DOMI Lomiiel",
+      "request_id": "song-a28a90e2dab1f22b964965f1"
+    },
+    {
+      "expected_artist": "Africa Unite",
+      "expected_title": "In piedi",
+      "query": "In piedi Africa Unite",
+      "request_id": "song-d57af85eb00deef187d01921"
+    },
+    {
+      "expected_artist": "Ñengo Flow",
+      "expected_title": "Free Tempo",
+      "query": "Free Tempo Ñengo Flow",
+      "request_id": "song-f3e60ade9143755520e6744e"
+    },
+    {
+      "expected_artist": "Rochy RD",
+      "expected_title": "Yamile",
+      "query": "Yamile Rochy RD",
+      "request_id": "song-0d767e314d63583890c35486"
+    },
+    {
+      "expected_artist": "Kaly Ocho",
+      "expected_title": "Piri Bambam",
+      "query": "Piri Bambam Kaly Ocho",
+      "request_id": "song-47c33cd606bceca8f0eec646"
+    },
+    {
+      "expected_artist": "Braulio Fogon",
+      "expected_title": "Bagre",
+      "query": "Bagre Braulio Fogon",
+      "request_id": "song-52d8c9f9dc4a46ac173f84b2"
+    },
+    {
+      "expected_artist": "Violadores del Verso",
+      "expected_title": "No Pasa Nada",
+      "query": "No Pasa Nada Violadores del Verso",
+      "request_id": "song-49617fbc21d8336e8c7e3ce0"
+    },
+    {
+      "expected_artist": "Chiquito Team Band",
+      "expected_title": "Lupita",
+      "query": "Lupita Chiquito Team Band",
+      "request_id": "song-0067f5a2cb98ba9e7c7e40cf"
+    },
+    {
+      "expected_artist": "Alex Matos",
+      "expected_title": "El cariño es como una flor",
+      "query": "El cariño es como una flor Alex Matos",
+      "request_id": "song-f0f7c8cfc5777c45a76a01dd"
+    },
+    {
+      "expected_artist": "Al2 El Aldeano",
+      "expected_title": "Pésima Conducta",
+      "query": "Pésima Conducta Al2 El Aldeano",
+      "request_id": "song-373ad8683753b7cdb0d5228a"
+    },
+    {
+      "expected_artist": "Nino Rucci",
+      "expected_title": "Tiffany’s",
+      "query": "Tiffany’s Nino Rucci",
+      "request_id": "song-0858f93d65ba4ddc2ec0aafa"
+    },
+    {
+      "expected_artist": "Blue MMM",
+      "expected_title": "Inventiva Desbordante",
+      "query": "Inventiva Desbordante Blue MMM",
+      "request_id": "song-be3b66319650fb83d685143b"
+    },
+    {
+      "expected_artist": "Inténtalo Carito",
+      "expected_title": "Qué difícil es hablar el español",
+      "query": "Qué difícil es hablar el español Inténtalo Carito",
+      "request_id": "song-da97d3d1b89cfd71d2be626d"
+    },
+    {
+      "expected_artist": "Genius Traducciones al Español",
+      "expected_title": "The Weeknd - King of the Fall (Traducción al Español)",
+      "query": "The Weeknd - King of the Fall (Traducción al Español) Genius Traducciones al Español",
+      "request_id": "song-1d9d41fd0e3dfe02fea572b5"
+    },
+    {
+      "expected_artist": "José Alberto “El Canario”",
+      "expected_title": "Mis amores",
+      "query": "Mis amores José Alberto “El Canario”",
+      "request_id": "song-ef429b26cfcf3b137f88f367"
+    },
+    {
+      "expected_artist": "Kmpoy",
+      "expected_title": "ALL EYEZ ON ME",
+      "query": "ALL EYEZ ON ME Kmpoy",
+      "request_id": "song-835786870b6e00979beaf156"
+    },
+    {
+      "expected_artist": "Vicente García",
+      "expected_title": "Mi balcon (Dueto)",
+      "query": "Mi balcon (Dueto) Vicente García",
+      "request_id": "song-a2524c928b21e2c039734765"
+    },
+    {
+      "expected_artist": "Foyone",
+      "expected_title": "Fuck NPO",
+      "query": "Fuck NPO Foyone",
+      "request_id": "song-9cbd8b88c23f631e06e542c5"
+    },
+    {
+      "expected_artist": "Covi Quintana",
+      "expected_title": "Tu Lugar",
+      "query": "Tu Lugar Covi Quintana",
+      "request_id": "song-b10d9d8eb2cb66bbd7fd6ee6"
+    },
+    {
+      "expected_artist": "Aparna (Hamilton)",
+      "expected_title": "Cabinet Battle #1 - Fishing",
+      "query": "Cabinet Battle #1 - Fishing Aparna (Hamilton)",
+      "request_id": "song-80035f7d41d43a77ac1b2145"
+    },
+    {
+      "expected_artist": "Riccie Oriach",
+      "expected_title": "La Dueña",
+      "query": "La Dueña Riccie Oriach",
+      "request_id": "song-bf9dd105f5d0e41c5ed5f037"
+    },
+    {
+      "expected_artist": "Riccie Oriach",
+      "expected_title": "Prima Tecata",
+      "query": "Prima Tecata Riccie Oriach",
+      "request_id": "song-a21f23ebeb69fbe7f1ba6eb5"
+    },
+    {
+      "expected_artist": "Solo Fernández",
+      "expected_title": "MAGIA",
+      "query": "MAGIA Solo Fernández",
+      "request_id": "song-7d52c2dfd728ec3babf72f0f"
+    },
+    {
+      "expected_artist": "Carlos Ponce",
+      "expected_title": "Canela",
+      "query": "Canela Carlos Ponce",
+      "request_id": "song-1a37b5d5680a8b08d3939f14"
+    },
+    {
+      "expected_artist": "Romina Palmisano",
+      "expected_title": "Experimentar",
+      "query": "Experimentar Romina Palmisano",
+      "request_id": "song-3a397dec57e8f43c0af36845"
+    },
+    {
+      "expected_artist": "La Malilla",
+      "expected_title": "Makin’ the Switch",
+      "query": "Makin’ the Switch La Malilla",
+      "request_id": "song-588c0aa97ba97c24780ccfdf"
+    },
+    {
+      "expected_artist": "Don Miguelo",
+      "expected_title": "Dímelo",
+      "query": "Dímelo Don Miguelo",
+      "request_id": "song-601c2f1926ccff182a829747"
+    },
+    {
+      "expected_artist": "Wason",
+      "expected_title": "Que No Hay Mejor Lugar",
+      "query": "Que No Hay Mejor Lugar Wason",
+      "request_id": "song-7e73deca63cf6d6ecd176d20"
+    },
+    {
+      "expected_artist": "DJ Boy",
+      "expected_title": "Set DJ Boy 3.0",
+      "query": "Set DJ Boy 3.0 DJ Boy",
+      "request_id": "song-bf40b0fb8ce48ae086f12a04"
+    },
+    {
+      "expected_artist": "Marcos Yaroide",
+      "expected_title": "Bajo Tus Alas",
+      "query": "Bajo Tus Alas Marcos Yaroide",
+      "request_id": "song-a19657290d9af99f23d2e684"
+    },
+    {
+      "expected_artist": "Marcos Yaroide",
+      "expected_title": "Mi Trabajo Es Creer",
+      "query": "Mi Trabajo Es Creer Marcos Yaroide",
+      "request_id": "song-81921f1987fd9c2ca2c313d8"
+    },
+    {
+      "expected_artist": "Lilly Goodman",
+      "expected_title": "Si Puedes Creer",
+      "query": "Si Puedes Creer Lilly Goodman",
+      "request_id": "song-d175e02ef7f403a38d96583b"
+    },
+    {
+      "expected_artist": "Tercer Cielo",
+      "expected_title": "Lindo Viaje",
+      "query": "Lindo Viaje Tercer Cielo",
+      "request_id": "song-7c1e8a6076e03564fb6518de"
+    },
+    {
+      "expected_artist": "Tercer Cielo",
+      "expected_title": "No estoy solo",
+      "query": "No estoy solo Tercer Cielo",
+      "request_id": "song-bb9e6acb914bdbd57a098f31"
+    },
+    {
+      "expected_artist": "Redimi2",
+      "expected_title": "Ofensivo y Escandaloso",
+      "query": "Ofensivo y Escandaloso Redimi2",
+      "request_id": "song-2d4c268d1c3fc2473c161eeb"
+    },
+    {
+      "expected_artist": "Redimi2",
+      "expected_title": "Espíritu Santo",
+      "query": "Espíritu Santo Redimi2",
+      "request_id": "song-16ea2ff284b9ff082d0182e7"
+    },
+    {
+      "expected_artist": "Gilberto Daza",
+      "expected_title": "¿Quién Dijo Miedo? (Grupo)",
+      "query": "¿Quién Dijo Miedo? (Grupo) Gilberto Daza",
+      "request_id": "song-591e894e8ff4eeabe492281c"
+    },
+    {
+      "expected_artist": "Kairo Worship",
+      "expected_title": "Hermoso Momento (Sesión Acústica)",
+      "query": "Hermoso Momento (Sesión Acústica) Kairo Worship",
+      "request_id": "song-80da48c86d8318ccd619e758"
+    },
+    {
+      "expected_artist": "Redimi2",
+      "expected_title": "Trapstorno",
+      "query": "Trapstorno Redimi2",
+      "request_id": "song-bc823729c26e03202c423235"
+    },
+    {
+      "expected_artist": "C.R.O (Bardero$)",
+      "expected_title": "III",
+      "query": "III C.R.O (Bardero$)",
+      "request_id": "song-834bcfaba41c0c588579cf61"
+    },
+    {
+      "expected_artist": "El Alfa",
+      "expected_title": "Yo No Cojo Fiao",
+      "query": "Yo No Cojo Fiao El Alfa",
+      "request_id": "song-2255d16b4f20992a4fc6f91d"
+    },
+    {
+      "expected_artist": "El Clooy",
+      "expected_title": "Me Perjudiqué",
+      "query": "Me Perjudiqué El Clooy",
+      "request_id": "song-d681715b0358736b608bff0f"
+    },
+    {
+      "expected_artist": "Blackinny",
+      "expected_title": "Amaneció",
+      "query": "Amaneció Blackinny",
+      "request_id": "song-1387bc8af49e3fbb03e0dd6b"
+    },
+    {
+      "expected_artist": "J NOA",
+      "expected_title": "Era De Cristal",
+      "query": "Era De Cristal J NOA",
+      "request_id": "song-51cdd6ce1335ddb17a349960"
+    },
+    {
+      "expected_artist": "Euclides da Cunha",
+      "expected_title": "Os Sertões",
+      "query": "Os Sertões Euclides da Cunha",
+      "request_id": "song-ea8626d921721e1550855c3d"
+    },
+    {
+      "expected_artist": "Santicuado.Q",
+      "expected_title": "ME AT THE ZOO",
+      "query": "ME AT THE ZOO Santicuado.Q",
+      "request_id": "song-956f6f18d236e713b450c2b8"
+    },
+    {
+      "expected_artist": "Rels B",
+      "expected_title": "Te Regalo",
+      "query": "Te Regalo Rels B",
+      "request_id": "song-191bbad866625555bd5d7b7d"
+    },
+    {
+      "expected_artist": "Ñejo",
+      "expected_title": "Mamisonga (Remix)",
+      "query": "Mamisonga (Remix) Ñejo",
+      "request_id": "song-08e0f50abbf5f684d9aae75f"
+    },
+    {
+      "expected_artist": "Mr. Deal",
+      "expected_title": "Rimac",
+      "query": "Rimac Mr. Deal",
+      "request_id": "song-40659da5ee5cc06cb8e9d5b8"
+    },
+    {
+      "expected_artist": "Jeriko RI INRI",
+      "expected_title": "Caín y Abel (Remix)",
+      "query": "Caín y Abel (Remix) Jeriko RI INRI",
+      "request_id": "song-5141bebd6c662f846f027b4a"
+    },
+    {
+      "expected_artist": "Latin Grammys",
+      "expected_title": "Nominados a los Latin Grammy 2017",
+      "query": "Nominados a los Latin Grammy 2017 Latin Grammys",
+      "request_id": "song-1031f31a2ac74fe16e2764af"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Boomerang",
+      "query": "Boomerang Romeo Santos",
+      "request_id": "song-e2bbdf73a6dd0690fc74bffe"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Suegra",
+      "query": "Suegra Romeo Santos",
+      "request_id": "song-67f9dc922d7386be2f76d471"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "El Pañuelo",
+      "query": "El Pañuelo Romeo Santos",
+      "request_id": "song-40e0c67d4a03dc4dbffb3972"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Nirvana",
+      "query": "Nirvana Romeo Santos",
+      "request_id": "song-4ff96e2ca4a2642e7ccabd9f"
+    },
+    {
+      "expected_artist": "Romeo Santos",
+      "expected_title": "Culpable",
+      "query": "Culpable Romeo Santos",
+      "request_id": "song-5c3515b5623ae0369dff6de7"
+    },
+    {
+      "expected_artist": "Aventura",
+      "expected_title": "Peligro",
+      "query": "Peligro Aventura",
+      "request_id": "song-2d1113324100297f3893e9e9"
+    },
+    {
+      "expected_artist": "Aventura",
+      "expected_title": "La Novelita",
+      "query": "La Novelita Aventura",
+      "request_id": "song-dced0502de01e738afa8e1e8"
+    },
+    {
+      "expected_artist": "Aventura",
+      "expected_title": "El Desprecio",
+      "query": "El Desprecio Aventura",
+      "request_id": "song-1e3aac3624c5d22b610936be"
+    },
+    {
+      "expected_artist": "Prince Royce",
+      "expected_title": "Me EnRD",
+      "query": "Me EnRD Prince Royce",
+      "request_id": "song-a4dd0c9360d6b14b85881135"
+    },
+    {
+      "expected_artist": "Genius en Español",
+      "expected_title": "Sencillos del Mes de Marzo 2018",
+      "query": "Sencillos del Mes de Marzo 2018 Genius en Español",
+      "request_id": "song-7a9830483c5d7cb94f33232c"
+    },
+    {
+      "expected_artist": "Prince Royce",
+      "expected_title": "Te Espero",
+      "query": "Te Espero Prince Royce",
+      "request_id": "song-dabcaca0edbb7f2f0bdb395f"
+    },
+    {
+      "expected_artist": "Anthony Santos",
+      "expected_title": "La Parcela",
+      "query": "La Parcela Anthony Santos",
+      "request_id": "song-f5873727d1ebd0d7f5ab3f9b"
+    },
+    {
+      "expected_artist": "Anthony Santos",
+      "expected_title": "Vete y Alejate de Mi",
+      "query": "Vete y Alejate de Mi Anthony Santos",
+      "request_id": "song-c83bd94f18966e416007ab48"
+    },
+    {
+      "expected_artist": "Anthony Santos",
+      "expected_title": "Ay! ven - bachata",
+      "query": "Ay! ven - bachata Anthony Santos",
+      "request_id": "song-a619dd2ac50519dc7b785c7c"
+    },
+    {
+      "expected_artist": "Raulin Rodriguez",
+      "expected_title": "Nadie Más que Tu",
+      "query": "Nadie Más que Tu Raulin Rodriguez",
+      "request_id": "song-393bea01fea6e149617ddd63"
+    },
+    {
+      "expected_artist": "Raulin Rodriguez",
+      "expected_title": "Flor Pálida",
+      "query": "Flor Pálida Raulin Rodriguez",
+      "request_id": "song-dc0ccb935e2910194ee680af"
+    },
+    {
+      "expected_artist": "Joe Veras",
+      "expected_title": "Se Te Nota",
+      "query": "Se Te Nota Joe Veras",
+      "request_id": "song-fc815e59fb8bd9578dc729b3"
+    },
+    {
+      "expected_artist": "Funky",
+      "expected_title": "Ven Conmigo",
+      "query": "Ven Conmigo Funky",
+      "request_id": "song-1f48669658ede3b68eff22b2"
     }
   ],
   "schema_version": 1
