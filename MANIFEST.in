@@ -1,2 +1,4 @@
 prune tests
+recursive-include data/manifests *.json
+include data/audio/starter-silence.wav
 global-exclude __pycache__ *.py[cod]

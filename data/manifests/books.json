@@ -1,0 +1,12 @@
+{
+  "books": [
+    {
+      "author": "Ramón Marrero Aristy",
+      "book_id": "book_3d87604d9d498d6b95859426",
+      "publication_year": 1939,
+      "source": "starter",
+      "title": "Over"
+    }
+  ],
+  "schema_version": 1
+}

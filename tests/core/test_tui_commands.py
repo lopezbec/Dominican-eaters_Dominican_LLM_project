@@ -4,12 +4,27 @@ from pathlib import Path
 
 import pytest
 
+from dominican_eaters.collection.books import load_book_manifest
+from dominican_eaters.collection.lyrics import load_lyrics_manifest
+from dominican_eaters.collection.poems import load_poem_manifest
+from dominican_eaters.data import load_manifest
 from dominican_eaters.tui.commands import (
+    DEFAULT_SOURCE_PATHS,
     CommandValidationError,
     Workflow,
     WorkflowRequest,
     build_cli_args,
 )
+
+
+def test_default_manifests_are_loadable_and_stt_audio_exists() -> None:
+    project_root = Path(__file__).parents[2]
+
+    load_book_manifest(project_root / DEFAULT_SOURCE_PATHS[Workflow.BOOKS_RUN])
+    load_lyrics_manifest(project_root / DEFAULT_SOURCE_PATHS[Workflow.LYRICS_RUN])
+    load_poem_manifest(project_root / DEFAULT_SOURCE_PATHS[Workflow.POEMS_RUN])
+    stt_manifest = load_manifest(project_root / DEFAULT_SOURCE_PATHS[Workflow.STT_BENCHMARK])
+    stt_manifest.preflight(verify_hashes=True)
 
 
 @pytest.mark.parametrize(

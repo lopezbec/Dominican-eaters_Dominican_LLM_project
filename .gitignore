@@ -35,7 +35,11 @@ htmlcov/
 Thumbs.db
 
 # Canonical local data and runtime artifacts
-/data/
+/data/*
+!/data/manifests/
+!/data/audio/
+/data/audio/*
+!/data/audio/starter-silence.wav
 /artifacts/
 *.log
 logs/

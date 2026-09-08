@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "dataset_root": "../audio",
+  "samples": [
+    {
+      "sample_id": "starter-silence",
+      "audio_path": "starter-silence.wav",
+      "reference_text": "",
+      "group_id": "starter",
+      "split": "smoke",
+      "source": "generated silence control",
+      "sha256": "643f8a8dc8bd9c19225afffad2becfec5426180b3749cb208abdf1a6c8354efc"
+    }
+  ]
+}

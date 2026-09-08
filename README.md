@@ -69,6 +69,11 @@ for scripts and automation:
 .venv/bin/dominican-eaters config validate config/default.yaml
 ```
 
+The collection screens start with tracked manifests in `data/manifests`. They contain one small
+Dominican example each, so they can be validated immediately and copied or edited for a real run.
+The STT starter manifest points to the included one-second silence control; replace its sample list
+and `dataset_root` with the reviewed recordings used for an actual benchmark.
+
 ## Features
 
 - Strict configuration with explicit data and artifact roots
@@ -90,9 +95,9 @@ for scripts and automation:
 Validate each strict source manifest without making provider calls:
 
 ```bash
-.venv/bin/dominican-eaters collect books preflight path/to/books.json
-.venv/bin/dominican-eaters collect lyrics preflight path/to/lyrics.json
-.venv/bin/dominican-eaters collect poems preflight path/to/poems.json
+.venv/bin/dominican-eaters collect books preflight data/manifests/books.json
+.venv/bin/dominican-eaters collect lyrics preflight data/manifests/lyrics.json
+.venv/bin/dominican-eaters collect poems preflight data/manifests/poems.json
 ```
 
 Live collection reads credentials only from environment variables. They are not accepted as command-line values and are not written to artifacts.
@@ -116,8 +121,8 @@ These commands collect metadata, lyrics, and selected media links; they do not d
 An STT manifest declares a dataset root and one stable record per utterance. Validate file availability before loading a model:
 
 ```bash
-.venv/bin/dominican-eaters stt preflight path/to/manifest.json
-.venv/bin/dominican-eaters stt preflight path/to/manifest.json --verify-hashes
+.venv/bin/dominican-eaters stt preflight data/manifests/stt.json
+.venv/bin/dominican-eaters stt preflight data/manifests/stt.json --verify-hashes
 ```
 
 Moving a dataset is explicit and verifies all declared hashes:

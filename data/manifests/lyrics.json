@@ -1,0 +1,11 @@
+{
+  "requests": [
+    {
+      "expected_artist": "Juan Luis Guerra",
+      "expected_title": "Bachata Rosa",
+      "query": "Bachata Rosa Juan Luis Guerra",
+      "request_id": "bachata-rosa"
+    }
+  ],
+  "schema_version": 1
+}
