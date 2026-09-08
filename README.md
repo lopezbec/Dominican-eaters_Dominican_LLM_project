@@ -11,7 +11,7 @@ The supported runtime lives in `src/dominican_eaters`; model-specific workers li
 
 - Python 3.11 or newer for the core package
 - Python 3.11 or 3.12 for the isolated NeMo worker
-- Internet access and API credentials for live Genius and YouTube collection
+- Internet access and a Genius credential for live lyrics collection
 - FFmpeg for workflows that inspect or process audio
 - CUDA-compatible drivers only when GPU inference is requested
 
@@ -100,11 +100,12 @@ Validate each strict source manifest without making provider calls:
 .venv/bin/dominican-eaters collect poems preflight data/manifests/poems.json
 ```
 
-Live collection reads credentials only from environment variables. They are not accepted as command-line values and are not written to artifacts.
+YouTube discovery uses Scrapetube and does not require an API key. Lyrics collection reads its
+Genius credential from the environment; it is not accepted as a command-line value or written to
+artifacts.
 
 ```bash
-export YOUTUBE_API_KEY='...'
-export GENIUS_ACCESS_TOKEN='...'  # required only for lyrics
+export GENIUS_ACCESS_TOKEN='...'
 
 .venv/bin/dominican-eaters collect books run path/to/books.json \
   --output-dir artifacts/books
@@ -254,7 +255,7 @@ cd workers/nemo && mypy src && pytest -q
 ## Troubleshooting
 
 - **Missing provider dependency:** install `.venv/bin/python -m pip install -e '.[providers]'`.
-- **Missing API credential:** set `YOUTUBE_API_KEY`; lyrics also requires `GENIUS_ACCESS_TOKEN`.
+- **Missing Genius credential:** set `GENIUS_ACCESS_TOKEN` before collecting lyrics.
 - **Whisper out of memory:** select a smaller model, use `--device cpu`, or use an isolated GPU environment.
 - **Parakeet/Canary worker rejected:** use Python 3.11 or 3.12 and pass the absolute `--worker-python` path.
 - **Manifest preflight failure:** check the declared dataset root, relative audio paths, duplicate IDs, and hashes.

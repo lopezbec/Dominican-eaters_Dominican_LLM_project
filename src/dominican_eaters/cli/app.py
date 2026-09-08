@@ -30,7 +30,7 @@ from dominican_eaters.collection.poems import (
     YouTubeRecitationSearch,
     load_poem_manifest,
 )
-from dominican_eaters.collection.providers import YouTubeDataAPI
+from dominican_eaters.collection.providers import ScrapeTubeSearch
 from dominican_eaters.config import ConfigError, load_config
 from dominican_eaters.data import ConcurrentWriteError, ManifestValidationError, load_manifest
 from dominican_eaters.evaluation.asr import BenchmarkRunner, OutputCollisionError
@@ -129,20 +129,15 @@ def preflight_book_manifest(manifest_path: Path) -> None:
 @click.option("--output-dir", type=click.Path(path_type=Path, file_okay=False), required=True)
 @click.option("--force/--no-force", default=False, show_default=True)
 def run_book_collection(manifest_path: Path, output_dir: Path, force: bool) -> None:
-    """Collect books using YOUTUBE_API_KEY and a resumable JSON checkpoint."""
+    """Collect books with API-key-free YouTube search and a resumable checkpoint."""
 
-    api: YouTubeDataAPI | None = None
     try:
         manifest = load_book_manifest(manifest_path)
-        api = YouTubeDataAPI(_required_environment("YOUTUBE_API_KEY"))
-        result = BookCollectionRunner(YouTubeAudiobookSearch(api), force=force).run(
+        result = BookCollectionRunner(YouTubeAudiobookSearch(ScrapeTubeSearch()), force=force).run(
             manifest.books, output_dir / "books-collection.json"
         )
     except (ValueError, OSError, ConcurrentCollectionError) as error:
         raise click.ClickException(str(error)) from error
-    finally:
-        if api is not None:
-            api.close()
     counts = Counter(record.status.value for record in result.records)
     click.echo(f"state={result.state.value}")
     click.echo(f"records={len(result.records)}")
@@ -186,23 +181,19 @@ def preflight_lyrics_manifest(manifest_path: Path) -> None:
 @click.option("--output-dir", type=click.Path(path_type=Path, file_okay=False), required=True)
 @click.option("--force/--no-force", default=False, show_default=True)
 def run_lyrics_collection(manifest_path: Path, output_dir: Path, force: bool) -> None:
-    """Collect songs using GENIUS_ACCESS_TOKEN and YOUTUBE_API_KEY."""
+    """Collect songs using GENIUS_ACCESS_TOKEN and API-key-free YouTube search."""
 
     genius: GeniusAPI | None = None
-    youtube: YouTubeDataAPI | None = None
     try:
         manifest = load_lyrics_manifest(manifest_path)
         genius = GeniusAPI(_required_environment("GENIUS_ACCESS_TOKEN"))
-        youtube = YouTubeDataAPI(_required_environment("YOUTUBE_API_KEY"))
-        service = LyricsCollectionService(genius, YouTubeMusicVideoSearch(youtube))
+        service = LyricsCollectionService(genius, YouTubeMusicVideoSearch(ScrapeTubeSearch()))
         result = LyricsCollectionRunner(service).run(manifest, output_dir, force=force)
     except (ValueError, OSError, LedgerConflictError, ConcurrentWriteError) as error:
         raise click.ClickException(str(error)) from error
     finally:
         if genius is not None:
             genius.close()
-        if youtube is not None:
-            youtube.close()
     counts = Counter(item.status.value for item in result.results)
     click.echo(f"requests={len(result.manifest)}")
     click.echo(f"results={len(result.results)}")
@@ -246,21 +237,16 @@ def preflight_poem_manifest(manifest_path: Path) -> None:
 @click.option("--output-dir", type=click.Path(path_type=Path, file_okay=False), required=True)
 @click.option("--force/--no-force", default=False, show_default=True)
 def run_poem_collection(manifest_path: Path, output_dir: Path, force: bool) -> None:
-    """Collect poem recitations using YOUTUBE_API_KEY."""
+    """Collect poem recitations with API-key-free YouTube search."""
 
-    api: YouTubeDataAPI | None = None
     try:
         manifest = load_poem_manifest(manifest_path)
-        api = YouTubeDataAPI(_required_environment("YOUTUBE_API_KEY"))
         result = PoemCollector(
-            provider=YouTubeRecitationSearch(api),
+            provider=YouTubeRecitationSearch(ScrapeTubeSearch()),
             checkpoint_path=output_dir / "poems-collection.json",
         ).collect(manifest.poems, force=force)
     except (ValueError, OSError, ConcurrentWriteError) as error:
         raise click.ClickException(str(error)) from error
-    finally:
-        if api is not None:
-            api.close()
     counts = Counter(outcome.status.value for outcome in result.outcomes)
     click.echo(f"state={result.state.value}")
     click.echo(f"sources={len(result.sources)}")

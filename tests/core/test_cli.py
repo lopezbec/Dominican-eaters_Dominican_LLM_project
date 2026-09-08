@@ -49,21 +49,16 @@ class CliFakeBackend:
         self.calls.append("close")
 
 
-class EmptyYouTubeAPI:
-    instances: list[EmptyYouTubeAPI] = []
+class EmptyYouTubeSearch:
+    instances: list[EmptyYouTubeSearch] = []
 
-    def __init__(self, api_key: str) -> None:
-        self.api_key = api_key
-        self.closed = False
+    def __init__(self) -> None:
         self.queries: list[str] = []
         self.instances.append(self)
 
     def search(self, query: str, *, max_results: int = 10) -> tuple[()]:
         self.queries.append(query)
         return ()
-
-    def close(self) -> None:
-        self.closed = True
 
 
 class EmptyGeniusAPI:
@@ -267,84 +262,81 @@ def test_poem_manifest_preflight_uses_installed_cli(tmp_path: Path) -> None:
 
 
 def test_collection_run_requires_credentials_from_environment(tmp_path: Path) -> None:
-    path = tmp_path / "books.json"
-    write_book_manifest(BookManifest((BookSeed.create("Over", "Ramón Marrero Aristy"),)), path)
+    path = tmp_path / "lyrics.json"
+    write_lyrics_manifest(LyricsManifest((LyricsRequest("req-1", "Juan Luis Guerra"),)), path)
 
     result = CliRunner().invoke(
         main,
-        ["collect", "books", "run", str(path), "--output-dir", str(tmp_path / "output")],
-        env={"YOUTUBE_API_KEY": ""},
+        ["collect", "lyrics", "run", str(path), "--output-dir", str(tmp_path / "output")],
+        env={"GENIUS_ACCESS_TOKEN": ""},
     )
 
     assert result.exit_code != 0
-    assert "YOUTUBE_API_KEY is required in the environment" in result.output
+    assert "GENIUS_ACCESS_TOKEN is required in the environment" in result.output
 
 
-def test_book_collection_run_writes_checkpoint_and_closes_provider(
+def test_book_collection_run_writes_checkpoint_without_api_key(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    EmptyYouTubeAPI.instances.clear()
+    EmptyYouTubeSearch.instances.clear()
     path = tmp_path / "books.json"
     output = tmp_path / "books-output"
     write_book_manifest(BookManifest((BookSeed.create("Over", "Ramón Marrero Aristy"),)), path)
-    monkeypatch.setattr("dominican_eaters.cli.app.YouTubeDataAPI", EmptyYouTubeAPI)
+    monkeypatch.setattr("dominican_eaters.cli.app.ScrapeTubeSearch", EmptyYouTubeSearch)
 
     result = CliRunner().invoke(
         main,
         ["collect", "books", "run", str(path), "--output-dir", str(output)],
-        env={"YOUTUBE_API_KEY": "youtube-secret"},
     )
 
     assert result.exit_code == 0, result.output
     assert "not_found=1" in result.output
     assert (output / "books-collection.json").is_file()
-    assert EmptyYouTubeAPI.instances[0].api_key == "youtube-secret"
-    assert EmptyYouTubeAPI.instances[0].closed is True
+    assert EmptyYouTubeSearch.instances
 
 
-def test_lyrics_collection_run_writes_ledger_and_closes_providers(
+def test_lyrics_collection_run_writes_ledger_and_closes_genius(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     EmptyGeniusAPI.instances.clear()
-    EmptyYouTubeAPI.instances.clear()
+    EmptyYouTubeSearch.instances.clear()
     path = tmp_path / "lyrics.json"
     output = tmp_path / "lyrics-output"
     write_lyrics_manifest(LyricsManifest((LyricsRequest("req-1", "Juan Luis Guerra"),)), path)
     monkeypatch.setattr("dominican_eaters.cli.app.GeniusAPI", EmptyGeniusAPI)
-    monkeypatch.setattr("dominican_eaters.cli.app.YouTubeDataAPI", EmptyYouTubeAPI)
+    monkeypatch.setattr("dominican_eaters.cli.app.ScrapeTubeSearch", EmptyYouTubeSearch)
 
     result = CliRunner().invoke(
         main,
         ["collect", "lyrics", "run", str(path), "--output-dir", str(output)],
-        env={"GENIUS_ACCESS_TOKEN": "genius-secret", "YOUTUBE_API_KEY": "youtube-secret"},
+        env={"GENIUS_ACCESS_TOKEN": "genius-secret"},
     )
 
     assert result.exit_code == 0, result.output
     assert "not_found=1" in result.output
     assert (output / "lyrics-collection.json").is_file()
     assert EmptyGeniusAPI.instances[0].closed is True
-    assert EmptyYouTubeAPI.instances[0].closed is True
+    assert EmptyYouTubeSearch.instances
 
 
-def test_poem_collection_run_writes_checkpoint_and_closes_provider(
+def test_poem_collection_run_writes_checkpoint_without_api_key(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    EmptyYouTubeAPI.instances.clear()
+    EmptyYouTubeSearch.instances.clear()
     path = tmp_path / "poems.json"
     output = tmp_path / "poems-output"
     write_poem_manifest(
         PoemManifest((PoemSource.create(title="Hay un país en el mundo", author="Pedro Mir"),)),
         path,
     )
-    monkeypatch.setattr("dominican_eaters.cli.app.YouTubeDataAPI", EmptyYouTubeAPI)
+    monkeypatch.setattr("dominican_eaters.cli.app.ScrapeTubeSearch", EmptyYouTubeSearch)
 
     result = CliRunner().invoke(
         main,
         ["collect", "poems", "run", str(path), "--output-dir", str(output)],
-        env={"YOUTUBE_API_KEY": "youtube-secret"},
     )
 
     assert result.exit_code == 0, result.output
     assert "not_found=1" in result.output
     assert (output / "poems-collection.json").is_file()
-    assert EmptyYouTubeAPI.instances[0].closed is True
+    assert EmptyYouTubeSearch.instances

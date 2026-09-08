@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from dominican_eaters.collection.providers import YouTubeAPIError, YouTubeDataAPI
+from dominican_eaters.collection.providers import YouTubeSearchError, YouTubeSearchProvider
 
 from .models import VideoCandidate
 from .ports import ProviderError, RecitationQuery
 
 
 class YouTubeRecitationSearch:
-    def __init__(self, api: YouTubeDataAPI, *, max_results: int = 10) -> None:
+    def __init__(self, api: YouTubeSearchProvider, *, max_results: int = 10) -> None:
         if not 1 <= max_results <= 50:
             raise ValueError("max_results must be between 1 and 50")
         self._api = api
@@ -21,7 +21,7 @@ class YouTubeRecitationSearch:
         text = " ".join(part for part in parts if part).strip()
         try:
             videos = self._api.search(text, max_results=self._limit)
-        except YouTubeAPIError as exc:
+        except YouTubeSearchError as exc:
             raise ProviderError(str(exc), retryable=exc.retryable) from exc
         return tuple(
             VideoCandidate(
@@ -29,7 +29,7 @@ class YouTubeRecitationSearch:
                 url=video.url,
                 title=video.title,
                 duration_seconds=video.duration_seconds,
-                provider="youtube-data-api-v3",
+                provider="scrapetube",
                 query=text,
             )
             for video in videos

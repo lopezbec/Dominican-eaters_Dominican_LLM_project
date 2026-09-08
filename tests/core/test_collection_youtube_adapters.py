@@ -19,7 +19,7 @@ from dominican_eaters.collection.poems import (
 from dominican_eaters.collection.poems import (
     ProviderError as PoemProviderError,
 )
-from dominican_eaters.collection.providers import YouTubeAPIError, YouTubeVideo
+from dominican_eaters.collection.providers import YouTubeSearchError, YouTubeVideo
 
 
 class API:
@@ -81,7 +81,7 @@ def test_poem_adapter_builds_typed_candidates_with_query_evidence() -> None:
     results = YouTubeRecitationSearch(api).search(RecitationQuery(source))
 
     assert results[0].video_id == "abcdefghijk"
-    assert results[0].provider == "youtube-data-api-v3"
+    assert results[0].provider == "scrapetube"
     assert "poesía social" in results[0].query
 
 
@@ -111,7 +111,7 @@ def test_music_video_adapter_rejects_title_without_expected_artist() -> None:
 
 
 def test_domain_adapters_translate_transport_errors() -> None:
-    error = YouTubeAPIError("quota", retryable=True, status_code=429)
+    error = YouTubeSearchError("offline", retryable=True)
     with pytest.raises(BookProviderError) as book:
         YouTubeAudiobookSearch(API([error])).search(BookSeed.create("Over", "Author"))
     assert book.value.retryable is True

@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 import unicodedata
 
-from dominican_eaters.collection.providers import YouTubeAPIError, YouTubeDataAPI
+from dominican_eaters.collection.providers import YouTubeSearchError, YouTubeSearchProvider
 
 from .contracts import VideoMatch
 from .ports import ProviderError
@@ -18,7 +18,7 @@ def _tokens(value: str) -> frozenset[str]:
 
 class YouTubeMusicVideoSearch:
     def __init__(
-        self, api: YouTubeDataAPI, *, max_results: int = 10, minimum_confidence: float = 0.5
+        self, api: YouTubeSearchProvider, *, max_results: int = 10, minimum_confidence: float = 0.5
     ) -> None:
         if not 1 <= max_results <= 50:
             raise ValueError("max_results must be between 1 and 50")
@@ -34,8 +34,8 @@ class YouTubeMusicVideoSearch:
         query = f"{title} {artist} video oficial"
         try:
             videos = self._api.search(query, max_results=self._limit)
-        except YouTubeAPIError as exc:
-            raise ProviderError("youtube_api", str(exc), retryable=exc.retryable) from exc
+        except YouTubeSearchError as exc:
+            raise ProviderError("youtube_search", str(exc), retryable=exc.retryable) from exc
         if not videos:
             return None
 

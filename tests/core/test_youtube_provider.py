@@ -1,157 +1,99 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections.abc import Iterable, Mapping
+from typing import Any
 
 import pytest
 
 from dominican_eaters.collection.providers import (
-    YouTubeAPIError,
-    YouTubeDataAPI,
-    parse_youtube_duration,
+    ScrapeTubeSearch,
+    YouTubeSearchError,
+    parse_display_duration,
 )
 
 
-@dataclass
-class Response:
-    status_code: int
-    payload: object
+class SearchFixture:
+    def __init__(self, rows: Iterable[Mapping[str, Any]] | Exception) -> None:
+        self.rows = rows
+        self.calls: list[tuple[str, int | None, float]] = []
 
-    def json(self) -> object:
-        return self.payload
-
-
-class Client:
-    def __init__(self, responses: list[object]) -> None:
-        self.responses = responses
-        self.calls: list[tuple[str, dict[str, object], float]] = []
-        self.closed = False
-
-    def get(self, url: str, *, params, timeout: float):  # type: ignore[no-untyped-def]
-        self.calls.append((url, dict(params), timeout))
-        response = self.responses.pop(0)
-        if isinstance(response, Exception):
-            raise response
-        return response
-
-    def close(self) -> None:
-        self.closed = True
+    def __call__(
+        self, query: str, *, limit: int | None = None, sleep: float = 1
+    ) -> Iterable[Mapping[str, Any]]:
+        self.calls.append((query, limit, sleep))
+        if isinstance(self.rows, Exception):
+            raise self.rows
+        return self.rows
 
 
-def test_duration_parser_supports_hours_minutes_seconds_and_days() -> None:
-    assert parse_youtube_duration("PT2H3M4.5S") == 7_384.5
-    assert parse_youtube_duration("P1DT1S") == 86_401
+def test_duration_parser_supports_minute_and_hour_displays() -> None:
+    assert parse_display_duration("03:05") == 185
+    assert parse_display_duration("2:03:04") == 7_384
     with pytest.raises(ValueError, match="invalid"):
-        parse_youtube_duration("03:45")
+        parse_display_duration("PT3M5S")
+    with pytest.raises(ValueError, match="invalid"):
+        parse_display_duration("2:61:00")
 
 
-def test_search_joins_official_search_and_video_detail_responses() -> None:
-    client = Client(
+def test_search_maps_scrapetube_results_without_credentials() -> None:
+    fixture = SearchFixture(
         [
-            Response(
-                200,
-                {
-                    "items": [
-                        {
-                            "id": {"videoId": "abcdefghijk"},
-                            "snippet": {"title": "Hay un pa&iacute;s"},
-                        }
-                    ]
-                },
-            ),
-            Response(
-                200,
-                {
-                    "items": [
-                        {
-                            "id": "abcdefghijk",
-                            "contentDetails": {"duration": "PT3M5S"},
-                        }
-                    ]
-                },
-            ),
+            {
+                "videoId": "abcdefghijk",
+                "title": {"runs": [{"text": "Hay un país"}]},
+                "lengthText": {"simpleText": "3:05"},
+            }
         ]
     )
 
-    videos = YouTubeDataAPI("secret", client=client).search("poema", max_results=5)
+    videos = ScrapeTubeSearch(search_function=fixture, sleep_seconds=0).search(
+        "poema", max_results=5
+    )
 
     assert videos[0].title == "Hay un país"
     assert videos[0].duration_seconds == 185
     assert videos[0].url.endswith("v=abcdefghijk")
-    assert client.calls[0][1]["type"] == "video"
-    assert client.calls[0][1]["regionCode"] == "DO"
-    assert client.calls[1][1]["part"] == "contentDetails"
+    assert fixture.calls == [("poema", 5, 0)]
 
 
-@pytest.mark.parametrize(
-    ("status", "retryable"),
-    [(400, False), (403, False), (429, True), (500, True)],
-)
-def test_http_failures_are_classified(status: int, retryable: bool) -> None:
-    api = YouTubeDataAPI("secret", client=Client([Response(status, {})]))
-    with pytest.raises(YouTubeAPIError) as captured:
-        api.search("query")
-    assert captured.value.retryable is retryable
-    assert captured.value.status_code == status
-
-
-def test_transport_and_schema_failures_are_explicit() -> None:
-    with pytest.raises(YouTubeAPIError) as transport:
-        YouTubeDataAPI("secret", client=Client([OSError("offline")])).search("query")
-    assert transport.value.retryable is True
-
-    with pytest.raises(YouTubeAPIError, match="items"):
-        YouTubeDataAPI("secret", client=Client([Response(200, {})])).search("query")
-
-
-def test_missing_video_details_fail_instead_of_silently_dropping_a_candidate() -> None:
-    client = Client(
+def test_search_skips_live_and_malformed_results() -> None:
+    fixture = SearchFixture(
         [
-            Response(
-                200,
-                {
-                    "items": [
-                        {
-                            "id": {"videoId": "abcdefghijk"},
-                            "snippet": {"title": "Poema"},
-                        }
-                    ]
-                },
-            ),
-            Response(200, {"items": []}),
+            {"videoId": "abcdefghijk", "title": {"simpleText": "Live"}},
+            {
+                "videoId": "bad",
+                "title": {"simpleText": "Malformed"},
+                "lengthText": {"simpleText": "1:00"},
+            },
         ]
     )
 
-    with pytest.raises(YouTubeAPIError, match="missing IDs: abcdefghijk") as captured:
-        YouTubeDataAPI("secret", client=client).search("query")
+    assert ScrapeTubeSearch(search_function=fixture).search("query") == ()
+
+
+def test_transport_failure_is_typed_and_retryable() -> None:
+    with pytest.raises(YouTubeSearchError) as captured:
+        ScrapeTubeSearch(search_function=SearchFixture(OSError("offline"))).search("query")
 
     assert captured.value.retryable is True
+    assert "OSError" in str(captured.value)
 
 
-def test_malformed_video_identifier_is_a_typed_provider_error() -> None:
-    client = Client(
-        [
-            Response(
-                200,
-                {"items": [{"id": {"videoId": "bad"}, "snippet": {"title": "Poema"}}]},
-            ),
-            Response(
-                200,
-                {"items": [{"id": "bad", "contentDetails": {"duration": "PT1M"}}]},
-            ),
-        ]
+def test_missing_dependency_has_actionable_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    def missing(_name: str) -> object:
+        raise ImportError
+
+    monkeypatch.setattr(
+        "dominican_eaters.collection.providers.youtube.importlib.import_module", missing
     )
 
-    with pytest.raises(YouTubeAPIError, match="invalid YouTube video metadata") as captured:
-        YouTubeDataAPI("secret", client=client).search("query")
+    with pytest.raises(YouTubeSearchError, match=r"dominican-eaters\[providers\]") as captured:
+        ScrapeTubeSearch().search("query")
 
     assert captured.value.retryable is False
 
 
-def test_injected_client_is_not_owned_or_closed() -> None:
-    client = Client([Response(200, {"items": []})])
-    api = YouTubeDataAPI("secret", client=client)
-    api.search("query")
-    api.close()
-    assert client.closed is False
-    with pytest.raises(YouTubeAPIError, match="closed"):
-        api.search("query")
+@pytest.mark.parametrize("query", ["", "   "])
+def test_search_rejects_empty_query(query: str) -> None:
+    with pytest.raises(ValueError, match="must not be empty"):
+        ScrapeTubeSearch(search_function=SearchFixture([])).search(query)

@@ -6,7 +6,11 @@ import re
 import unicodedata
 from dataclasses import dataclass
 
-from dominican_eaters.collection.providers import YouTubeAPIError, YouTubeDataAPI, YouTubeVideo
+from dominican_eaters.collection.providers import (
+    YouTubeSearchError,
+    YouTubeSearchProvider,
+    YouTubeVideo,
+)
 
 from .models import AudiobookHit, BookSeed, MatchKind
 from .service import ProviderError
@@ -34,7 +38,7 @@ class _RankedHit:
 class YouTubeAudiobookSearch:
     def __init__(
         self,
-        api: YouTubeDataAPI,
+        api: YouTubeSearchProvider,
         *,
         results_per_query: int = 5,
         minimum_duration_seconds: float = 30.0,
@@ -99,7 +103,7 @@ class YouTubeAudiobookSearch:
                     ranked.append(
                         _RankedHit(video, query, 0.8 * title_coverage + 0.2 * author_coverage)
                     )
-        except YouTubeAPIError as exc:
+        except YouTubeSearchError as exc:
             raise ProviderError(str(exc), retryable=exc.retryable) from exc
         if not ranked:
             return None
