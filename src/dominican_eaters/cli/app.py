@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from collections import Counter
 from pathlib import Path
 from typing import cast
@@ -37,10 +38,37 @@ from dominican_eaters.evaluation.asr import BenchmarkRunner, OutputCollisionErro
 from .backends import BackendName, create_asr_backend
 
 
-@click.group()
+@click.group(invoke_without_command=True)
 @click.version_option(version=__version__, prog_name="dominican-eaters")
-def main() -> None:
-    """Collect and evaluate Dominican Spanish language data."""
+@click.pass_context
+def main(context: click.Context) -> None:
+    """Collect and evaluate Dominican Spanish language data.
+
+    Run without a subcommand in an interactive terminal to open the workflow launcher.
+    """
+
+    if context.invoked_subcommand is not None:
+        return
+    if not sys.stdin.isatty() or not sys.stdout.isatty():
+        click.echo(context.get_help())
+        return
+    _run_tui()
+
+
+@main.command("tui")
+def tui_command() -> None:
+    """Open the interactive terminal workflow launcher."""
+
+    _run_tui()
+
+
+def _run_tui() -> None:
+    from dominican_eaters.tui import TUIUnavailableError, run_tui
+
+    try:
+        run_tui()
+    except TUIUnavailableError as error:
+        raise click.ClickException(str(error)) from error
 
 
 @main.group("config")

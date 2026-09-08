@@ -20,6 +20,7 @@ The supported runtime lives in `src/dominican_eaters`; model-specific workers li
 - Base runtime dependencies and the `dominican-eaters` console command are declared in `pyproject.toml`.
 - `providers` installs the optional HTTP client for Genius and YouTube.
 - `whisper` installs the compatible OpenAI Whisper and PyTorch dependencies.
+- `tui` installs the interactive terminal workflow launcher.
 - Parakeet and Canary run from the independently packaged `workers/nemo` environment.
 - Development tools are kept out of the published runtime dependencies.
 
@@ -48,9 +49,20 @@ python3.12 -m venv .venv
 
 # Whisper benchmark environment; preferably install in its own virtual environment
 .venv/bin/python -m pip install -e '.[whisper]'
+
+# Interactive terminal launcher
+.venv/bin/python -m pip install -e '.[tui]'
 ```
 
-4. Inspect the installed CLI and validate the canonical configuration.
+4. Open the terminal launcher. It presents every workflow and builds the command for you.
+
+```bash
+.venv/bin/dominican-eaters
+```
+
+The launcher shows only the fields needed by the selected workflow, displays the generated
+command, streams its output, and can stop a running process. Existing subcommands remain available
+for scripts and automation:
 
 ```bash
 .venv/bin/dominican-eaters --help

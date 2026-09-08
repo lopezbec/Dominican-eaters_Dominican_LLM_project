@@ -130,6 +130,14 @@ def test_help_and_version_do_not_import_model_dependencies() -> None:
     assert "0.2.0" in version_result.output
 
 
+def test_bare_noninteractive_command_shows_help() -> None:
+    result = CliRunner().invoke(main)
+
+    assert result.exit_code == 0
+    assert "Run without a subcommand" in result.output
+    assert "tui" in result.output
+
+
 def test_config_validation_has_nonzero_exit_for_invalid_config(tmp_path: Path) -> None:
     config = tmp_path / "invalid.yaml"
     config.write_text("schema_version: 1\ndata_root: data\n", encoding="utf-8")

@@ -1,0 +1,79 @@
+Screen {
+    background: $surface;
+}
+
+#body {
+    width: 100%;
+    max-width: 100;
+    height: 1fr;
+    margin: 0 1;
+    padding: 1 2;
+}
+
+.section-title {
+    margin-top: 1;
+    color: $accent;
+    text-style: bold;
+}
+
+.field {
+    height: auto;
+    margin-top: 1;
+}
+
+.field-row {
+    height: auto;
+    layout: horizontal;
+    margin-top: 1;
+}
+
+.field-row > .field {
+    width: 1fr;
+    margin: 0 1 0 0;
+}
+
+.options {
+    height: auto;
+    margin-top: 1;
+}
+
+.options Checkbox {
+    width: auto;
+    margin-right: 3;
+}
+
+#preview {
+    min-height: 3;
+    padding: 1;
+    border: round $primary;
+    color: $text-muted;
+}
+
+#status {
+    height: 1;
+    margin: 1 0;
+    color: $success;
+}
+
+#status.error {
+    color: $error;
+}
+
+#actions {
+    height: auto;
+}
+
+#actions Button {
+    margin-right: 1;
+}
+
+#output-log {
+    height: 16;
+    min-height: 8;
+    margin-top: 1;
+    border: round $secondary;
+}
+
+.hidden {
+    display: none;
+}

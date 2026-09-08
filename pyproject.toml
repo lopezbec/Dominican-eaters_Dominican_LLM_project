@@ -23,6 +23,9 @@ whisper = [
 providers = [
     "httpx>=0.27,<1",
 ]
+tui = [
+    "textual>=8.2,<9",
+]
 
 [project.scripts]
 dominican-eaters = "dominican_eaters.cli:main"
@@ -32,7 +35,9 @@ dev = [
     "build>=1.2,<2",
     "mypy>=1.15,<2",
     "pytest>=8.3,<9",
+    "pytest-asyncio>=0.25,<2",
     "ruff>=0.11,<1",
+    "textual>=8.2,<9",
     "types-PyYAML>=6.0,<7",
     "types-psutil>=5.9,<8",
 ]
@@ -45,7 +50,7 @@ where = ["src"]
 include = ["dominican_eaters*"]
 
 [tool.setuptools.package-data]
-dominican_eaters = ["py.typed"]
+dominican_eaters = ["py.typed", "tui/*.tcss"]
 
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib", "--strict-config", "--strict-markers"]
