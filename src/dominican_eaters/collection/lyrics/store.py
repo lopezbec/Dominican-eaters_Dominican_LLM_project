@@ -21,6 +21,8 @@ from .contracts import (
 
 LEDGER_FILENAME: Final = "lyrics-collection.json"
 _LEDGER_FIELDS = frozenset({"schema_version", "manifest", "results"})
+_BATCH_BLOCKING_CODES = frozenset({"authentication", "rate_limit"})
+_LEGACY_BATCH_BLOCKING_STATUSES = ("HTTP 401", "HTTP 403", "HTTP 429")
 
 
 class LedgerConflictError(RuntimeError):
@@ -182,6 +184,8 @@ class LyricsCollectionRunner:
             result = self._service.collect(request, attempt=attempt)
             ledger = ledger.with_result(result)
             store.save(ledger)
+            if self._is_batch_blocking(result):
+                break
         return ledger
 
     def _should_retry(self, result: CollectionResult) -> bool:
@@ -190,5 +194,29 @@ class LyricsCollectionRunner:
         if result.status is CollectionStatus.PARTIAL:
             return self._retry_partial
         if result.status is CollectionStatus.ERROR:
+            if self._is_authentication_failure(result):
+                return True
             return result.retryable or self._retry_nonretryable_errors
         return False
+
+    @staticmethod
+    def _is_authentication_failure(result: CollectionResult) -> bool:
+        return any(
+            issue.code == "authentication"
+            or (
+                issue.code == "http_error"
+                and any(status in issue.message for status in ("HTTP 401", "HTTP 403"))
+            )
+            for issue in result.issues
+        )
+
+    @staticmethod
+    def _is_batch_blocking(result: CollectionResult) -> bool:
+        return any(
+            issue.code in _BATCH_BLOCKING_CODES
+            or (
+                issue.code == "http_error"
+                and any(status in issue.message for status in _LEGACY_BATCH_BLOCKING_STATUSES)
+            )
+            for issue in result.issues
+        )

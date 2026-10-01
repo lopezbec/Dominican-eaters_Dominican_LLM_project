@@ -241,3 +241,43 @@ def test_keyboard_interrupt_leaves_completed_record_and_pending_identity(tmp_pat
     ledger = LyricsLedgerStore(tmp_path).load()
     assert [result.request.request_id for result in ledger.results] == ["req-1"]
     assert ledger.pending_request_ids == ("req-2",)
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        ProviderError("authentication", "invalid token", retryable=False),
+        ProviderError("rate_limit", "request allowance exhausted", retryable=True),
+    ],
+)
+def test_runner_stops_batch_after_provider_wide_failure(
+    tmp_path: Path, error: ProviderError
+) -> None:
+    requests = (LyricsRequest("req-1", "first"), LyricsRequest("req-2", "second"))
+    genius = FakeGenius([error])
+
+    ledger = LyricsCollectionRunner(service(genius, FakeVideos())).run(
+        LyricsManifest(requests), tmp_path
+    )
+
+    assert genius.search_calls == ["first"]
+    assert [result.request.request_id for result in ledger.results] == ["req-1"]
+    assert ledger.pending_request_ids == ("req-2",)
+
+
+def test_runner_retries_legacy_http_401_checkpoint(tmp_path: Path) -> None:
+    request = LyricsRequest("req-1", "Ojalá que llueva café")
+    manifest = LyricsManifest((request,))
+    LyricsCollectionRunner(
+        service(
+            FakeGenius([ProviderError("http_error", "Genius returned HTTP 401", retryable=False)]),
+            FakeVideos(),
+        )
+    ).run(manifest, tmp_path)
+    recovered = FakeGenius([(candidate(),)])
+
+    ledger = LyricsCollectionRunner(service(recovered, FakeVideos(video()))).run(manifest, tmp_path)
+
+    assert recovered.search_calls == ["Ojalá que llueva café"]
+    assert ledger.results[0].status is CollectionStatus.COMPLETE
+    assert ledger.results[0].attempt == 2

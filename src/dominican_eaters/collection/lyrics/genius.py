@@ -228,6 +228,12 @@ class GeniusAPI:
             ) from exc
         status = response.status_code
         if not 200 <= status < 300:
+            if status in {401, 403}:
+                raise ProviderError(
+                    "authentication",
+                    f"Genius rejected the access token with HTTP {status}",
+                    retryable=False,
+                )
             retryable = status == 429 or status >= 500
             code = "rate_limit" if status == 429 else "http_error"
             raise ProviderError(code, f"Genius returned HTTP {status}", retryable=retryable)

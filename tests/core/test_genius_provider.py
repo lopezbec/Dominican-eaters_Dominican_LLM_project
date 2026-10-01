@@ -127,11 +127,15 @@ def test_lyrics_fetch_rejects_noncanonical_urls_without_network_access(url: str)
     assert client.calls == []
 
 
-@pytest.mark.parametrize(("status", "retryable"), [(401, False), (429, True), (503, True)])
-def test_http_errors_are_classified(status: int, retryable: bool) -> None:
+@pytest.mark.parametrize(
+    ("status", "code", "retryable"),
+    [(401, "authentication", False), (429, "rate_limit", True), (503, "http_error", True)],
+)
+def test_http_errors_are_classified(status: int, code: str, retryable: bool) -> None:
     api = GeniusAPI("token", client=Client([Response(status, {})]))
     with pytest.raises(ProviderError) as captured:
         api.search("query")
+    assert captured.value.code == code
     assert captured.value.retryable is retryable
 
 
