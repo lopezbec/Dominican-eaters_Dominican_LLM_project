@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import math
+import os
+from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -53,6 +55,36 @@ DEFAULT_OUTPUT_DIRS: dict[Workflow, str] = {
     Workflow.POEMS_RUN: "artifacts/poems",
     Workflow.STT_BENCHMARK: "artifacts/stt-run",
 }
+
+WORKER_PYTHON_ENV_VARS = (
+    "DOMINICAN_EATERS_WORKER_PYTHON",
+    "NEMO_WORKER_PYTHON",
+)
+
+
+def discover_worker_python(
+    *, cwd: Path | None = None, environ: Mapping[str, str] | None = None
+) -> str:
+    """Find a configured NeMo interpreter without guessing unrelated environments."""
+
+    environment = os.environ if environ is None else environ
+    root = Path.cwd() if cwd is None else cwd
+    candidates = [
+        Path(environment[name]).expanduser()
+        for name in WORKER_PYTHON_ENV_VARS
+        if environment.get(name)
+    ]
+    candidates.append(root / ".venv-nemo" / "bin" / "python")
+
+    active_environment = environment.get("VIRTUAL_ENV", "")
+    if "nemo" in Path(active_environment).name.lower():
+        candidates.append(Path(active_environment) / "bin" / "python")
+
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved.is_file() and os.access(resolved, os.X_OK):
+            return str(resolved)
+    return ""
 
 
 class CommandValidationError(ValueError):

@@ -4,7 +4,7 @@ import pytest
 
 pytest.importorskip("textual")
 
-from textual.widgets import Input, Select, Static  # noqa: E402
+from textual.widgets import Input, RichLog, Select, Static  # noqa: E402
 
 from dominican_eaters.tui.app import DominicanEatersApp  # noqa: E402
 from dominican_eaters.tui.commands import Workflow  # noqa: E402
@@ -67,3 +67,37 @@ async def test_tui_runs_a_workflow_and_reports_success() -> None:
         await worker.wait()
 
         assert str(app.query_one("#status", Static).content) == "Completed successfully"
+        output_state = str(app.query_one("#output-state", Static).content)
+        assert "lines" in output_state
+        assert "finished" in output_state
+        assert app._log_line_count > 0
+
+
+@pytest.mark.asyncio
+async def test_tui_can_maximize_console_and_restore_workflow_focus() -> None:
+    app = DominicanEatersApp()
+
+    async with app.run_test(size=(110, 40)) as pilot:
+        await pilot.press("ctrl+o")
+        await pilot.pause()
+
+        assert app.has_class("console-maximized")
+        assert app.query_one("#output-log", RichLog).has_focus
+
+        await pilot.press("ctrl+p")
+        await pilot.pause()
+
+        assert not app.has_class("console-maximized")
+        assert app.query_one("#workflow", Select).has_focus
+
+
+@pytest.mark.asyncio
+async def test_tui_clear_shortcut_resets_console_state() -> None:
+    app = DominicanEatersApp()
+
+    async with app.run_test(size=(110, 40)) as pilot:
+        app.query_one("#output-log", RichLog).write("temporary output")
+        await pilot.press("ctrl+l")
+        await pilot.pause()
+
+        assert str(app.query_one("#output-state", Static).content) == "log cleared"

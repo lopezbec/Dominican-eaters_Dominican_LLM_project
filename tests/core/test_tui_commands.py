@@ -14,6 +14,7 @@ from dominican_eaters.tui.commands import (
     Workflow,
     WorkflowRequest,
     build_cli_args,
+    discover_worker_python,
 )
 
 
@@ -155,6 +156,27 @@ def test_nemo_benchmark_requires_and_normalizes_worker_python(tmp_path: Path) ->
         )
     )
     assert args[-2:] == ("--worker-python", str(worker.resolve()))
+
+
+def test_discovers_worker_python_from_environment(tmp_path: Path) -> None:
+    worker = tmp_path / "configured-nemo" / "bin" / "python"
+    worker.parent.mkdir(parents=True)
+    worker.write_text("#!/bin/sh\n")
+    worker.chmod(0o755)
+
+    assert discover_worker_python(
+        cwd=tmp_path,
+        environ={"DOMINICAN_EATERS_WORKER_PYTHON": str(worker)},
+    ) == str(worker.resolve())
+
+
+def test_discovers_project_nemo_environment(tmp_path: Path) -> None:
+    worker = tmp_path / ".venv-nemo" / "bin" / "python"
+    worker.parent.mkdir(parents=True)
+    worker.write_text("#!/bin/sh\n")
+    worker.chmod(0o755)
+
+    assert discover_worker_python(cwd=tmp_path, environ={}) == str(worker.resolve())
 
 
 @pytest.mark.parametrize(
