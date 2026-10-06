@@ -73,6 +73,10 @@ class FakeTransport:
             )
         elif request.method == "describe":
             payload = {
+                "worker": "dominican-eaters-nemo",
+                "worker_version": "0.2.0",
+                "protocol_version": 2,
+                "backends": ["canary", "parakeet"],
                 "descriptor": {
                     "backend_id": "nemo/parakeet",
                     "model": "parakeet",
@@ -84,7 +88,7 @@ class FakeTransport:
                     "effective_precision": "fp16",
                     "runtime_versions": {"python": "3.11", "nemo_toolkit": "2.0"},
                     "options": {"batch_size": 1},
-                }
+                },
             }
         elif request.method == "transcribe":
             payload = {

@@ -470,7 +470,18 @@ def _required_choice(
 
 
 def _descriptor_from_payload(payload: Mapping[str, JSONValue]) -> BackendDescriptor:
-    _require_exact_fields(payload, {"descriptor"}, "worker describe payload")
+    allowed_fields = {
+        "descriptor",
+        "worker",
+        "worker_version",
+        "protocol_version",
+        "backends",
+    }
+    if "descriptor" not in payload:
+        raise WorkerProcessError("worker describe payload missing fields: descriptor")
+    unknown = sorted(payload.keys() - allowed_fields)
+    if unknown:
+        raise WorkerProcessError(f"worker describe payload unknown fields: {', '.join(unknown)}")
     raw = payload["descriptor"]
     if not isinstance(raw, dict):
         raise WorkerProcessError("worker descriptor must be an object")
