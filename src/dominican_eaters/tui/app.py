@@ -26,6 +26,8 @@ from textual.widgets import (
     Static,
 )
 
+from dominican_eaters.speech.asr.registry import MODEL_PRESETS, RUNTIME_SPECS
+
 from .commands import (
     COLLECTION_RUNS,
     DEFAULT_OUTPUT_DIRS,
@@ -62,7 +64,7 @@ class DominicanEatersApp(App[None]):
         self._cancel_requested = False
         self._active_workflow = Workflow.CONFIG_VALIDATE
         self._console_maximized = False
-        self._detected_worker_python = discover_worker_python()
+        self._detected_worker_python = ""
         self._run_started_at: float | None = None
         self._run_active = False
         self._log_line_count = 0
@@ -94,28 +96,24 @@ class DominicanEatersApp(App[None]):
                     with Vertical(classes="field hidden", id="artifacts-root-field"):
                         yield Label("Artifacts root override (optional)")
                         yield Input(placeholder="/srv/artifacts", id="artifacts-root")
-                    with Horizontal(classes="field-row hidden", id="backend-fields"):
-                        with Vertical(classes="field"):
-                            yield Label("Backend")
-                            yield Select(
-                                (
-                                    ("Whisper", "whisper"),
-                                    ("Parakeet", "parakeet"),
-                                    ("Canary", "canary"),
-                                ),
-                                value="whisper",
-                                allow_blank=False,
-                                id="backend",
-                            )
-                        with Vertical(classes="field"):
-                            yield Label("Model (optional)")
-                            yield Input(placeholder="Use backend default", id="model")
+                    with Vertical(classes="field hidden", id="preset-field"):
+                        yield Label("Model preset")
+                        yield Select(
+                            tuple(
+                                (f"{preset.label} [{preset.status}]", preset.preset_id)
+                                for preset in MODEL_PRESETS.values()
+                            ),
+                            value="whisper-base",
+                            allow_blank=False,
+                            id="preset",
+                        )
+                        yield Static("", id="preset-state")
                     with Horizontal(classes="field-row hidden", id="runtime-fields"):
                         with Vertical(classes="field"):
                             yield Label("Device")
                             yield Select(
                                 (("Auto", "auto"), ("CPU", "cpu"), ("CUDA", "cuda")),
-                                value="auto",
+                                value="cuda",
                                 allow_blank=False,
                                 id="device",
                             )
@@ -128,7 +126,7 @@ class DominicanEatersApp(App[None]):
                                     ("FP32", "fp32"),
                                     ("BF16", "bf16"),
                                 ),
-                                value="auto",
+                                value="fp16",
                                 allow_blank=False,
                                 id="precision",
                             )
@@ -191,8 +189,18 @@ class DominicanEatersApp(App[None]):
     def workflow_changed(self) -> None:
         self._sync_fields()
 
-    @on(Select.Changed, "#backend")
-    def backend_changed(self) -> None:
+    @on(Select.Changed, "#preset")
+    def preset_changed(self) -> None:
+        preset = MODEL_PRESETS[self._selected("#preset")]
+        default_device = "auto"
+        if preset.precision in {"fp16", "bf16"} and "cuda" in (
+            preset.capabilities.supported_devices
+        ):
+            default_device = "cuda"
+        elif len(preset.capabilities.supported_devices) == 1:
+            default_device = preset.capabilities.supported_devices[0]
+        self.query_one("#device", Select).value = default_device
+        self.query_one("#precision", Select).value = preset.precision or "auto"
         self._sync_fields()
 
     @on(Select.Changed, "#device")
@@ -331,6 +339,7 @@ class DominicanEatersApp(App[None]):
     def _sync_fields(self) -> None:
         workflow = self._selected_workflow()
         benchmark = workflow is Workflow.STT_BENCHMARK
+        stt_workflow = workflow in {Workflow.STT_PREFLIGHT, Workflow.STT_BENCHMARK}
         source = self.query_one("#source", Input)
         output = self.query_one("#output", Input)
         previous_source = DEFAULT_SOURCE_PATHS[self._active_workflow]
@@ -345,13 +354,24 @@ class DominicanEatersApp(App[None]):
             "#data-root-field", workflow in {Workflow.CONFIG_VALIDATE, Workflow.STT_PREFLIGHT}
         )
         self._show("#artifacts-root-field", workflow is Workflow.CONFIG_VALIDATE)
-        self._show("#backend-fields", benchmark)
-        self._show("#runtime-fields", benchmark)
-        self._show("#worker-field", benchmark and self._selected("#backend") != "whisper")
+        self._show("#preset-field", stt_workflow)
+        self._show("#runtime-fields", stt_workflow)
+        preset = MODEL_PRESETS[self._selected("#preset")]
+        runtime = RUNTIME_SPECS[preset.runtime_id]
+        requires_worker = runtime.execution == "worker"
+        detected_worker = discover_worker_python(runtime_id=preset.runtime_id)
+        worker_input = self.query_one("#worker-python", Input)
+        if not worker_input.value.strip() or worker_input.value == self._detected_worker_python:
+            worker_input.value = detected_worker
+        self._detected_worker_python = detected_worker
+        self._show("#worker-field", stt_workflow and requires_worker)
         self.query_one("#worker-label", Label).update(
             "Worker Python · detected"
-            if self._detected_worker_python
-            else "Worker Python · required for Parakeet and Canary"
+            if detected_worker
+            else f"Worker Python · {runtime.interpreter_env_var or 'current Python'}"
+        )
+        self.query_one("#preset-state", Static).update(
+            f"{preset.status.upper()} · {preset.reason or 'Ready to run'}"
         )
         self._show("#benchmark-number-fields", benchmark)
         self._show("#audio-policy-fields", benchmark)
@@ -378,8 +398,7 @@ class DominicanEatersApp(App[None]):
             output_dir=self.query_one("#output", Input).value,
             data_root=self.query_one("#data-root", Input).value,
             artifacts_root=self.query_one("#artifacts-root", Input).value,
-            backend=self._selected("#backend"),
-            model=self.query_one("#model", Input).value,
+            preset=self._selected("#preset"),
             device=self._selected("#device"),
             precision=self._selected("#precision"),
             worker_python=self.query_one("#worker-python", Input).value,
@@ -458,7 +477,7 @@ class DominicanEatersApp(App[None]):
         return f"{minutes:02d}:{seconds:02d}"
 
     def _refresh_run_metrics(self) -> None:
-        if not self.is_mounted or self._run_started_at is None:
+        if self._run_started_at is None:
             return
         state = "running" if self._run_active else "finished"
         self.query_one("#output-state", Static).update(

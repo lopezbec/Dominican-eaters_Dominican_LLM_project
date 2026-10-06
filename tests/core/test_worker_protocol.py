@@ -14,12 +14,14 @@ from dominican_eaters.speech.asr.worker_protocol import (
     LineTooLargeError,
     MessageValidationError,
     Method,
+    PreflightCheck,
     SuccessResponse,
     WorkerRequest,
     decode_request,
     decode_response,
     encode_message,
     error_response,
+    make_preflight_result,
     make_request,
     success_response,
 )
@@ -36,10 +38,26 @@ def load_params() -> dict[str, JSONValue]:
     }
 
 
+def preflight_params() -> dict[str, JSONValue]:
+    return {
+        "backend": "nemo",
+        "preset": "parakeet-tdt-0.6b-v3",
+        "model": "nvidia/parakeet-tdt-0.6b-v3",
+        "model_revision": None,
+        "language": "es",
+        "device": "cuda",
+        "precision": "fp16",
+        "quantization": None,
+        "prompt_template_id": None,
+        "options": {},
+    }
+
+
 @pytest.mark.parametrize(
     ("method", "params"),
     [
         ("describe", {}),
+        ("preflight", preflight_params()),
         ("load", load_params()),
         ("warmup", {}),
         ("transcribe", {"audio_path": "/data/a.wav", "duration_seconds": 2.5}),
@@ -85,7 +103,7 @@ def test_success_and_error_responses_roundtrip_and_retain_request_id() -> None:
     [
         (lambda raw: raw.update(extra="unexpected"), "unknown fields"),
         (lambda raw: raw.pop("params"), "missing fields"),
-        (lambda raw: raw.update(protocol_version=2), "protocol_version"),
+        (lambda raw: raw.update(protocol_version=3), "protocol_version"),
         (lambda raw: raw.update(protocol_version=True), "must be an integer"),
         (lambda raw: raw.update(request_id=""), "request_id"),
         (lambda raw: raw.update(params=[]), "params must be a JSON object"),
@@ -183,3 +201,61 @@ def test_direct_dataclass_construction_is_validated_at_encoding() -> None:
     request = WorkerRequest(PROTOCOL_VERSION, "id", "warmup", {"unexpected": True})
     with pytest.raises(MessageValidationError, match="unknown fields"):
         encode_message(request)
+
+
+def test_v1_requests_and_responses_remain_decodable() -> None:
+    request = make_request("load", load_params(), request_id="legacy", protocol_version=1)
+
+    decoded_request = decode_request(encode_message(request))
+    response = success_response(decoded_request, {"descriptor": {}})
+    decoded_response = decode_response(encode_message(response))
+
+    assert decoded_request.protocol_version == 1
+    assert decoded_response.protocol_version == 1
+
+
+def test_v1_rejects_the_v2_preflight_method() -> None:
+    with pytest.raises(MessageValidationError, match="unsupported method"):
+        make_request("preflight", preflight_params(), protocol_version=1)
+
+
+def test_preflight_result_is_structured_and_derives_readiness() -> None:
+    result = make_preflight_result(
+        [
+            PreflightCheck("python", "passed", "error", "Python is compatible"),
+            PreflightCheck(
+                "cuda",
+                "failed",
+                "error",
+                "CUDA is unavailable",
+                {"requested_device": "cuda"},
+            ),
+        ],
+        environment={"python_version": "3.11"},
+    )
+    request = make_request("preflight", preflight_params(), request_id="preflight-1")
+
+    response = success_response(request, result)
+
+    assert response.result["ready"] is False
+    assert response.result["environment"] == {"python_version": "3.11"}
+
+
+def test_preflight_success_rejects_an_inconsistent_result() -> None:
+    request = make_request("preflight", preflight_params())
+    result: dict[str, JSONValue] = {
+        "ready": True,
+        "checks": [
+            {
+                "name": "cuda",
+                "status": "failed",
+                "severity": "error",
+                "message": "unavailable",
+                "details": {},
+            }
+        ],
+        "environment": {},
+    }
+
+    with pytest.raises(MessageValidationError, match="cannot be ready"):
+        success_response(request, result)

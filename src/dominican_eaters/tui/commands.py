@@ -8,6 +8,16 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
+from typing import cast
+
+from dominican_eaters.speech.asr.registry import (
+    CURRENT_BACKEND_SPECS,
+    MODEL_PRESETS,
+    RUNTIME_SPECS,
+    BackendName,
+    BackendSpec,
+    ModelPreset,
+)
 
 
 class Workflow(StrEnum):
@@ -60,30 +70,53 @@ WORKER_PYTHON_ENV_VARS = (
     "DOMINICAN_EATERS_WORKER_PYTHON",
     "NEMO_WORKER_PYTHON",
 )
+RUNTIME_VENV_DIRS = {
+    "nemo-worker": ".venv-nemo",
+    "granite-4.1-transformers": ".venv-granite",
+    "granite-3.3-transformers": ".venv-granite",
+    "qwen3-asr-transformers": ".venv-qwen3-asr",
+    "voxtral-transformers": ".venv-voxtral",
+    "qwen2-audio-transformers": ".venv-qwen2-audio",
+}
 
 
 def discover_worker_python(
-    *, cwd: Path | None = None, environ: Mapping[str, str] | None = None
+    *,
+    runtime_id: str = "nemo-worker",
+    cwd: Path | None = None,
+    environ: Mapping[str, str] | None = None,
 ) -> str:
-    """Find a configured NeMo interpreter without guessing unrelated environments."""
+    """Find the interpreter configured for one isolated runtime."""
 
     environment = os.environ if environ is None else environ
     root = Path.cwd() if cwd is None else cwd
+    try:
+        runtime = RUNTIME_SPECS[runtime_id]
+    except KeyError as error:
+        raise ValueError(f"Unknown ASR runtime: {runtime_id}") from error
+    if runtime.execution == "inline":
+        return ""
+    runtime_variables = (
+        (runtime.interpreter_env_var,) if runtime.interpreter_env_var is not None else ()
+    )
     candidates = [
         Path(environment[name]).expanduser()
-        for name in WORKER_PYTHON_ENV_VARS
+        for name in (*runtime_variables, *WORKER_PYTHON_ENV_VARS)
         if environment.get(name)
     ]
-    candidates.append(root / ".venv-nemo" / "bin" / "python")
+    environment_dir = RUNTIME_VENV_DIRS.get(runtime_id)
+    if environment_dir is not None:
+        candidates.append(root / environment_dir / "bin" / "python")
 
     active_environment = environment.get("VIRTUAL_ENV", "")
-    if "nemo" in Path(active_environment).name.lower():
+    runtime_hint = (environment_dir or runtime_id).removeprefix(".venv-").split("-")[0]
+    if runtime_hint in Path(active_environment).name.lower():
         candidates.append(Path(active_environment) / "bin" / "python")
 
     for candidate in candidates:
-        resolved = candidate.resolve()
-        if resolved.is_file() and os.access(resolved, os.X_OK):
-            return str(resolved)
+        absolute = Path(os.path.abspath(candidate))
+        if absolute.is_file() and os.access(absolute, os.X_OK):
+            return str(absolute)
     return ""
 
 
@@ -98,6 +131,7 @@ class WorkflowRequest:
     output_dir: str = ""
     data_root: str = ""
     artifacts_root: str = ""
+    preset: str = ""
     backend: str = "whisper"
     model: str = ""
     device: str = "auto"
@@ -145,17 +179,40 @@ def build_cli_args(request: WorkflowRequest) -> tuple[str, ...]:
         return tuple(args)
 
     if request.workflow is Workflow.STT_PREFLIGHT:
+        preset = _request_preset(request)
+        if preset is None:
+            _request_backend_spec(request)
         args = ["stt", "preflight", source_path]
         if request.data_root.strip():
             args.extend(("--dataset-root", request.data_root.strip()))
+        if preset is not None:
+            args.extend(("--preset", preset.preset_id))
+        else:
+            args.extend(("--backend", request.backend))
+        args.extend(("--device", request.device, "--precision", request.precision))
+        if preset is None and request.model.strip():
+            args.extend(("--model", request.model.strip()))
+        if request.worker_python.strip():
+            executable = os.path.abspath(Path(request.worker_python.strip()).expanduser())
+            args.extend(("--worker-python", executable))
         if request.verify_hashes:
             args.append("--verify-hashes")
         return tuple(args)
 
     if request.workflow is Workflow.STT_BENCHMARK:
-        if request.backend not in {"whisper", "parakeet", "canary"}:
-            raise CommandValidationError(f"Unsupported backend: {request.backend}")
-        if request.backend in {"parakeet", "canary"} and not request.worker_python.strip():
+        preset = _request_preset(request)
+        backend_spec = _request_backend_spec(request) if preset is None else None
+        if preset is not None and not preset.runnable:
+            reason = preset.reason or "the adapter has not been promoted"
+            raise CommandValidationError(
+                f"Preset {preset.preset_id} is {preset.status} and cannot be benchmarked: {reason}"
+            )
+        if preset is None:
+            assert backend_spec is not None
+            runtime = backend_spec.runtime
+        else:
+            runtime = RUNTIME_SPECS[preset.runtime_id]
+        if runtime.execution == "worker" and not request.worker_python.strip():
             raise CommandValidationError("Select the isolated worker Python executable.")
         warmup_runs = _nonnegative_integer(request.warmup_runs, "Warmup runs")
         request_timeout = _positive_number(request.request_timeout, "Request timeout")
@@ -170,25 +227,31 @@ def build_cli_args(request: WorkflowRequest) -> tuple[str, ...]:
             source_path,
             "--output-dir",
             _required_output_dir(request),
-            "--backend",
-            request.backend,
-            "--device",
-            request.device,
-            "--precision",
-            request.precision,
-            "--warmup-runs",
-            warmup_runs,
-            "--request-timeout",
-            request_timeout,
-            "--short-audio-policy",
-            request.short_audio_policy,
-            "--minimum-audio-seconds",
-            minimum_audio,
         ]
-        if request.model.strip():
+        if preset is not None:
+            args.extend(("--preset", preset.preset_id))
+        else:
+            args.extend(("--backend", request.backend))
+        args.extend(
+            [
+                "--device",
+                request.device,
+                "--precision",
+                request.precision,
+                "--warmup-runs",
+                warmup_runs,
+                "--request-timeout",
+                request_timeout,
+                "--short-audio-policy",
+                request.short_audio_policy,
+                "--minimum-audio-seconds",
+                minimum_audio,
+            ]
+        )
+        if preset is None and request.model.strip():
             args.extend(("--model", request.model.strip()))
         if request.worker_python.strip():
-            executable = str(Path(request.worker_python.strip()).expanduser().resolve())
+            executable = os.path.abspath(Path(request.worker_python.strip()).expanduser())
             args.extend(("--worker-python", executable))
         if request.verify_hashes:
             args.append("--verify-hashes")
@@ -197,6 +260,23 @@ def build_cli_args(request: WorkflowRequest) -> tuple[str, ...]:
         return tuple(args)
 
     raise CommandValidationError(f"Unsupported workflow: {request.workflow}")
+
+
+def _request_preset(request: WorkflowRequest) -> ModelPreset | None:
+    preset_id = request.preset.strip()
+    if not preset_id:
+        return None
+    try:
+        return MODEL_PRESETS[preset_id]
+    except KeyError as error:
+        raise CommandValidationError(f"Unsupported preset: {preset_id}") from error
+
+
+def _request_backend_spec(request: WorkflowRequest) -> BackendSpec:
+    try:
+        return CURRENT_BACKEND_SPECS[cast(BackendName, request.backend)]
+    except KeyError as error:
+        raise CommandValidationError(f"Unsupported backend: {request.backend}") from error
 
 
 def _required_output_dir(request: WorkflowRequest) -> str:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 import textwrap
@@ -18,10 +19,12 @@ from dominican_eaters.speech.asr.subprocess_backend import (
     _SubprocessLineTransport,
 )
 from dominican_eaters.speech.asr.worker_protocol import (
+    PreflightCheck,
     WorkerRequest,
     decode_request,
     encode_message,
     error_response,
+    make_preflight_result,
     make_request,
     success_response,
 )
@@ -32,6 +35,9 @@ class FakeTransport:
         self.argv: tuple[str, ...] | None = None
         self.requests: list[WorkerRequest] = []
         self.closed = 0
+        self.started = 0
+        self.read_timeouts: list[float] = []
+        self.close_timeouts: list[float] = []
         self.response_override: bytes | BaseException | None = None
 
     @property
@@ -39,19 +45,33 @@ class FakeTransport:
         return "fake diagnostic"
 
     def start(self, argv: Sequence[str]) -> None:
+        self.started += 1
         self.argv = tuple(argv)
 
     def write(self, frame: bytes) -> None:
         self.requests.append(decode_request(frame))
 
     def read(self, timeout_seconds: float) -> bytes:
-        del timeout_seconds
+        self.read_timeouts.append(timeout_seconds)
         if isinstance(self.response_override, BaseException):
             raise self.response_override
         if self.response_override is not None:
             return self.response_override
         request = self.requests[-1]
-        if request.method == "describe":
+        if request.method == "preflight":
+            payload = make_preflight_result(
+                [
+                    PreflightCheck(
+                        "runtime",
+                        "passed",
+                        "error",
+                        "runtime import succeeded",
+                        {"module": "nemo.collections.asr"},
+                    )
+                ],
+                environment={"python_version": "3.11", "lock_id": "nemo-test-lock"},
+            )
+        elif request.method == "describe":
             payload = {
                 "descriptor": {
                     "backend_id": "nemo/parakeet",
@@ -80,7 +100,7 @@ class FakeTransport:
         return encode_message(success_response(request, payload))
 
     def close(self, timeout_seconds: float) -> None:
-        del timeout_seconds
+        self.close_timeouts.append(timeout_seconds)
         self.closed += 1
 
 
@@ -93,9 +113,162 @@ def settings(tmp_path: Path) -> SubprocessBackendSettings:
     )
 
 
+def test_preflight_sends_complete_v2_runtime_and_reuses_process_for_load(
+    tmp_path: Path,
+) -> None:
+    transport = FakeTransport()
+    request_ids = iter(("startup-0", "preflight-1", "load-2", "describe-3", "close-4"))
+    backend = JsonlSubprocessBackend(
+        SubprocessBackendSettings(
+            interpreter=tmp_path / "venv" / "bin" / "python",
+            worker_module="dominican_eaters_nemo",
+            backend="parakeet",
+            model="nvidia/parakeet-tdt-0.6b-v3",
+            language="es",
+            device="cuda",
+            precision="fp16",
+            options={"timestamps": True},
+            preset="parakeet-tdt-0.6b-v3",
+            model_revision="revision-1",
+            quantization=None,
+            prompt_template_id=None,
+        ),
+        transport_factory=lambda: transport,
+        request_id_factory=lambda: next(request_ids),
+    )
+
+    report = backend.preflight()
+    backend.load()
+    backend.close()
+
+    expected_runtime = {
+        "backend": "parakeet",
+        "preset": "parakeet-tdt-0.6b-v3",
+        "model": "nvidia/parakeet-tdt-0.6b-v3",
+        "model_revision": "revision-1",
+        "language": "es",
+        "device": "cuda",
+        "precision": "fp16",
+        "quantization": None,
+        "prompt_template_id": None,
+        "options": {"timestamps": True},
+    }
+    assert report.ready is True
+    assert report.checks == (
+        PreflightCheck(
+            "runtime",
+            "passed",
+            "error",
+            "runtime import succeeded",
+            {"module": "nemo.collections.asr"},
+        ),
+    )
+    assert report.environment == {"python_version": "3.11", "lock_id": "nemo-test-lock"}
+    assert transport.started == 1
+    assert [request.method for request in transport.requests] == [
+        "describe",
+        "preflight",
+        "load",
+        "describe",
+        "close",
+    ]
+    assert transport.requests[1].params == expected_runtime
+    assert transport.requests[2].params == expected_runtime
+    assert transport.closed == 1
+
+
+def test_preflight_only_closes_worker_through_protocol(tmp_path: Path) -> None:
+    transport = FakeTransport()
+    request_ids = iter(("startup-0", "preflight-1", "close-2"))
+    backend = JsonlSubprocessBackend(
+        settings(tmp_path),
+        transport_factory=lambda: transport,
+        request_id_factory=lambda: next(request_ids),
+    )
+
+    report = backend.preflight(close_after=True)
+    backend.close()
+
+    assert report.ready is True
+    assert [request.method for request in transport.requests] == [
+        "describe",
+        "preflight",
+        "close",
+    ]
+    assert transport.started == 1
+    assert transport.closed == 1
+
+
+def test_failed_preflight_is_structured_and_prevents_load(tmp_path: Path) -> None:
+    class FailedPreflightTransport(FakeTransport):
+        def read(self, timeout_seconds: float) -> bytes:
+            if self.requests[-1].method != "preflight":
+                return super().read(timeout_seconds)
+            request = self.requests[-1]
+            return encode_message(
+                success_response(
+                    request,
+                    make_preflight_result(
+                        [
+                            PreflightCheck(
+                                "cuda",
+                                "failed",
+                                "error",
+                                "CUDA is unavailable",
+                                {"requested_device": "cuda"},
+                            )
+                        ],
+                        environment={"python_version": "3.11"},
+                    ),
+                )
+            )
+
+    transport = FailedPreflightTransport()
+    backend = JsonlSubprocessBackend(settings(tmp_path), transport_factory=lambda: transport)
+
+    report = backend.preflight()
+    with pytest.raises(RuntimeError, match="preflight did not pass"):
+        backend.load()
+    backend.close()
+
+    assert report.ready is False
+    assert report.checks[0].name == "cuda"
+    assert [request.method for request in transport.requests] == [
+        "describe",
+        "preflight",
+        "close",
+    ]
+
+
+def test_malformed_preflight_response_aborts_worker(tmp_path: Path) -> None:
+    class MalformedPreflightTransport(FakeTransport):
+        def read(self, timeout_seconds: float) -> bytes:
+            del timeout_seconds
+            request = self.requests[-1]
+            return (
+                json.dumps(
+                    {
+                        "protocol_version": request.protocol_version,
+                        "request_id": request.request_id,
+                        "ok": True,
+                        "result": {"ready": True, "checks": "invalid", "environment": {}},
+                    }
+                ).encode("utf-8")
+                + b"\n"
+            )
+
+    transport = MalformedPreflightTransport()
+    backend = JsonlSubprocessBackend(settings(tmp_path), transport_factory=lambda: transport)
+
+    with pytest.raises(WorkerProcessError, match="checks must be an array"):
+        backend.preflight()
+
+    assert transport.closed == 1
+
+
 def test_lifecycle_uses_list_argv_unique_ids_and_converts_transcript(tmp_path: Path) -> None:
     transport = FakeTransport()
-    request_ids = iter(("load-1", "describe-2", "warmup-3", "transcribe-4", "close-5"))
+    request_ids = iter(("startup-0", "load-1", "describe-2", "warmup-3", "transcribe-4", "close-5"))
     backend = JsonlSubprocessBackend(
         settings(tmp_path),
         transport_factory=lambda: transport,
@@ -114,6 +287,7 @@ def test_lifecycle_uses_list_argv_unique_ids_and_converts_transcript(tmp_path: P
         "dominican_eaters_nemo",
     )
     assert [request.request_id for request in transport.requests] == [
+        "startup-0",
         "load-1",
         "describe-2",
         "warmup-3",
@@ -126,7 +300,7 @@ def test_lifecycle_uses_list_argv_unique_ids_and_converts_transcript(tmp_path: P
     assert transcript.gpu_peak_allocated_bytes == 1024
     assert transcript.gpu_peak_reserved_bytes == 2048
     assert transcript.metadata == {"rtf": 0.2}
-    assert transport.requests[3].params["audio_path"] == str(
+    assert transport.requests[4].params["audio_path"] == str(
         (tmp_path / "audio" / "sample.wav").resolve()
     )
     assert backend.descriptor.effective_device == "cuda"
@@ -178,8 +352,14 @@ def test_transcript_requires_all_canonical_fields(tmp_path: Path) -> None:
 
 
 def test_timeout_aborts_worker_and_close_remains_idempotent(tmp_path: Path) -> None:
-    transport = FakeTransport()
-    transport.response_override = TimeoutError()
+    class LoadTimeoutTransport(FakeTransport):
+        def read(self, timeout_seconds: float) -> bytes:
+            if self.requests[-1].method == "load":
+                self.read_timeouts.append(timeout_seconds)
+                raise TimeoutError
+            return super().read(timeout_seconds)
+
+    transport = LoadTimeoutTransport()
     backend = JsonlSubprocessBackend(settings(tmp_path), transport_factory=lambda: transport)
 
     with pytest.raises(WorkerTimeoutError, match="load timed out"):
@@ -187,6 +367,102 @@ def test_timeout_aborts_worker_and_close_remains_idempotent(tmp_path: Path) -> N
 
     backend.close()
     assert transport.closed == 1
+
+
+def test_each_worker_phase_uses_its_configured_timeout(tmp_path: Path) -> None:
+    transport = FakeTransport()
+    backend = JsonlSubprocessBackend(
+        SubprocessBackendSettings(
+            interpreter=tmp_path / "venv" / "bin" / "python",
+            worker_module="dominican_eaters_nemo",
+            backend="parakeet",
+            model="nvidia/parakeet-tdt-0.6b-v3",
+            request_timeout_seconds=99,
+            startup_timeout_seconds=1,
+            preflight_timeout_seconds=2,
+            load_timeout_seconds=3,
+            inference_timeout_seconds=4,
+            shutdown_timeout_seconds=5,
+        ),
+        transport_factory=lambda: transport,
+    )
+
+    backend.preflight()
+    backend.load()
+    backend.warmup()
+    backend.transcribe(tmp_path / "sample.wav")
+    backend.close()
+
+    assert [request.method for request in transport.requests] == [
+        "describe",
+        "preflight",
+        "load",
+        "describe",
+        "warmup",
+        "transcribe",
+        "close",
+    ]
+    assert transport.read_timeouts == [1, 2, 3, 3, 3, 4, 5]
+    assert transport.close_timeouts == [5]
+
+
+def test_legacy_request_timeout_remains_the_phase_fallback(tmp_path: Path) -> None:
+    configured = SubprocessBackendSettings(
+        interpreter=tmp_path / "venv" / "bin" / "python",
+        worker_module="dominican_eaters_nemo",
+        backend="parakeet",
+        model="nvidia/parakeet-tdt-0.6b-v3",
+        request_timeout_seconds=7.5,
+    )
+
+    assert configured.timeout_for("startup") == 7.5
+    assert configured.timeout_for("preflight") == 7.5
+    assert configured.timeout_for("load") == 7.5
+    assert configured.timeout_for("inference") == 7.5
+
+
+def test_startup_handshake_timeout_is_classified_and_aborts(tmp_path: Path) -> None:
+    transport = FakeTransport()
+    transport.response_override = TimeoutError()
+    backend = JsonlSubprocessBackend(
+        SubprocessBackendSettings(
+            interpreter=tmp_path / "venv" / "bin" / "python",
+            worker_module="dominican_eaters_nemo",
+            backend="parakeet",
+            model="nvidia/parakeet-tdt-0.6b-v3",
+            startup_timeout_seconds=1.25,
+        ),
+        transport_factory=lambda: transport,
+    )
+
+    with pytest.raises(WorkerTimeoutError, match="startup timed out after 1.25 seconds"):
+        backend.load()
+
+    assert transport.closed == 1
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "request_timeout_seconds",
+        "startup_timeout_seconds",
+        "preflight_timeout_seconds",
+        "load_timeout_seconds",
+        "inference_timeout_seconds",
+        "shutdown_timeout_seconds",
+    ],
+)
+def test_settings_reject_non_positive_phase_timeouts(tmp_path: Path, field: str) -> None:
+    kwargs = {field: 0.0}
+
+    with pytest.raises(ValueError, match=field):
+        SubprocessBackendSettings(
+            interpreter=tmp_path / "venv" / "bin" / "python",
+            worker_module="dominican_eaters_nemo",
+            backend="parakeet",
+            model="nvidia/parakeet-tdt-0.6b-v3",
+            **kwargs,  # type: ignore[arg-type]
+        )
 
 
 def test_close_timeout_does_not_cleanup_transport_twice(tmp_path: Path) -> None:
@@ -242,8 +518,12 @@ def test_structured_worker_error_is_exposed_and_worker_is_cleaned_up(tmp_path: P
     with pytest.raises(WorkerRemoteError, match="model download disabled") as caught:
         backend.load()
 
+    assert caught.value.code == "ModelUnavailable"
     assert caught.value.error_type == "ModelUnavailable"
     assert caught.value.retryable is False
+    assert caught.value.error.code == "ModelUnavailable"
+    assert caught.value.error.message == "model download disabled"
+    assert caught.value.error.retryable is False
     assert transport.closed == 1
 
 
@@ -285,13 +565,42 @@ def test_real_transport_launches_without_a_shell(monkeypatch: pytest.MonkeyPatch
 
 
 def test_real_transport_reports_early_process_exit() -> None:
-    transport = _SubprocessLineTransport()
-    transport.start((sys.executable, "-c", "raise SystemExit(7)"))
+    stderr_chunks: list[str] = []
+    transport = _SubprocessLineTransport(stderr_sink=stderr_chunks.append)
+    transport.start(
+        (
+            sys.executable,
+            "-c",
+            "import sys, time; print('model loading', file=sys.stderr, flush=True); "
+            "time.sleep(0.1); raise SystemExit(7)",
+        )
+    )
 
-    with pytest.raises(WorkerProcessError, match="worker exited with code"):
+    with pytest.raises(WorkerProcessError, match="stderr: model loading"):
         transport.read(2.0)
 
+    assert "".join(stderr_chunks) == "model loading\n"
+    assert transport.stderr_tail == "model loading"
     transport.close(1.0)
+
+
+def test_stderr_sink_failure_does_not_interrupt_protocol_transport() -> None:
+    def broken_sink(message: str) -> None:
+        raise RuntimeError(f"cannot display {message}")
+
+    transport = _SubprocessLineTransport(stderr_sink=broken_sink)
+    transport.start(
+        (
+            sys.executable,
+            "-c",
+            "import sys; print('diagnostic', file=sys.stderr, flush=True); "
+            "print('protocol frame', flush=True)",
+        )
+    )
+
+    assert transport.read(2.0) == b"protocol frame\n"
+    transport.close(1.0)
+    assert transport.stderr_tail == "diagnostic"
 
 
 def test_real_process_completes_protocol_lifecycle(
@@ -303,12 +612,21 @@ def test_real_process_completes_protocol_lifecycle(
             """
             import sys
             from dominican_eaters.speech.asr.worker_protocol import (
-                decode_request, encode_message, success_response,
+                PreflightCheck, decode_request, encode_message,
+                make_preflight_result, success_response,
             )
 
+            print("fixture worker ready", file=sys.stderr, flush=True)
             for line in sys.stdin.buffer:
                 request = decode_request(line)
-                if request.method == "describe":
+                if request.method == "preflight":
+                    result = make_preflight_result(
+                        [PreflightCheck(
+                            "runtime", "passed", "error", "runtime ready",
+                        )],
+                        environment={"python_version": sys.version.split()[0]},
+                    )
+                elif request.method == "describe":
                     result = {"descriptor": {
                         "backend_id": "fixture/model",
                         "model": "model",
@@ -341,6 +659,7 @@ def test_real_process_completes_protocol_lifecycle(
         encoding="utf-8",
     )
     monkeypatch.setenv("PYTHONPATH", str(tmp_path))
+    stderr_chunks: list[str] = []
     backend = JsonlSubprocessBackend(
         SubprocessBackendSettings(
             interpreter=Path(sys.executable),
@@ -348,14 +667,19 @@ def test_real_process_completes_protocol_lifecycle(
             backend="fixture",
             model="model",
             request_timeout_seconds=2,
-        )
+        ),
+        stderr_sink=stderr_chunks.append,
     )
 
+    report = backend.preflight()
     backend.load()
     backend.warmup()
     transcript = backend.transcribe(tmp_path / "áudio sample.wav")
     backend.close()
 
     assert backend.descriptor.model_revision == "revision"
+    assert report.ready is True
+    assert report.checks[0].name == "runtime"
     assert transcript.text == "hola"
+    assert "".join(stderr_chunks) == "fixture worker ready\n"
     assert transcript.audio_duration_seconds == 1.5

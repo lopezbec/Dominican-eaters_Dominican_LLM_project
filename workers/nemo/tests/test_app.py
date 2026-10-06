@@ -4,7 +4,9 @@ import io
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from types import SimpleNamespace
 
+import pytest
 from dominican_eaters.speech.asr import BackendDescriptor, Transcript
 from dominican_eaters.speech.asr.worker_protocol import (
     ErrorResponse,
@@ -14,6 +16,7 @@ from dominican_eaters.speech.asr.worker_protocol import (
     make_request,
 )
 
+from dominican_eaters_nemo import app as app_module
 from dominican_eaters_nemo.adapters import NeMoSettings
 from dominican_eaters_nemo.app import WorkerService, serve
 
@@ -86,6 +89,150 @@ def load_request(*, backend: str = "parakeet", options=None):
     )
 
 
+def preflight_request(
+    *,
+    backend: str = "parakeet",
+    device: str = "cpu",
+    precision: str = "fp32",
+    options=None,
+):
+    return make_request(
+        "preflight",
+        {
+            "backend": backend,
+            "preset": "fixture-preset",
+            "model": "fixture-model",
+            "model_revision": None,
+            "language": "es",
+            "device": device,
+            "precision": precision,
+            "quantization": None,
+            "prompt_template_id": None,
+            "options": options or {},
+        },
+        request_id="preflight-1",
+    )
+
+
+class FakeCudaInspector:
+    def __init__(self, *, available: bool, bf16: bool = False) -> None:
+        self.available = available
+        self.bf16 = bf16
+
+    def is_available(self) -> bool:
+        return self.available
+
+    def device_count(self) -> int:
+        return 1 if self.available else 0
+
+    def is_bf16_supported(self) -> bool:
+        return self.bf16
+
+
+def install_fake_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    cuda_available: bool,
+) -> list[str]:
+    model_loads: list[str] = []
+
+    class ModelFactory:
+        @staticmethod
+        def from_pretrained(*, model_name: str) -> object:
+            model_loads.append(model_name)
+            raise AssertionError("preflight must not resolve model weights")
+
+    modules = {
+        "nemo.collections.asr": SimpleNamespace(models=SimpleNamespace(ASRModel=ModelFactory)),
+        "torch": SimpleNamespace(cuda=FakeCudaInspector(available=cuda_available)),
+    }
+    monkeypatch.setattr(app_module.importlib, "import_module", modules.__getitem__)
+    monkeypatch.setattr(
+        app_module.importlib.metadata,
+        "version",
+        lambda distribution: {"nemo_toolkit": "2.4.1", "torch": "2.7.0"}[distribution],
+    )
+    monkeypatch.setattr(app_module.sys, "version_info", (3, 12, 9))
+    monkeypatch.setattr(app_module.platform, "python_version", lambda: "3.12.9")
+    return model_loads
+
+
+def test_preflight_imports_runtime_without_loading_model_weights(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model_loads = install_fake_runtime(monkeypatch, cuda_available=True)
+    created: list[FakeBackend] = []
+
+    def factory(settings: NeMoSettings) -> FakeBackend:
+        backend = FakeBackend(settings)
+        created.append(backend)
+        return backend
+
+    output = io.BytesIO()
+    serve(
+        WorkerService({"parakeet": factory}),
+        request_lines(
+            preflight_request(device="cuda", precision="fp16"),
+            make_request("close", request_id="close"),
+        ),
+        output,
+        io.StringIO(),
+    )
+    response = decoded_lines(output)[0]
+
+    assert isinstance(response, SuccessResponse)
+    assert response.result["ready"] is True
+    assert response.result["environment"] == {
+        "python_version": "3.12.9",
+        "python_executable": app_module.sys.executable,
+        "platform": app_module.platform.platform(),
+        "nemo_toolkit_version": "2.4.1",
+        "torch_version": "2.7.0",
+        "cuda_available": True,
+        "cuda_device_count": 1,
+        "backend": "parakeet",
+        "model": "fixture-model",
+        "weights_loaded": False,
+    }
+    checks = response.result["checks"]
+    assert isinstance(checks, list)
+    assert {check["name"] for check in checks if isinstance(check, dict)} >= {
+        "configuration",
+        "python",
+        "module:nemo.collections.asr",
+        "module:torch",
+        "nemo_asr_api",
+        "cuda",
+    }
+    assert created == []
+    assert model_loads == []
+
+
+def test_preflight_reports_invalid_configuration_and_unavailable_cuda(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    install_fake_runtime(monkeypatch, cuda_available=False)
+    output = io.BytesIO()
+    serve(
+        WorkerService({"parakeet": FakeBackend}),
+        request_lines(
+            preflight_request(backend="unknown"),
+            preflight_request(device="cuda"),
+            make_request("close", request_id="close"),
+        ),
+        output,
+        io.StringIO(),
+    )
+    invalid_config, unavailable_cuda = decoded_lines(output)[:2]
+
+    assert isinstance(invalid_config, SuccessResponse)
+    assert invalid_config.result["ready"] is False
+    assert "Unsupported NeMo backend" in str(invalid_config.result["checks"])
+    assert isinstance(unavailable_cuda, SuccessResponse)
+    assert unavailable_cuda.result["ready"] is False
+    assert "CUDA was requested" in str(unavailable_cuda.result["checks"])
+
+
 def test_complete_jsonl_lifecycle_has_protocol_only_stdout(tmp_path: Path) -> None:
     created: list[FakeBackend] = []
 
@@ -128,6 +275,55 @@ def test_complete_jsonl_lifecycle_has_protocol_only_stdout(tmp_path: Path) -> No
     assert created[0].calls[-1] == "close"
     assert b"model diagnostic" not in output.getvalue()
     assert "model diagnostic must go to stderr" in errors.getvalue()
+
+
+def test_v1_lifecycle_remains_compatible(tmp_path: Path) -> None:
+    created: list[FakeBackend] = []
+
+    def factory(settings: NeMoSettings) -> FakeBackend:
+        backend = FakeBackend(settings)
+        created.append(backend)
+        return backend
+
+    legacy_load = make_request(
+        "load",
+        {
+            "backend": "parakeet",
+            "model": "fixture-model",
+            "language": "es",
+            "device": "cpu",
+            "precision": "fp32",
+            "options": {},
+        },
+        request_id="load-v1",
+        protocol_version=1,
+    )
+    requests = request_lines(
+        make_request("describe", request_id="describe-v1", protocol_version=1),
+        legacy_load,
+        make_request("warmup", request_id="warmup-v1", protocol_version=1),
+        make_request(
+            "transcribe",
+            {"audio_path": str(tmp_path / "audio.wav"), "duration_seconds": 0.5},
+            request_id="transcribe-v1",
+            protocol_version=1,
+        ),
+        make_request("close", request_id="close-v1", protocol_version=1),
+    )
+    output = io.BytesIO()
+
+    assert serve(WorkerService({"parakeet": factory}), requests, output, io.StringIO()) == 0
+
+    responses = decoded_lines(output)
+    assert len(responses) == 5
+    assert all(response.protocol_version == 1 for response in responses)
+    assert all(isinstance(response, SuccessResponse) for response in responses)
+    assert created[0].calls == [
+        "load",
+        "warmup",
+        f"transcribe:{tmp_path / 'audio.wav'}:0.5",
+        "close",
+    ]
 
 
 def test_invalid_request_and_backend_errors_are_structured() -> None:

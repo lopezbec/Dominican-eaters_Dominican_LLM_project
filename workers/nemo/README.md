@@ -16,6 +16,14 @@ python3.12 -m venv .venv-nemo
 
 The worker executable is a protocol process that waits for JSONL requests on stdin; it is not an
 interactive command. Its stdout is reserved for protocol frames and diagnostics go to stderr.
+It implements protocol v2 through the shared worker server while retaining the complete v1
+`describe`/`load`/`warmup`/`transcribe`/`close` lifecycle.
+
+Protocol v2 adds `preflight`. The NeMo preflight validates the backend configuration, supported
+Python version, imports the installed `nemo.collections.asr` and `torch` runtimes, checks the NeMo
+ASR API, and inspects CUDA (including BF16 support when requested). It never calls
+`from_pretrained`, downloads model files, or allocates model weights. The response includes
+machine-readable checks plus runtime versions and an explicit `weights_loaded=false` marker.
 
 Canary always runs Spanish speech recognition with explicit `source_lang="es"`
 and `target_lang="es"`. Short audio handling is explicit: the default `reject`

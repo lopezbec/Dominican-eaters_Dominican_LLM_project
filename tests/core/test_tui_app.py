@@ -34,16 +34,36 @@ async def test_tui_reveals_benchmark_fields_and_builds_command() -> None:
         preview = str(app.query_one("#preview", Static).content)
         assert preview.startswith("dominican-eaters stt benchmark data/manifests/stt.json")
         assert "--output-dir artifacts/stt-run" in preview
-        assert "--backend whisper" in preview
-        assert not app.query_one("#backend-fields").has_class("hidden")
+        assert "--preset whisper-base" in preview
+        assert not app.query_one("#preset-field").has_class("hidden")
         assert app.query_one("#worker-field").has_class("hidden")
 
-        app.query_one("#backend", Select).value = "parakeet"
+        app.query_one("#preset", Select).value = "parakeet-tdt-0.6b-v3"
         await pilot.pause()
         assert not app.query_one("#worker-field").has_class("hidden")
         assert "Select the isolated worker Python executable" in str(
             app.query_one("#preview", Static).content
         )
+
+
+@pytest.mark.asyncio
+async def test_tui_stt_preflight_includes_environment_controls() -> None:
+    app = DominicanEatersApp()
+
+    async with app.run_test(size=(110, 40)) as pilot:
+        app.query_one("#workflow", Select).value = Workflow.STT_PREFLIGHT
+        await pilot.pause()
+
+        preview = str(app.query_one("#preview", Static).content)
+        assert "stt preflight data/manifests/stt.json" in preview
+        assert "--preset whisper-base --device cuda --precision fp16" in preview
+        assert not app.query_one("#preset-field").has_class("hidden")
+        assert not app.query_one("#runtime-fields").has_class("hidden")
+
+        app.query_one("#preset", Select).value = "granite-speech-4.1-2b"
+        await pilot.pause()
+        assert "PLANNED" in str(app.query_one("#preset-state", Static).content)
+        assert "--preset granite-speech-4.1-2b" in str(app.query_one("#preview", Static).content)
 
 
 @pytest.mark.asyncio

@@ -11,7 +11,12 @@ from pathlib import Path
 from typing import Protocol
 
 from dominican_eaters.data import AudioSample, STTManifest, write_manifest
-from dominican_eaters.evaluation.asr.artifacts import write_artifact
+from dominican_eaters.evaluation.asr.artifacts import (
+    ArtifactProvenance,
+    HostSnapshot,
+    capture_host_snapshot,
+    write_artifact,
+)
 from dominican_eaters.evaluation.asr.scoring import (
     ASREvaluationReport,
     Recognition,
@@ -19,10 +24,15 @@ from dominican_eaters.evaluation.asr.scoring import (
     evaluate_asr,
 )
 from dominican_eaters.evaluation.resources import ResourceMeasurement, measure_call
-from dominican_eaters.speech.asr import ASRBackend, BackendDescriptor, Transcript
+from dominican_eaters.speech.asr import (
+    ASRBackend,
+    BackendDescriptor,
+    Transcript,
+    WorkerRemoteError,
+)
 
-BENCHMARK_RESULT_SCHEMA_VERSION = 1
-BENCHMARK_CHECKPOINT_SCHEMA_VERSION = 1
+BENCHMARK_RESULT_SCHEMA_VERSION = 2
+BENCHMARK_CHECKPOINT_SCHEMA_VERSION = 2
 
 
 class OutputCollisionError(FileExistsError):
@@ -74,6 +84,8 @@ class Failure:
     error_type: str
     message: str
     sample_id: str | None = None
+    error_code: str | None = None
+    retryable: bool | None = None
 
     @classmethod
     def from_exception(
@@ -83,11 +95,14 @@ class Failure:
         *,
         sample_id: str | None = None,
     ) -> Failure:
+        remote_error = exception if isinstance(exception, WorkerRemoteError) else None
         return cls(
             stage=stage,
             error_type=type(exception).__name__,
             message=str(exception),
             sample_id=sample_id,
+            error_code=None if remote_error is None else remote_error.code,
+            retryable=None if remote_error is None else remote_error.retryable,
         )
 
 
@@ -146,6 +161,7 @@ class PerformanceSummary:
 @dataclass(frozen=True, slots=True)
 class BenchmarkResult:
     backend: BackendDescriptor
+    provenance: ArtifactProvenance
     status: RunStatus
     output_dir: Path
     expected_samples: int
@@ -185,6 +201,7 @@ class BenchmarkCheckpoint:
     """Latest durable lifecycle state for a run that may still be incomplete."""
 
     backend: BackendDescriptor
+    provenance: ArtifactProvenance
     phase: BenchmarkPhase
     expected_samples: int
     sample_results: tuple[SampleResult, ...]
@@ -245,6 +262,7 @@ class BenchmarkRunner:
         scorer: Scorer = score_benchmark_results,
         warmup_runs: int = 1,
         verify_hashes: bool = False,
+        host_snapshot: HostSnapshot | None = None,
     ) -> None:
         if warmup_runs < 0:
             raise ValueError("warmup_runs must be nonnegative")
@@ -252,6 +270,7 @@ class BenchmarkRunner:
         self._scorer = scorer
         self._warmup_runs = warmup_runs
         self._verify_hashes = verify_hashes
+        self._host_snapshot = host_snapshot
 
     def run(self, manifest: STTManifest, output_dir: Path) -> BenchmarkResult:
         """Run once into a new output directory.
@@ -265,6 +284,9 @@ class BenchmarkRunner:
             destination.mkdir(parents=True, exist_ok=False)
         except FileExistsError as exc:
             raise OutputCollisionError(f"Benchmark output already exists: {destination}") from exc
+
+        if self._host_snapshot is None:
+            self._host_snapshot = capture_host_snapshot()
 
         samples = tuple(manifest.samples)
         failures: list[Failure] = []
@@ -575,6 +597,7 @@ class BenchmarkRunner:
     ) -> None:
         checkpoint = BenchmarkCheckpoint(
             backend=self._backend.descriptor,
+            provenance=self._provenance(),
             phase=phase,
             expected_samples=len(samples),
             sample_results=tuple(results),
@@ -614,6 +637,7 @@ class BenchmarkRunner:
             status = RunStatus.FAILED
         return BenchmarkResult(
             backend=self._backend.descriptor,
+            provenance=self._provenance(),
             status=status,
             output_dir=output_dir,
             expected_samples=len(samples),
@@ -622,6 +646,12 @@ class BenchmarkRunner:
             scoring=scoring,
             failures=tuple(failures),
         )
+
+    def _provenance(self) -> ArtifactProvenance:
+        host = self._host_snapshot
+        if host is None:
+            raise RuntimeError("benchmark host snapshot has not been captured")
+        return ArtifactProvenance.from_backend(self._backend.descriptor, host)
 
     @staticmethod
     def _performance(

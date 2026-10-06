@@ -92,8 +92,60 @@ def test_stt_preflight_includes_optional_controls() -> None:
         "stt.json",
         "--dataset-root",
         "/datasets/stt",
+        "--backend",
+        "whisper",
+        "--device",
+        "auto",
+        "--precision",
+        "auto",
         "--verify-hashes",
     )
+
+
+def test_stt_preflight_uses_planned_preset_without_claiming_worker_is_ready() -> None:
+    request = WorkflowRequest(
+        Workflow.STT_PREFLIGHT,
+        "stt.json",
+        preset="granite-speech-4.1-2b",
+        device="cuda",
+        precision="fp16",
+    )
+
+    assert build_cli_args(request) == (
+        "stt",
+        "preflight",
+        "stt.json",
+        "--preset",
+        "granite-speech-4.1-2b",
+        "--device",
+        "cuda",
+        "--precision",
+        "fp16",
+    )
+
+
+def test_stt_benchmark_rejects_planned_preset_with_reason() -> None:
+    request = WorkflowRequest(
+        Workflow.STT_BENCHMARK,
+        "stt.json",
+        output_dir="artifacts/run",
+        preset="qwen3-asr-1.7b",
+    )
+
+    with pytest.raises(CommandValidationError, match="Offline worker and T4 validation"):
+        build_cli_args(request)
+
+
+def test_stt_benchmark_current_worker_preset_requires_python() -> None:
+    request = WorkflowRequest(
+        Workflow.STT_BENCHMARK,
+        "stt.json",
+        output_dir="artifacts/run",
+        preset="canary-1b-v2",
+    )
+
+    with pytest.raises(CommandValidationError, match="worker Python"):
+        build_cli_args(request)
 
 
 def test_whisper_benchmark_uses_selected_runtime_options() -> None:
@@ -158,6 +210,25 @@ def test_nemo_benchmark_requires_and_normalizes_worker_python(tmp_path: Path) ->
     assert args[-2:] == ("--worker-python", str(worker.resolve()))
 
 
+def test_stt_preflight_preserves_worker_virtualenv_symlink(tmp_path: Path) -> None:
+    target = tmp_path / "base-python"
+    target.write_text("#!/bin/sh\n")
+    target.chmod(0o755)
+    worker = tmp_path / "worker-python"
+    worker.symlink_to(target)
+
+    args = build_cli_args(
+        WorkflowRequest(
+            Workflow.STT_PREFLIGHT,
+            "stt.json",
+            backend="canary",
+            worker_python=str(worker),
+        )
+    )
+
+    assert args[-2:] == ("--worker-python", str(worker))
+
+
 def test_discovers_worker_python_from_environment(tmp_path: Path) -> None:
     worker = tmp_path / "configured-nemo" / "bin" / "python"
     worker.parent.mkdir(parents=True)
@@ -177,6 +248,35 @@ def test_discovers_project_nemo_environment(tmp_path: Path) -> None:
     worker.chmod(0o755)
 
     assert discover_worker_python(cwd=tmp_path, environ={}) == str(worker.resolve())
+
+
+def test_discovers_worker_python_from_runtime_specific_environment(tmp_path: Path) -> None:
+    worker = tmp_path / "granite-runtime" / "bin" / "python"
+    worker.parent.mkdir(parents=True)
+    worker.write_text("#!/bin/sh\n")
+    worker.chmod(0o755)
+
+    assert discover_worker_python(
+        runtime_id="granite-4.1-transformers",
+        cwd=tmp_path,
+        environ={"DOMINICAN_EATERS_GRANITE_PYTHON": str(worker)},
+    ) == str(worker)
+
+
+def test_inline_runtime_does_not_discover_worker_python(tmp_path: Path) -> None:
+    worker = tmp_path / "configured" / "bin" / "python"
+    worker.parent.mkdir(parents=True)
+    worker.write_text("#!/bin/sh\n")
+    worker.chmod(0o755)
+
+    assert (
+        discover_worker_python(
+            runtime_id="whisper-native",
+            cwd=tmp_path,
+            environ={"DOMINICAN_EATERS_WORKER_PYTHON": str(worker)},
+        )
+        == ""
+    )
 
 
 @pytest.mark.parametrize(

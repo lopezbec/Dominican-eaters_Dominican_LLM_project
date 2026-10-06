@@ -11,12 +11,14 @@ from collections import deque
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import BinaryIO, Protocol, cast
+from typing import BinaryIO, Literal, Protocol, cast
 
 from .contracts import BackendDescriptor, Transcript
 from .worker_protocol import (
     ErrorResponse,
+    JSONObject,
     JSONValue,
+    PreflightCheck,
     WorkerRequest,
     decode_response,
     encode_message,
@@ -37,7 +39,9 @@ class WorkerRemoteError(WorkerProcessError):
 
     def __init__(self, response: ErrorResponse) -> None:
         super().__init__(f"worker failed ({response.error.code}): {response.error.message}")
-        self.error_type = response.error.code
+        self.error = response.error
+        self.code = response.error.code
+        self.error_type = self.code
         self.retryable = response.error.retryable
 
 
@@ -57,6 +61,16 @@ class WorkerTransport(Protocol):
 
 
 TransportFactory = Callable[[], WorkerTransport]
+WorkerStderrSink = Callable[[str], None]
+
+
+@dataclass(frozen=True, slots=True)
+class WorkerPreflightReport:
+    """Normalized result of a no-weight worker runtime inspection."""
+
+    ready: bool
+    checks: tuple[PreflightCheck, ...]
+    environment: JSONObject
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,7 +87,15 @@ class SubprocessBackendSettings:
     options: Mapping[str, JSONValue] = field(default_factory=dict)
     worker_args: tuple[str, ...] = ()
     request_timeout_seconds: float = 300.0
+    startup_timeout_seconds: float | None = None
+    preflight_timeout_seconds: float | None = None
+    load_timeout_seconds: float | None = None
+    inference_timeout_seconds: float | None = None
     shutdown_timeout_seconds: float = 10.0
+    preset: str | None = None
+    model_revision: str | None = None
+    quantization: str | None = None
+    prompt_template_id: str | None = None
 
     def __post_init__(self) -> None:
         if not self.interpreter.is_absolute():
@@ -82,17 +104,35 @@ class SubprocessBackendSettings:
             value = getattr(self, name)
             if not isinstance(value, str) or not value.strip():
                 raise ValueError(f"{name} must be a non-empty string")
-        if (
-            not math.isfinite(self.request_timeout_seconds)
-            or not math.isfinite(self.shutdown_timeout_seconds)
-            or self.request_timeout_seconds <= 0
-            or self.shutdown_timeout_seconds <= 0
-        ):
-            raise ValueError("worker timeouts must be positive")
+        for name in ("preset", "model_revision", "quantization", "prompt_template_id"):
+            value = getattr(self, name)
+            if value is not None and (not isinstance(value, str) or not value.strip()):
+                raise ValueError(f"{name} must be a non-empty string or None")
+        timeout_values = {
+            "request_timeout_seconds": self.request_timeout_seconds,
+            "startup_timeout_seconds": self.startup_timeout_seconds,
+            "preflight_timeout_seconds": self.preflight_timeout_seconds,
+            "load_timeout_seconds": self.load_timeout_seconds,
+            "inference_timeout_seconds": self.inference_timeout_seconds,
+            "shutdown_timeout_seconds": self.shutdown_timeout_seconds,
+        }
+        invalid = [
+            name
+            for name, value in timeout_values.items()
+            if value is not None and (not math.isfinite(value) or value <= 0)
+        ]
+        if invalid:
+            raise ValueError(f"worker timeouts must be positive: {', '.join(invalid)}")
 
     @property
     def argv(self) -> tuple[str, ...]:
         return (str(self.interpreter), "-m", self.worker_module, *self.worker_args)
+
+    def timeout_for(self, phase: Literal["startup", "preflight", "load", "inference"]) -> float:
+        """Resolve a phase deadline, retaining the legacy request timeout as fallback."""
+
+        configured = getattr(self, f"{phase}_timeout_seconds")
+        return self.request_timeout_seconds if configured is None else cast(float, configured)
 
 
 class JsonlSubprocessBackend:
@@ -104,12 +144,15 @@ class JsonlSubprocessBackend:
         *,
         transport_factory: TransportFactory | None = None,
         request_id_factory: Callable[[], str] | None = None,
+        stderr_sink: WorkerStderrSink | None = None,
     ) -> None:
         self._settings = settings
-        self._transport_factory = transport_factory or _SubprocessLineTransport
+        self._transport_factory = transport_factory
         self._request_id_factory = request_id_factory or (lambda: uuid.uuid4().hex)
+        self._stderr_sink = stderr_sink
         self._transport: WorkerTransport | None = None
         self._loaded = False
+        self._preflight_ready: bool | None = None
         self._descriptor = BackendDescriptor(
             backend_id=f"{settings.backend}/{settings.model}",
             model=settings.model,
@@ -127,30 +170,53 @@ class JsonlSubprocessBackend:
     def descriptor(self) -> BackendDescriptor:
         return self._descriptor
 
+    def preflight(self, *, close_after: bool = False) -> WorkerPreflightReport:
+        """Inspect the selected worker runtime without downloading or loading model weights.
+
+        The worker stays alive by default so a successful report can be followed by ``load()``
+        in the same process. ``close_after=True`` is the explicit preflight-only lifecycle.
+        """
+
+        if self._loaded:
+            raise RuntimeError("worker backend is already loaded")
+        try:
+            self._ensure_started()
+            payload = self._exchange(
+                make_request(
+                    "preflight",
+                    self._runtime_params(),
+                    request_id=self._new_request_id(),
+                ),
+                timeout_seconds=self._settings.timeout_for("preflight"),
+            )
+            report = _preflight_report_from_payload(payload)
+            self._preflight_ready = report.ready
+        except Exception:
+            self._abort()
+            raise
+        if close_after:
+            self.close()
+        return report
+
     def load(self) -> None:
         if self._loaded:
             return
-        if self._transport is not None:
-            raise RuntimeError("worker process is already started but not loaded")
-        transport = self._transport_factory()
-        self._transport = transport
+        if self._preflight_ready is False:
+            raise RuntimeError("worker preflight did not pass")
         try:
-            transport.start(self._settings.argv)
+            self._ensure_started()
             self._exchange(
                 make_request(
                     "load",
-                    {
-                        "backend": self._settings.backend,
-                        "model": self._settings.model,
-                        "language": self._settings.language,
-                        "device": self._settings.device,
-                        "precision": self._settings.precision,
-                        "options": dict(self._settings.options),
-                    },
+                    self._runtime_params(),
                     request_id=self._new_request_id(),
-                )
+                ),
+                timeout_seconds=self._settings.timeout_for("load"),
             )
-            payload = self._exchange(make_request("describe", request_id=self._new_request_id()))
+            payload = self._exchange(
+                make_request("describe", request_id=self._new_request_id()),
+                timeout_seconds=self._settings.timeout_for("load"),
+            )
             self._descriptor = _descriptor_from_payload(payload)
             self._loaded = True
         except Exception:
@@ -159,7 +225,10 @@ class JsonlSubprocessBackend:
 
     def warmup(self) -> None:
         self._require_loaded()
-        self._exchange(make_request("warmup", request_id=self._new_request_id()))
+        self._exchange(
+            make_request("warmup", request_id=self._new_request_id()),
+            timeout_seconds=self._settings.timeout_for("load"),
+        )
 
     def transcribe(self, audio_path: Path) -> Transcript:
         self._require_loaded()
@@ -169,7 +238,8 @@ class JsonlSubprocessBackend:
                 "transcribe",
                 {"audio_path": str(resolved)},
                 request_id=self._new_request_id(),
-            )
+            ),
+            timeout_seconds=self._settings.timeout_for("inference"),
         )
         expected_fields = {
             "text",
@@ -205,13 +275,16 @@ class JsonlSubprocessBackend:
         transport = self._transport
         if transport is None:
             self._loaded = False
+            self._preflight_ready = None
             return
         error: Exception | None = None
-        if self._loaded:
-            try:
-                self._exchange(make_request("close", request_id=self._new_request_id()))
-            except Exception as exc:
-                error = exc
+        try:
+            self._exchange(
+                make_request("close", request_id=self._new_request_id()),
+                timeout_seconds=self._settings.shutdown_timeout_seconds,
+            )
+        except Exception as exc:
+            error = exc
         try:
             if self._transport is transport:
                 try:
@@ -222,21 +295,28 @@ class JsonlSubprocessBackend:
         finally:
             self._transport = None
             self._loaded = False
+            self._preflight_ready = None
         if error is not None:
             raise error
 
-    def _exchange(self, request: WorkerRequest) -> dict[str, JSONValue]:
+    def _exchange(
+        self,
+        request: WorkerRequest,
+        *,
+        timeout_seconds: float,
+        operation: str | None = None,
+    ) -> dict[str, JSONValue]:
         transport = self._transport
         if transport is None:
             raise RuntimeError("worker process is not started")
         try:
             transport.write(encode_message(request))
-            response = decode_response(transport.read(self._settings.request_timeout_seconds))
+            response = decode_response(transport.read(timeout_seconds))
         except TimeoutError as exc:
             self._abort()
+            operation_name = operation or request.method
             raise WorkerTimeoutError(
-                f"worker {request.method} timed out after "
-                f"{self._settings.request_timeout_seconds:g} seconds"
+                f"worker {operation_name} timed out after {timeout_seconds:g} seconds"
             ) from exc
         except Exception:
             self._abort()
@@ -246,6 +326,12 @@ class JsonlSubprocessBackend:
             raise WorkerProcessError(
                 f"worker response request_id {response.request_id!r} does not match "
                 f"{request.request_id!r}"
+            )
+        if response.protocol_version != request.protocol_version:
+            self._abort()
+            raise WorkerProcessError(
+                f"worker response protocol_version {response.protocol_version} does not match "
+                f"request version {request.protocol_version}"
             )
         if isinstance(response, ErrorResponse):
             raise WorkerRemoteError(response)
@@ -261,15 +347,126 @@ class JsonlSubprocessBackend:
         if not self._loaded:
             raise RuntimeError("worker backend is not loaded")
 
+    def _ensure_started(self) -> None:
+        if self._transport is not None:
+            return
+        transport = (
+            self._transport_factory()
+            if self._transport_factory is not None
+            else _SubprocessLineTransport(stderr_sink=self._stderr_sink)
+        )
+        self._transport = transport
+        try:
+            transport.start(self._settings.argv)
+            self._exchange(
+                make_request("describe", request_id=self._new_request_id()),
+                timeout_seconds=self._settings.timeout_for("startup"),
+                operation="startup",
+            )
+        except Exception:
+            self._abort()
+            raise
+
+    def _runtime_params(self) -> JSONObject:
+        return {
+            "backend": self._settings.backend,
+            "preset": self._settings.preset,
+            "model": self._settings.model,
+            "model_revision": self._settings.model_revision,
+            "language": self._settings.language,
+            "device": self._settings.device,
+            "precision": self._settings.precision,
+            "quantization": self._settings.quantization,
+            "prompt_template_id": self._settings.prompt_template_id,
+            "options": dict(self._settings.options),
+        }
+
     def _abort(self) -> None:
         transport = self._transport
         self._transport = None
         self._loaded = False
+        self._preflight_ready = None
         if transport is not None:
             try:
                 transport.close(self._settings.shutdown_timeout_seconds)
             except Exception:
                 pass
+
+
+def _preflight_report_from_payload(payload: Mapping[str, JSONValue]) -> WorkerPreflightReport:
+    _require_exact_fields(payload, {"ready", "checks", "environment"}, "worker preflight payload")
+    ready = payload["ready"]
+    if not isinstance(ready, bool):
+        raise WorkerProcessError("worker preflight ready must be a boolean")
+    raw_checks = payload["checks"]
+    if not isinstance(raw_checks, list):
+        raise WorkerProcessError("worker preflight checks must be an array")
+    checks: list[PreflightCheck] = []
+    has_blocking_failure = False
+    for index, raw_check in enumerate(raw_checks):
+        context = f"worker preflight check {index}"
+        if not isinstance(raw_check, dict):
+            raise WorkerProcessError(f"{context} must be an object")
+        _require_exact_fields(
+            raw_check,
+            {"name", "status", "severity", "message", "details"},
+            context,
+        )
+        name = _required_string(raw_check, "name", context)
+        status = _required_choice(
+            raw_check,
+            "status",
+            ("passed", "failed", "skipped"),
+            context,
+        )
+        severity = _required_choice(
+            raw_check,
+            "severity",
+            ("info", "warning", "error"),
+            context,
+        )
+        message = raw_check["message"]
+        if not isinstance(message, str):
+            raise WorkerProcessError(f"{context} message must be a string")
+        details = raw_check["details"]
+        if not isinstance(details, dict):
+            raise WorkerProcessError(f"{context} details must be an object")
+        has_blocking_failure |= status == "failed" and severity == "error"
+        checks.append(
+            PreflightCheck(
+                name=name,
+                status=cast(Literal["passed", "failed", "skipped"], status),
+                severity=cast(Literal["info", "warning", "error"], severity),
+                message=message,
+                details=cast(JSONObject, dict(details)),
+            )
+        )
+    environment = payload["environment"]
+    if not isinstance(environment, dict):
+        raise WorkerProcessError("worker preflight environment must be an object")
+    derived_ready = not has_blocking_failure
+    if ready != derived_ready:
+        raise WorkerProcessError("worker preflight ready does not match its error-severity checks")
+    return WorkerPreflightReport(ready, tuple(checks), cast(JSONObject, dict(environment)))
+
+
+def _required_string(payload: Mapping[str, JSONValue], field: str, context: str) -> str:
+    value = payload[field]
+    if not isinstance(value, str) or not value:
+        raise WorkerProcessError(f"{context} {field} must be a non-empty string")
+    return value
+
+
+def _required_choice(
+    payload: Mapping[str, JSONValue],
+    field: str,
+    choices: tuple[str, ...],
+    context: str,
+) -> str:
+    value = _required_string(payload, field, context)
+    if value not in choices:
+        raise WorkerProcessError(f"{context} {field} is unsupported: {value!r}")
+    return value
 
 
 def _descriptor_from_payload(payload: Mapping[str, JSONValue]) -> BackendDescriptor:
@@ -360,14 +557,18 @@ def _optional_nonnegative_integer(payload: Mapping[str, JSONValue], field: str) 
 class _SubprocessLineTransport:
     """Drain both child streams continuously so model logging cannot deadlock it."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, stderr_sink: WorkerStderrSink | None = None) -> None:
         self._process: subprocess.Popen[bytes] | None = None
         self._stdout: queue.Queue[bytes | BaseException | None] = queue.Queue()
         self._stderr: deque[bytes] = deque(maxlen=200)
+        self._stderr_sink = stderr_sink
+        self._stderr_lock = threading.Lock()
 
     @property
     def stderr_tail(self) -> str:
-        return b"".join(self._stderr).decode("utf-8", errors="replace").strip()
+        with self._stderr_lock:
+            tail = b"".join(self._stderr)
+        return tail.decode("utf-8", errors="replace").strip()
 
     def start(self, argv: Sequence[str]) -> None:
         if self._process is not None:
@@ -446,8 +647,19 @@ class _SubprocessLineTransport:
     def _drain_stderr(self, stream: BinaryIO) -> None:
         try:
             while chunk := stream.read(4096):
-                self._stderr.append(chunk)
+                with self._stderr_lock:
+                    self._stderr.append(chunk)
+                self._emit_stderr(chunk.decode("utf-8", errors="replace"))
         except OSError:
+            return
+
+    def _emit_stderr(self, message: str) -> None:
+        if self._stderr_sink is None:
+            return
+        try:
+            self._stderr_sink(message)
+        except Exception:
+            # Diagnostics must never interrupt the protocol transport.
             return
 
     def _require_process(self) -> subprocess.Popen[bytes]:

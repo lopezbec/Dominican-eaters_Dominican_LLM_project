@@ -4,18 +4,22 @@ from __future__ import annotations
 
 import json
 import math
-from dataclasses import asdict, dataclass
+from collections.abc import Sequence
+from dataclasses import asdict, dataclass, field
 from typing import Literal, TypeAlias, cast
 from uuid import uuid4
 
-PROTOCOL_VERSION = 1
+PROTOCOL_VERSION = 2
+SUPPORTED_PROTOCOL_VERSIONS = frozenset({1, PROTOCOL_VERSION})
 MAX_LINE_BYTES = 1024 * 1024
 MAX_REQUEST_ID_LENGTH = 128
 
 JSONScalar: TypeAlias = str | int | float | bool | None
 JSONValue: TypeAlias = JSONScalar | list["JSONValue"] | dict[str, "JSONValue"]
 JSONObject: TypeAlias = dict[str, JSONValue]
-Method: TypeAlias = Literal["describe", "load", "warmup", "transcribe", "close"]
+Method: TypeAlias = Literal["describe", "preflight", "load", "warmup", "transcribe", "close"]
+PreflightStatus: TypeAlias = Literal["passed", "failed", "skipped"]
+PreflightSeverity: TypeAlias = Literal["info", "warning", "error"]
 
 
 class WorkerProtocolError(ValueError):
@@ -28,6 +32,17 @@ class LineTooLargeError(WorkerProtocolError):
 
 class MessageValidationError(WorkerProtocolError):
     """A JSON value does not match the protocol schema."""
+
+
+@dataclass(frozen=True, slots=True)
+class PreflightCheck:
+    """One machine-readable runtime compatibility check."""
+
+    name: str
+    status: PreflightStatus
+    severity: PreflightSeverity
+    message: str
+    details: JSONObject = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,8 +83,13 @@ _REQUEST_FIELDS = frozenset({"protocol_version", "request_id", "method", "params
 _SUCCESS_FIELDS = frozenset({"protocol_version", "request_id", "ok", "result"})
 _ERROR_FIELDS = frozenset({"protocol_version", "request_id", "ok", "error"})
 _ERROR_DETAIL_FIELDS = frozenset({"code", "message", "retryable"})
-_METHODS = frozenset({"describe", "load", "warmup", "transcribe", "close"})
-_PARAM_FIELDS: dict[str, tuple[frozenset[str], frozenset[str]]] = {
+_PREFLIGHT_RESULT_FIELDS = frozenset({"ready", "checks", "environment"})
+_PREFLIGHT_CHECK_FIELDS = frozenset({"name", "status", "severity", "message", "details"})
+_METHODS_BY_VERSION = {
+    1: frozenset({"describe", "load", "warmup", "transcribe", "close"}),
+    2: frozenset({"describe", "preflight", "load", "warmup", "transcribe", "close"}),
+}
+_V1_PARAM_FIELDS: dict[str, tuple[frozenset[str], frozenset[str]]] = {
     "describe": (frozenset(), frozenset()),
     "load": (
         frozenset({"backend", "model", "language", "device", "precision", "options"}),
@@ -82,6 +102,26 @@ _PARAM_FIELDS: dict[str, tuple[frozenset[str], frozenset[str]]] = {
     ),
     "close": (frozenset(), frozenset()),
 }
+_RUNTIME_FIELDS = frozenset(
+    {
+        "backend",
+        "preset",
+        "model",
+        "model_revision",
+        "language",
+        "device",
+        "precision",
+        "quantization",
+        "prompt_template_id",
+        "options",
+    }
+)
+_V2_PARAM_FIELDS: dict[str, tuple[frozenset[str], frozenset[str]]] = {
+    **_V1_PARAM_FIELDS,
+    "preflight": (_RUNTIME_FIELDS, _RUNTIME_FIELDS),
+    # Extra provenance is optional on load while existing clients migrate from v1.
+    "load": (_V1_PARAM_FIELDS["load"][0], _RUNTIME_FIELDS),
+}
 
 
 def make_request(
@@ -89,10 +129,11 @@ def make_request(
     params: JSONObject | None = None,
     *,
     request_id: str | None = None,
+    protocol_version: int = PROTOCOL_VERSION,
 ) -> WorkerRequest:
     """Construct a request, generating a correlation ID when omitted."""
     request = WorkerRequest(
-        PROTOCOL_VERSION,
+        protocol_version,
         request_id or uuid4().hex,
         method,
         {} if params is None else params,
@@ -103,9 +144,10 @@ def make_request(
 
 def success_response(request: WorkerRequest, result: JSONObject | None = None) -> SuccessResponse:
     """Construct a successful response correlated with ``request``."""
-    response = SuccessResponse(
-        PROTOCOL_VERSION, request.request_id, True, {} if result is None else result
-    )
+    payload = {} if result is None else result
+    if request.method == "preflight":
+        _validate_preflight_result(payload)
+    response = SuccessResponse(request.protocol_version, request.request_id, True, payload)
     _validate_response(response)
     return response
 
@@ -119,7 +161,7 @@ def error_response(
 ) -> ErrorResponse:
     """Construct a structured error correlated with ``request``."""
     response = ErrorResponse(
-        PROTOCOL_VERSION,
+        request.protocol_version,
         request.request_id,
         False,
         ErrorDetail(code=code, message=message, retryable=retryable),
@@ -154,10 +196,10 @@ def decode_request(line: bytes | str) -> WorkerRequest:
     _require_exact_fields(raw, _REQUEST_FIELDS, path="request")
     version, request_id = _common_fields(raw)
     method_value = _required_string(raw, "method")
-    if method_value not in _METHODS:
+    if method_value not in _METHODS_BY_VERSION[version]:
         raise MessageValidationError(f"unsupported method: {method_value!r}")
     params = _required_object(raw, "params")
-    _validate_method_params(method_value, params)
+    _validate_method_params(version, method_value, params)
     return WorkerRequest(version, request_id, cast(Method, method_value), params)
 
 
@@ -191,10 +233,10 @@ def decode_response(line: bytes | str) -> WorkerResponse:
 def _validate_request(request: WorkerRequest) -> None:
     _validate_protocol_version(request.protocol_version)
     _validate_request_id(request.request_id)
-    if request.method not in _METHODS:
+    if request.method not in _METHODS_BY_VERSION[request.protocol_version]:
         raise MessageValidationError(f"unsupported method: {request.method!r}")
     _validate_json_value(request.params, path="params")
-    _validate_method_params(request.method, request.params)
+    _validate_method_params(request.protocol_version, request.method, request.params)
 
 
 def _validate_response(response: WorkerResponse) -> None:
@@ -215,13 +257,17 @@ def _validate_response(response: WorkerResponse) -> None:
         raise MessageValidationError("error.retryable must be a boolean")
 
 
-def _validate_method_params(method: str, params: JSONObject) -> None:
-    required, allowed = _PARAM_FIELDS[method]
+def _validate_method_params(version: int, method: str, params: JSONObject) -> None:
+    schemas = _V1_PARAM_FIELDS if version == 1 else _V2_PARAM_FIELDS
+    required, allowed = schemas[method]
     _require_fields(params, required, allowed, path=f"{method} params")
-    if method == "load":
+    if method in ("load", "preflight"):
         for field in ("backend", "model", "language", "device", "precision"):
             _required_string(params, field)
         _required_object(params, "options")
+        for field in ("preset", "model_revision", "quantization", "prompt_template_id"):
+            if field in params:
+                _optional_string(params, field)
     elif method == "transcribe":
         _required_string(params, "audio_path")
         if "duration_seconds" in params:
@@ -233,6 +279,55 @@ def _validate_method_params(method: str, params: JSONObject) -> None:
                 or duration <= 0
             ):
                 raise MessageValidationError("duration_seconds must be a finite positive number")
+
+
+def make_preflight_result(
+    checks: Sequence[PreflightCheck],
+    *,
+    environment: JSONObject | None = None,
+) -> JSONObject:
+    """Build the canonical v2 preflight result and derive its readiness."""
+
+    ready = not any(check.status == "failed" and check.severity == "error" for check in checks)
+    result: JSONObject = {
+        "ready": ready,
+        "checks": cast(list[JSONValue], [asdict(check) for check in checks]),
+        "environment": {} if environment is None else environment,
+    }
+    _validate_preflight_result(result)
+    return result
+
+
+def _validate_preflight_result(result: JSONObject) -> None:
+    _require_exact_fields(result, _PREFLIGHT_RESULT_FIELDS, path="preflight result")
+    ready = result["ready"]
+    if not isinstance(ready, bool):
+        raise MessageValidationError("preflight result ready must be a boolean")
+    raw_checks = result["checks"]
+    if not isinstance(raw_checks, list):
+        raise MessageValidationError("preflight result checks must be an array")
+    has_blocking_failure = False
+    for index, raw_check in enumerate(raw_checks):
+        path = f"preflight result checks[{index}]"
+        if not isinstance(raw_check, dict):
+            raise MessageValidationError(f"{path} must be a JSON object")
+        check = raw_check
+        _require_exact_fields(check, _PREFLIGHT_CHECK_FIELDS, path=path)
+        _required_string(check, "name", prefix=f"{path}.")
+        status = _required_string(check, "status", prefix=f"{path}.")
+        if status not in ("passed", "failed", "skipped"):
+            raise MessageValidationError(f"{path}.status is unsupported: {status!r}")
+        severity = _required_string(check, "severity", prefix=f"{path}.")
+        if severity not in ("info", "warning", "error"):
+            raise MessageValidationError(f"{path}.severity is unsupported: {severity!r}")
+        _required_string(check, "message", allow_empty=True, prefix=f"{path}.")
+        _required_object(check, "details")
+        has_blocking_failure |= status == "failed" and severity == "error"
+    _required_object(result, "environment")
+    if ready and has_blocking_failure:
+        raise MessageValidationError(
+            "preflight result cannot be ready with a failed error-severity check"
+        )
 
 
 def _decode_object(line: bytes | str) -> JSONObject:
@@ -321,9 +416,10 @@ def _common_fields(raw: JSONObject) -> tuple[int, str]:
 def _validate_protocol_version(value: object) -> None:
     if isinstance(value, bool) or not isinstance(value, int):
         raise MessageValidationError("protocol_version must be an integer")
-    if value != PROTOCOL_VERSION:
+    if value not in SUPPORTED_PROTOCOL_VERSIONS:
         raise MessageValidationError(
-            f"unsupported protocol_version {value}; expected {PROTOCOL_VERSION}"
+            f"unsupported protocol_version {value}; expected one of "
+            f"{', '.join(str(version) for version in sorted(SUPPORTED_PROTOCOL_VERSIONS))}"
         )
 
 
@@ -352,4 +448,11 @@ def _required_object(raw: JSONObject, field: str) -> JSONObject:
     value = raw[field]
     if not isinstance(value, dict):
         raise MessageValidationError(f"{field} must be a JSON object")
+    return value
+
+
+def _optional_string(raw: JSONObject, field: str) -> str | None:
+    value = raw[field]
+    if value is not None and (not isinstance(value, str) or not value):
+        raise MessageValidationError(f"{field} must be a non-empty string or null")
     return value

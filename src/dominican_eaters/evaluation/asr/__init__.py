@@ -1,5 +1,6 @@
 """Canonical speech-to-text evaluation API."""
 
+from .artifacts import ArtifactProvenance, GPUDeviceSnapshot, HostSnapshot, capture_host_snapshot
 from .runner import (
     BENCHMARK_CHECKPOINT_SCHEMA_VERSION,
     BENCHMARK_RESULT_SCHEMA_VERSION,
@@ -30,6 +31,7 @@ from .scoring import (
 
 __all__ = [
     "ASREvaluationReport",
+    "ArtifactProvenance",
     "BENCHMARK_CHECKPOINT_SCHEMA_VERSION",
     "BENCHMARK_RESULT_SCHEMA_VERSION",
     "BenchmarkCheckpoint",
@@ -40,6 +42,8 @@ __all__ = [
     "CoverageSummary",
     "Failure",
     "FailureStage",
+    "GPUDeviceSnapshot",
+    "HostSnapshot",
     "OutputCollisionError",
     "PerformanceSummary",
     "Recognition",
@@ -50,6 +54,7 @@ __all__ = [
     "ScoreResult",
     "ScoreStatus",
     "UtteranceResult",
+    "capture_host_snapshot",
     "evaluate_asr",
     "grouped_bootstrap_intervals",
 ]

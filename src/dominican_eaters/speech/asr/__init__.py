@@ -4,6 +4,7 @@ from .contracts import ASRBackend, BackendDescriptor, Transcript
 from .subprocess_backend import (
     JsonlSubprocessBackend,
     SubprocessBackendSettings,
+    WorkerPreflightReport,
     WorkerProcessError,
     WorkerRemoteError,
     WorkerTimeoutError,
@@ -20,6 +21,7 @@ __all__ = [
     "WhisperDependencyError",
     "WhisperSettings",
     "WorkerProcessError",
+    "WorkerPreflightReport",
     "WorkerRemoteError",
     "WorkerTimeoutError",
 ]

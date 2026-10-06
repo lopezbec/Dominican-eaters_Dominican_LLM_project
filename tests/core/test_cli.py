@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,7 @@ from dominican_eaters.collection.books import BookManifest, BookSeed, write_book
 from dominican_eaters.collection.lyrics import LyricsManifest, LyricsRequest, write_lyrics_manifest
 from dominican_eaters.collection.poems import PoemManifest, PoemSource, write_poem_manifest
 from dominican_eaters.speech.asr import BackendDescriptor, Transcript, WhisperSettings
+from dominican_eaters.speech.asr.environment import BackendEnvironmentReport, EnvironmentCheck
 
 
 class CliFakeBackend:
@@ -133,6 +135,24 @@ def test_bare_noninteractive_command_shows_help() -> None:
     assert "tui" in result.output
 
 
+def test_stt_model_catalog_lists_all_presets_and_explains_blocked_models() -> None:
+    runner = CliRunner()
+
+    listing = runner.invoke(main, ["stt", "models", "list"])
+    details = runner.invoke(main, ["stt", "models", "show", "granite-speech-3.3-8b"])
+
+    assert listing.exit_code == 0, listing.output
+    assert "whisper-base\tcurrent" in listing.output
+    assert "granite-speech-4.1-2b\tplanned" in listing.output
+    assert "qwen2-audio-7b-instruct\texperimental" in listing.output
+    assert "granite-speech-3.3-8b\tblocked" in listing.output
+    assert details.exit_code == 0, details.output
+    assert "runtime=granite-3.3-transformers" in details.output
+    assert "execution=worker" in details.output
+    assert "status=blocked" in details.output
+    assert "reason=Published BF16 weights exceed T4 VRAM" in details.output
+
+
 def test_config_validation_has_nonzero_exit_for_invalid_config(tmp_path: Path) -> None:
     config = tmp_path / "invalid.yaml"
     config.write_text("schema_version: 1\ndata_root: data\n", encoding="utf-8")
@@ -182,6 +202,136 @@ def test_stt_preflight_success_and_missing_file_failure(tmp_path: Path) -> None:
     assert "audio file does not exist" in failure.output
 
 
+def test_stt_preflight_reports_selected_model_environment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manifest = write_cli_manifest(tmp_path)
+    report = BackendEnvironmentReport(
+        backend="whisper",
+        interpreter=Path(sys.executable),
+        requested_device="cuda",
+        python_version="3.12.8",
+        checks=(EnvironmentCheck("cuda", "torch.cuda", True, "available"),),
+    )
+    monkeypatch.setattr("dominican_eaters.cli.app.create_asr_backend", lambda **_kwargs: object())
+    monkeypatch.setattr(
+        "dominican_eaters.cli.app.preflight_asr_environment", lambda **_kwargs: report
+    )
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "stt",
+            "preflight",
+            str(manifest),
+            "--backend",
+            "whisper",
+            "--model",
+            "large-v3",
+            "--device",
+            "cuda",
+            "--precision",
+            "fp16",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "environment_backend=whisper" in result.output
+    assert "environment_model=large-v3" in result.output
+    assert "environment_check[cuda:torch.cuda]=ok:available" in result.output
+    assert "environment_preflight=passed" in result.output
+
+
+@pytest.mark.parametrize(
+    ("preset_id", "status"),
+    [
+        ("granite-speech-4.1-2b", "planned"),
+        ("granite-speech-3.3-8b", "blocked"),
+    ],
+)
+def test_stt_preflight_reports_non_runnable_preset_without_constructing_backend(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    preset_id: str,
+    status: str,
+) -> None:
+    manifest = write_cli_manifest(tmp_path)
+    received: dict[str, object] = {}
+
+    def report(**kwargs: object) -> BackendEnvironmentReport:
+        received.update(kwargs)
+        return BackendEnvironmentReport(
+            backend=kwargs["backend"],  # type: ignore[arg-type]
+            interpreter=Path(sys.executable),
+            requested_device="cuda",
+            python_version="3.12.8",
+            checks=(EnvironmentCheck("module", "torch", True, "available"),),
+        )
+
+    monkeypatch.setattr("dominican_eaters.cli.app.preflight_asr_environment", report)
+
+    def unexpected_backend(**_kwargs: object) -> object:
+        raise AssertionError("non-runnable presets must not construct a backend")
+
+    monkeypatch.setattr("dominican_eaters.cli.app.create_asr_backend", unexpected_backend)
+
+    result = CliRunner().invoke(
+        main,
+        ["stt", "preflight", str(manifest), "--preset", preset_id],
+    )
+
+    assert result.exit_code != 0
+    assert f"preset={preset_id}" in result.output
+    assert f"preset_status={status}" in result.output
+    assert "preset_runnable=no" in result.output
+    assert "environment_preflight=passed" in result.output
+    assert f"is {status} and cannot complete preflight" in result.output
+    assert received["requested_device"] == "cuda"
+
+
+def test_stt_preset_rejects_conflicting_legacy_backend(tmp_path: Path) -> None:
+    manifest = write_cli_manifest(tmp_path)
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "stt",
+            "preflight",
+            str(manifest),
+            "--preset",
+            "canary-1b-v2",
+            "--backend",
+            "whisper",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "uses backend 'canary', not 'whisper'" in result.output
+
+
+def test_stt_benchmark_rejects_non_runnable_preset_with_registered_reason(
+    tmp_path: Path,
+) -> None:
+    manifest = write_cli_manifest(tmp_path)
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "stt",
+            "benchmark",
+            str(manifest),
+            "--output-dir",
+            str(tmp_path / "run"),
+            "--preset",
+            "qwen3-asr-1.7b",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "is planned and cannot benchmark" in result.output
+    assert "Offline worker and T4 validation are pending" in result.output
+
+
 def test_stt_benchmark_success_uses_canonical_runner_and_artifacts(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -202,6 +352,39 @@ def test_stt_benchmark_success_uses_canonical_runner_and_artifacts(
     assert backend.calls == ["load", "warmup", "transcribe:sample.wav", "close"]
     artifact = json.loads((output / "result.json").read_text(encoding="utf-8"))
     assert artifact["backend"]["model_revision"] == "fixture"
+
+
+def test_stt_benchmark_current_preset_resolves_registered_model(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manifest = write_cli_manifest(tmp_path)
+    backend = CliFakeBackend(WhisperSettings())
+    received: dict[str, object] = {}
+
+    def create_backend(**kwargs: object) -> CliFakeBackend:
+        received.update(kwargs)
+        return backend
+
+    monkeypatch.setattr("dominican_eaters.cli.app.create_asr_backend", create_backend)
+    result = CliRunner().invoke(
+        main,
+        [
+            "stt",
+            "benchmark",
+            str(manifest),
+            "--output-dir",
+            str(tmp_path / "preset-run"),
+            "--preset",
+            "whisper-base",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert received["backend"] == "whisper"
+    assert received["model"] == "base"
+    assert received["language"] == "es"
+    assert received["device"] == "cuda"
+    assert received["precision"] == "fp16"
 
 
 def test_stt_benchmark_failure_exits_nonzero_and_keeps_artifacts(
@@ -313,6 +496,8 @@ def test_lyrics_collection_run_writes_ledger_and_closes_genius(
     )
 
     assert result.exit_code == 0, result.output
+    assert "progress=1/1 state=started request_id=req-1" in result.output
+    assert "progress=1/1 state=saved status=not_found request_id=req-1" in result.output
     assert "not_found=1" in result.output
     assert (output / "lyrics-collection.json").is_file()
     assert EmptyGeniusAPI.instances[0].closed is True

@@ -34,8 +34,17 @@ from dominican_eaters.collection.providers import ScrapeTubeSearch
 from dominican_eaters.config import ConfigError, load_config
 from dominican_eaters.data import ConcurrentWriteError, ManifestValidationError, load_manifest
 from dominican_eaters.evaluation.asr import BenchmarkRunner, OutputCollisionError
+from dominican_eaters.speech.asr import WorkerProcessError
+from dominican_eaters.speech.asr.environment import preflight_asr_environment
+from dominican_eaters.speech.asr.registry import (
+    CURRENT_BACKEND_SPECS,
+    MODEL_PRESETS,
+    RUNTIME_SPECS,
+    BackendName,
+    ModelPreset,
+)
 
-from .backends import BackendName, create_asr_backend
+from .backends import create_asr_backend
 
 
 @click.group(invoke_without_command=True)
@@ -283,6 +292,49 @@ def stt_group() -> None:
     """Validate and evaluate speech-to-text datasets."""
 
 
+@stt_group.group("models")
+def stt_models_group() -> None:
+    """Inspect registered speech-to-text model presets."""
+
+
+@stt_models_group.command("list")
+def list_stt_models() -> None:
+    """List current, planned, experimental, and blocked presets."""
+
+    for preset in MODEL_PRESETS.values():
+        click.echo(f"{preset.preset_id}\t{preset.status}\t{preset.label}\t{preset.model}")
+
+
+@stt_models_group.command("show")
+@click.argument("preset_id", type=click.Choice(tuple(MODEL_PRESETS)))
+def show_stt_model(preset_id: str) -> None:
+    """Show runtime requirements and capabilities for one preset."""
+
+    preset = MODEL_PRESETS[preset_id]
+    runtime = RUNTIME_SPECS[preset.runtime_id]
+    capabilities = preset.capabilities
+    click.echo(f"preset={preset.preset_id}")
+    click.echo(f"status={preset.status}")
+    click.echo(f"label={preset.label}")
+    click.echo(f"backend={preset.backend}")
+    click.echo(f"model={preset.model}")
+    click.echo(f"model_revision={preset.model_revision or 'unresolved'}")
+    click.echo(f"runtime={runtime.runtime_id}")
+    click.echo(f"execution={runtime.execution}")
+    click.echo(f"worker_module={runtime.worker_module or 'inline'}")
+    click.echo(f"interpreter_env_var={runtime.interpreter_env_var or 'current-python'}")
+    click.echo(f"supported_python={runtime.supported_python}")
+    click.echo(f"default_precision={preset.precision or 'unresolved'}")
+    click.echo(f"quantization={preset.quantization or 'none'}")
+    click.echo(f"timestamps={'yes' if capabilities.timestamps else 'no'}")
+    click.echo(f"streaming={'yes' if capabilities.streaming else 'no'}")
+    click.echo(f"language_detection={'yes' if capabilities.language_detection else 'no'}")
+    click.echo(f"long_form_policy={capabilities.long_form_policy}")
+    click.echo(f"devices={','.join(capabilities.supported_devices)}")
+    click.echo(f"precisions={','.join(capabilities.supported_precisions)}")
+    click.echo(f"reason={preset.reason or 'ready'}")
+
+
 @stt_group.command("preflight")
 @click.argument("manifest_path", type=click.Path(path_type=Path, dir_okay=False))
 @click.option(
@@ -291,25 +343,128 @@ def stt_group() -> None:
     help="Explicitly remap the dataset root; declared hashes are verified by default.",
 )
 @click.option("--verify-hashes/--no-verify-hashes", default=False, show_default=True)
+@click.option(
+    "--preset",
+    "preset_id",
+    type=click.Choice(tuple(MODEL_PRESETS)),
+    help="Registered model/runtime preset to inspect.",
+)
+@click.option(
+    "--backend",
+    type=click.Choice(tuple(CURRENT_BACKEND_SPECS)),
+    help="Legacy backend selection; use --preset for reproducible runs.",
+)
+@click.option("--model", help="Model name; defaults are backend-specific.")
+@click.option(
+    "--device", type=click.Choice(["auto", "cpu", "cuda"]), default="auto", show_default=True
+)
+@click.option(
+    "--precision",
+    type=click.Choice(["auto", "fp16", "fp32", "bf16"]),
+    default="auto",
+    show_default=True,
+)
+@click.option(
+    "--worker-python",
+    type=click.Path(path_type=Path, dir_okay=False),
+    help="Python executable for the selected isolated worker.",
+)
 def preflight_stt_manifest(
     manifest_path: Path,
     dataset_root: Path | None,
     verify_hashes: bool,
+    preset_id: str | None,
+    backend: str | None,
+    model: str | None,
+    device: str,
+    precision: str,
+    worker_python: Path | None,
 ) -> None:
-    """Validate one strict STT manifest and its audio files."""
+    """Validate an STT dataset and, when selected, its model environment."""
 
     try:
+        preset, backend_name, selected_model, selected_device, selected_precision = (
+            _resolve_stt_selection(
+                preset_id=preset_id,
+                backend=backend,
+                model=model,
+                language=None,
+                precision=precision,
+                device=device,
+            )
+        )
         manifest = load_manifest(
             manifest_path,
             dataset_root_override=dataset_root,
             verify_hashes_on_override=True,
         )
         manifest.preflight(verify_hashes=verify_hashes or dataset_root is not None)
+        environment_report = None
+        worker_report = None
+        if backend_name is not None:
+            environment_report = preflight_asr_environment(
+                backend=backend_name,
+                worker_python=worker_python,
+                requested_device=selected_device,
+            )
+            if environment_report.ready and (preset is None or preset.runnable):
+                selected_backend = create_asr_backend(
+                    backend=backend_name,
+                    model=selected_model,
+                    language=preset.language if preset is not None else "es",
+                    device=selected_device,
+                    precision=selected_precision,
+                    worker_python=worker_python,
+                    request_timeout_seconds=15,
+                    timestamps=False,
+                    worker_stderr_sink=_echo_worker_stderr,
+                    preset=preset,
+                )
+                worker_preflight = getattr(selected_backend, "preflight", None)
+                if callable(worker_preflight):
+                    worker_report = worker_preflight(close_after=True)
     except ManifestValidationError as error:
+        raise click.ClickException(str(error)) from error
+    except ValueError as error:
+        raise click.ClickException(str(error)) from error
+    except WorkerProcessError as error:
         raise click.ClickException(str(error)) from error
     click.echo(f"schema_version={manifest.schema_version}")
     click.echo(f"dataset_root={manifest.dataset_root}")
     click.echo(f"samples={len(manifest)}")
+    if preset is not None:
+        click.echo(f"preset={preset.preset_id}")
+        click.echo(f"preset_status={preset.status}")
+        click.echo(f"preset_runtime={preset.runtime_id}")
+        click.echo(f"preset_runnable={'yes' if preset.runnable else 'no'}")
+        click.echo(f"preset_reason={preset.reason or 'ready'}")
+    if environment_report is not None:
+        click.echo(f"environment_backend={environment_report.backend}")
+        click.echo(f"environment_model={selected_model}")
+        click.echo(f"environment_python={environment_report.interpreter}")
+        click.echo(f"environment_python_version={environment_report.python_version}")
+        for check in environment_report.checks:
+            state = "ok" if check.available else "missing"
+            click.echo(f"environment_check[{check.kind}:{check.name}]={state}:{check.detail}")
+        click.echo("environment_preflight=" + ("passed" if environment_report.ready else "failed"))
+    if worker_report is not None:
+        for worker_check in worker_report.checks:
+            click.echo(
+                f"worker_check[{worker_check.name}]={worker_check.status}:"
+                f"{worker_check.severity}:{worker_check.message}"
+            )
+        for name, value in sorted(worker_report.environment.items()):
+            click.echo(f"worker_environment[{name}]={value}")
+        click.echo("worker_preflight=" + ("passed" if worker_report.ready else "failed"))
+    failures = []
+    if preset is not None and not preset.runnable:
+        failures.append(_preset_unavailable_message(preset, action="complete preflight"))
+    if environment_report is not None and not environment_report.ready:
+        failures.append(f"{environment_report.backend} environment preflight failed")
+    if worker_report is not None and not worker_report.ready:
+        failures.append(f"{backend_name} worker preflight failed")
+    if failures:
+        raise click.ClickException("; ".join(failures))
     click.echo("preflight=passed")
 
 
@@ -321,13 +476,18 @@ def preflight_stt_manifest(
     required=True,
 )
 @click.option(
+    "--preset",
+    "preset_id",
+    type=click.Choice(tuple(MODEL_PRESETS)),
+    help="Registered model/runtime preset. Non-current presets cannot be benchmarked.",
+)
+@click.option(
     "--backend",
-    type=click.Choice(["whisper", "parakeet", "canary"]),
-    default="whisper",
-    show_default=True,
+    type=click.Choice(tuple(CURRENT_BACKEND_SPECS)),
+    help="Legacy backend selection; defaults to whisper when --preset is omitted.",
 )
 @click.option("--model", help="Model name; defaults are backend-specific.")
-@click.option("--language", default="es", show_default=True)
+@click.option("--language", help="Language override; defaults to the preset language or es.")
 @click.option(
     "--device", type=click.Choice(["auto", "cpu", "cuda"]), default="auto", show_default=True
 )
@@ -341,7 +501,7 @@ def preflight_stt_manifest(
 @click.option(
     "--worker-python",
     type=click.Path(path_type=Path, dir_okay=False),
-    help="Absolute Python executable for an isolated Parakeet or Canary worker.",
+    help="Absolute Python executable for the selected isolated worker.",
 )
 @click.option(
     "--request-timeout",
@@ -368,9 +528,10 @@ def benchmark_stt(
     context: click.Context,
     manifest_path: Path,
     output_dir: Path,
-    backend: str,
+    preset_id: str | None,
+    backend: str | None,
     model: str | None,
-    language: str,
+    language: str | None,
     device: str,
     precision: str,
     warmup_runs: int,
@@ -384,18 +545,34 @@ def benchmark_stt(
     """Run one canonical benchmark into a new OUTPUT_DIR."""
 
     try:
+        preset, backend_name, selected_model, selected_device, selected_precision = (
+            _resolve_stt_selection(
+                preset_id=preset_id,
+                backend=backend,
+                model=model,
+                language=language,
+                precision=precision,
+                device=device,
+                require_backend=True,
+            )
+        )
+        if preset is not None and not preset.runnable:
+            raise ValueError(_preset_unavailable_message(preset, action="benchmark"))
+        assert backend_name is not None
         manifest = load_manifest(manifest_path)
         selected_backend = create_asr_backend(
-            backend=cast(BackendName, backend),
-            model=model,
-            language=language,
-            device=device,
-            precision=precision,
+            backend=backend_name,
+            model=selected_model,
+            language=language or (preset.language if preset is not None else "es"),
+            device=selected_device,
+            precision=selected_precision,
             worker_python=worker_python,
             request_timeout_seconds=request_timeout,
             timestamps=timestamps,
             short_audio_policy=short_audio_policy,
             minimum_audio_seconds=minimum_audio_seconds,
+            worker_stderr_sink=_echo_worker_stderr,
+            preset=preset,
         )
         result = BenchmarkRunner(
             backend=selected_backend,
@@ -452,3 +629,58 @@ def benchmark_stt(
         click.echo(f"failure={failure.stage.value}:{failure.error_type}:{failure.message}{sample}")
     if not result.successful:
         context.exit(1)
+
+
+def _resolve_stt_selection(
+    *,
+    preset_id: str | None,
+    backend: str | None,
+    model: str | None,
+    language: str | None,
+    precision: str,
+    device: str,
+    require_backend: bool = False,
+) -> tuple[ModelPreset | None, BackendName | None, str | None, str, str]:
+    """Resolve a preset without obscuring explicit legacy option conflicts."""
+
+    if preset_id is None:
+        if backend is None and not require_backend:
+            return None, None, model, device, precision
+        backend_name = cast(BackendName, backend or "whisper")
+        selected_model = model or CURRENT_BACKEND_SPECS[backend_name].default_model
+        return None, backend_name, selected_model, device, precision
+
+    preset = MODEL_PRESETS[preset_id]
+    if backend is not None and backend != preset.backend:
+        raise ValueError(f"Preset {preset_id!r} uses backend {preset.backend!r}, not {backend!r}")
+    if model is not None and model != preset.model:
+        raise ValueError(f"Preset {preset_id!r} fixes model {preset.model!r}, not {model!r}")
+    if language is not None and language != preset.language:
+        raise ValueError(
+            f"Preset {preset_id!r} fixes language {preset.language!r}, not {language!r}"
+        )
+    if device != "auto" and device not in preset.capabilities.supported_devices:
+        raise ValueError(f"Preset {preset_id!r} does not support device {device!r}")
+    if precision != "auto" and precision not in preset.capabilities.supported_precisions:
+        raise ValueError(f"Preset {preset_id!r} does not support precision {precision!r}")
+    selected_precision = preset.precision if precision == "auto" and preset.precision else precision
+    selected_device = device
+    if device == "auto":
+        if selected_precision in {"fp16", "bf16"} and "cuda" in (
+            preset.capabilities.supported_devices
+        ):
+            selected_device = "cuda"
+        elif len(preset.capabilities.supported_devices) == 1:
+            selected_device = preset.capabilities.supported_devices[0]
+    return preset, preset.backend, preset.model, selected_device, selected_precision
+
+
+def _preset_unavailable_message(preset: ModelPreset, *, action: str) -> str:
+    reason = preset.reason or "the adapter has not been promoted"
+    return f"Preset {preset.preset_id!r} is {preset.status} and cannot {action}: {reason}"
+
+
+def _echo_worker_stderr(message: str) -> None:
+    """Forward worker diagnostics immediately while preserving their line endings."""
+
+    click.echo(message, nl=False, err=True)
