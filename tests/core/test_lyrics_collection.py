@@ -281,3 +281,20 @@ def test_runner_retries_legacy_http_401_checkpoint(tmp_path: Path) -> None:
     assert recovered.search_calls == ["Ojalá que llueva café"]
     assert ledger.results[0].status is CollectionStatus.COMPLETE
     assert ledger.results[0].attempt == 2
+
+
+def test_runner_reports_started_and_saved_progress(tmp_path: Path) -> None:
+    request = LyricsRequest("req-1", "Ojalá que llueva café")
+    started: list[tuple[int, int, LyricsRequest, int]] = []
+    saved: list[tuple[int, int, CollectionStatus]] = []
+
+    LyricsCollectionRunner(
+        service(FakeGenius([(candidate(),)]), FakeVideos(video())),
+        on_request_started=lambda index, total, item, attempt: started.append(
+            (index, total, item, attempt)
+        ),
+        on_result_saved=lambda index, total, result: saved.append((index, total, result.status)),
+    ).run(LyricsManifest((request,)), tmp_path)
+
+    assert started == [(1, 1, request, 1)]
+    assert saved == [(1, 1, CollectionStatus.COMPLETE)]

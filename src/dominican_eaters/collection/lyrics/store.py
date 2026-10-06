@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final
@@ -15,6 +15,7 @@ from .contracts import (
     CollectionResult,
     CollectionStatus,
     LyricsManifest,
+    LyricsRequest,
     LyricsValidationError,
     require_exact_fields,
 )
@@ -23,6 +24,8 @@ LEDGER_FILENAME: Final = "lyrics-collection.json"
 _LEDGER_FIELDS = frozenset({"schema_version", "manifest", "results"})
 _BATCH_BLOCKING_CODES = frozenset({"authentication", "rate_limit"})
 _LEGACY_BATCH_BLOCKING_STATUSES = ("HTTP 401", "HTTP 403", "HTTP 429")
+RequestStartedCallback = Callable[[int, int, LyricsRequest, int], None]
+ResultSavedCallback = Callable[[int, int, CollectionResult], None]
 
 
 class LedgerConflictError(RuntimeError):
@@ -148,6 +151,8 @@ class LyricsCollectionRunner:
         retry_not_found: bool = True,
         retry_partial: bool = True,
         retry_nonretryable_errors: bool = False,
+        on_request_started: RequestStartedCallback | None = None,
+        on_result_saved: ResultSavedCallback | None = None,
     ) -> None:
         from .service import LyricsCollectionService
 
@@ -157,6 +162,8 @@ class LyricsCollectionRunner:
         self._retry_not_found = retry_not_found
         self._retry_partial = retry_partial
         self._retry_nonretryable_errors = retry_nonretryable_errors
+        self._on_request_started = on_request_started
+        self._on_result_saved = on_result_saved
 
     def run(
         self, manifest: LyricsManifest, output_dir: str | Path, *, force: bool = False
@@ -176,14 +183,19 @@ class LyricsCollectionRunner:
             store.save(ledger)
             previous = {}
 
-        for request in manifest:
+        total = len(manifest)
+        for index, request in enumerate(manifest, start=1):
             old = previous.get(request.request_id)
             if not force and old is not None and not self._should_retry(old):
                 continue
             attempt = 1 if old is None else old.attempt + 1
+            if self._on_request_started is not None:
+                self._on_request_started(index, total, request, attempt)
             result = self._service.collect(request, attempt=attempt)
             ledger = ledger.with_result(result)
             store.save(ledger)
+            if self._on_result_saved is not None:
+                self._on_result_saved(index, total, result)
             if self._is_batch_blocking(result):
                 break
         return ledger

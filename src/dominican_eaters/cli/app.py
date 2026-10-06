@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import sys
 from collections import Counter
+from json import dumps
 from pathlib import Path
 from typing import cast
 
@@ -18,10 +19,12 @@ from dominican_eaters.collection.books import (
     load_book_manifest,
 )
 from dominican_eaters.collection.lyrics import (
+    CollectionResult,
     GeniusAPI,
     LedgerConflictError,
     LyricsCollectionRunner,
     LyricsCollectionService,
+    LyricsRequest,
     YouTubeMusicVideoSearch,
     load_lyrics_manifest,
 )
@@ -197,7 +200,11 @@ def run_lyrics_collection(manifest_path: Path, output_dir: Path, force: bool) ->
         manifest = load_lyrics_manifest(manifest_path)
         genius = GeniusAPI(_required_environment("GENIUS_ACCESS_TOKEN"))
         service = LyricsCollectionService(genius, YouTubeMusicVideoSearch(ScrapeTubeSearch()))
-        result = LyricsCollectionRunner(service).run(manifest, output_dir, force=force)
+        result = LyricsCollectionRunner(
+            service,
+            on_request_started=_echo_lyrics_request_started,
+            on_result_saved=_echo_lyrics_result_saved,
+        ).run(manifest, output_dir, force=force)
     except (ValueError, OSError, LedgerConflictError, ConcurrentWriteError) as error:
         raise click.ClickException(str(error)) from error
     finally:
@@ -220,6 +227,24 @@ def run_lyrics_collection(manifest_path: Path, output_dir: Path, force: bool) ->
     click.echo(f"ledger={(output_dir / 'lyrics-collection.json').resolve()}")
     if counts.get("error", 0):
         raise click.exceptions.Exit(1)
+
+
+def _echo_lyrics_request_started(
+    index: int, total: int, request: LyricsRequest, attempt: int
+) -> None:
+    click.echo(
+        f"progress={index}/{total} state=started request_id={request.request_id} "
+        f"attempt={attempt} query={dumps(request.query, ensure_ascii=False)}"
+    )
+
+
+def _echo_lyrics_result_saved(index: int, total: int, result: CollectionResult) -> None:
+    title = result.song.title if result.song is not None else result.request.query
+    click.echo(
+        f"progress={index}/{total} state=saved status={result.status.value} "
+        f"request_id={result.request.request_id} attempt={result.attempt} "
+        f"title={dumps(title, ensure_ascii=False)}"
+    )
 
 
 @collect_group.group("poems")
