@@ -376,7 +376,7 @@ class DominicanEatersApp(App[None]):
         )
         self._show("#benchmark-number-fields", benchmark)
         self._show("#audio-policy-fields", benchmark)
-        self._show("#force", workflow in COLLECTION_RUNS)
+        self._show("#force", workflow in COLLECTION_RUNS | {Workflow.LYRICS_DOWNLOAD_AUDIO})
         self._show("#verify", workflow in {Workflow.STT_PREFLIGHT, Workflow.STT_BENCHMARK})
         self._show("#timestamps", benchmark)
         self.query_one("#source-label", Label).update(
@@ -384,6 +384,8 @@ class DominicanEatersApp(App[None]):
             if workflow is Workflow.CONFIG_VALIDATE
             else "Audio directory"
             if manifest_build
+            else "Collection ledger"
+            if workflow is Workflow.LYRICS_DOWNLOAD_AUDIO
             else "Manifest file"
         )
         self.query_one("#output-field-label", Label).update(

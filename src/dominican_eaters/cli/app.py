@@ -28,6 +28,11 @@ from dominican_eaters.collection.lyrics import (
     YouTubeMusicVideoSearch,
     load_lyrics_manifest,
 )
+from dominican_eaters.collection.media import (
+    MediaDownloadRunner,
+    MediaRecord,
+    YtDlpMediaDownloader,
+)
 from dominican_eaters.collection.poems import (
     PoemCollector,
     YouTubeRecitationSearch,
@@ -250,6 +255,47 @@ def _echo_lyrics_result_saved(index: int, total: int, result: CollectionResult) 
         f"progress={index}/{total} state=saved status={result.status.value} "
         f"request_id={result.request.request_id} attempt={result.attempt} "
         f"title={dumps(title, ensure_ascii=False)}"
+    )
+
+
+@collect_lyrics_group.command("download-audio")
+@click.argument("ledger_path", type=click.Path(path_type=Path, dir_okay=False))
+@click.option("--output-dir", type=click.Path(path_type=Path, file_okay=False), required=True)
+@click.option("--timeout", type=click.FloatRange(min=1), default=900.0, show_default=True)
+@click.option("--force/--no-force", default=False, show_default=True)
+def download_lyrics_audio(ledger_path: Path, output_dir: Path, timeout: float, force: bool) -> None:
+    """Download and normalize audio selected by a lyrics collection ledger."""
+
+    runner = MediaDownloadRunner(
+        YtDlpMediaDownloader(),
+        timeout_seconds=timeout,
+        on_progress=_echo_media_progress,
+        on_log=lambda line: click.echo(f"download={line}"),
+    )
+    checks = runner.preflight()
+    for name, available, detail in checks:
+        status = "ok" if available else "missing"
+        click.echo(f"environment_check[executable:{name}]={status}:{detail}")
+    if not all(available for _, available, _ in checks):
+        raise click.ClickException("media download environment preflight failed")
+    try:
+        ledger = runner.run(ledger_path, output_dir, force=force)
+    except (ValueError, OSError, ConcurrentWriteError) as error:
+        raise click.ClickException(str(error)) from error
+    counts = Counter(record.status.value for record in ledger.records)
+    click.echo(f"records={len(ledger.records)}")
+    for status in sorted(counts):
+        click.echo(f"{status}={counts[status]}")
+    click.echo(f"ledger={(output_dir / 'media-download.json').resolve()}")
+    if counts.get("failed", 0):
+        raise click.exceptions.Exit(1)
+
+
+def _echo_media_progress(index: int, total: int, record: MediaRecord) -> None:
+    detail = f" error={record.error_code}" if record.error_code else ""
+    click.echo(
+        f"progress={index}/{total} state=saved status={record.status.value} "
+        f"request_id={record.request_id} attempt={record.attempt}{detail}"
     )
 
 

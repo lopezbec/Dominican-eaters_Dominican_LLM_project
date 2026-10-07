@@ -26,6 +26,7 @@ class Workflow(StrEnum):
     BOOKS_RUN = "books-run"
     LYRICS_PREFLIGHT = "lyrics-preflight"
     LYRICS_RUN = "lyrics-run"
+    LYRICS_DOWNLOAD_AUDIO = "lyrics-download-audio"
     POEMS_PREFLIGHT = "poems-preflight"
     POEMS_RUN = "poems-run"
     STT_PREFLIGHT = "stt-preflight"
@@ -39,6 +40,7 @@ WORKFLOW_OPTIONS: tuple[tuple[str, Workflow], ...] = (
     ("Collect books", Workflow.BOOKS_RUN),
     ("Preflight lyrics manifest", Workflow.LYRICS_PREFLIGHT),
     ("Collect lyrics", Workflow.LYRICS_RUN),
+    ("Download collected lyrics audio", Workflow.LYRICS_DOWNLOAD_AUDIO),
     ("Preflight poems manifest", Workflow.POEMS_PREFLIGHT),
     ("Collect poems", Workflow.POEMS_RUN),
     ("Preflight speech-to-text manifest", Workflow.STT_PREFLIGHT),
@@ -48,6 +50,7 @@ WORKFLOW_OPTIONS: tuple[tuple[str, Workflow], ...] = (
 
 COLLECTION_RUNS = {Workflow.BOOKS_RUN, Workflow.LYRICS_RUN, Workflow.POEMS_RUN}
 OUTPUT_WORKFLOWS = COLLECTION_RUNS | {Workflow.STT_MANIFEST_BUILD, Workflow.STT_BENCHMARK}
+OUTPUT_WORKFLOWS.add(Workflow.LYRICS_DOWNLOAD_AUDIO)
 
 DEFAULT_SOURCE_PATHS: dict[Workflow, str] = {
     Workflow.CONFIG_VALIDATE: "config/default.yaml",
@@ -55,6 +58,7 @@ DEFAULT_SOURCE_PATHS: dict[Workflow, str] = {
     Workflow.BOOKS_RUN: "data/manifests/books.json",
     Workflow.LYRICS_PREFLIGHT: "data/manifests/lyrics.json",
     Workflow.LYRICS_RUN: "data/manifests/lyrics.json",
+    Workflow.LYRICS_DOWNLOAD_AUDIO: "artifacts/lyrics/lyrics-collection.json",
     Workflow.POEMS_PREFLIGHT: "data/manifests/poems.json",
     Workflow.POEMS_RUN: "data/manifests/poems.json",
     Workflow.STT_PREFLIGHT: "data/manifests/stt.json",
@@ -65,6 +69,7 @@ DEFAULT_SOURCE_PATHS: dict[Workflow, str] = {
 DEFAULT_OUTPUT_DIRS: dict[Workflow, str] = {
     Workflow.BOOKS_RUN: "artifacts/books",
     Workflow.LYRICS_RUN: "artifacts/lyrics",
+    Workflow.LYRICS_DOWNLOAD_AUDIO: "data/audio/lyrics",
     Workflow.POEMS_RUN: "artifacts/poems",
     Workflow.STT_BENCHMARK: "artifacts/stt-run",
     Workflow.STT_MANIFEST_BUILD: "data/manifests/stt-all.json",
@@ -179,6 +184,19 @@ def build_cli_args(request: WorkflowRequest) -> tuple[str, ...]:
             args.extend(("--output-dir", _required_output_dir(request)))
             if request.force:
                 args.append("--force")
+        return tuple(args)
+
+    if request.workflow is Workflow.LYRICS_DOWNLOAD_AUDIO:
+        args = [
+            "collect",
+            "lyrics",
+            "download-audio",
+            source_path,
+            "--output-dir",
+            _required_output_dir(request),
+        ]
+        if request.force:
+            args.append("--force")
         return tuple(args)
 
     if request.workflow is Workflow.STT_MANIFEST_BUILD:

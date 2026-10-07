@@ -47,7 +47,6 @@ def test_collection_run_includes_output_and_force() -> None:
         output_dir="artifacts/lyrics",
         force=True,
     )
-
     assert build_cli_args(request) == (
         "collect",
         "lyrics",
@@ -55,6 +54,25 @@ def test_collection_run_includes_output_and_force() -> None:
         "lyrics.json",
         "--output-dir",
         "artifacts/lyrics",
+        "--force",
+    )
+
+
+def test_lyrics_audio_download_uses_collection_ledger_and_output_directory() -> None:
+    request = WorkflowRequest(
+        Workflow.LYRICS_DOWNLOAD_AUDIO,
+        "artifacts/lyrics/lyrics-collection.json",
+        output_dir="data/audio/lyrics",
+        force=True,
+    )
+
+    assert build_cli_args(request) == (
+        "collect",
+        "lyrics",
+        "download-audio",
+        "artifacts/lyrics/lyrics-collection.json",
+        "--output-dir",
+        "data/audio/lyrics",
         "--force",
     )
 
