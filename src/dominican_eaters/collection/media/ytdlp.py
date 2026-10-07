@@ -136,7 +136,13 @@ class YtDlpMediaDownloader:
     def _run_json(
         self, command: list[str], timeout: float, on_log: LogSink | None
     ) -> dict[str, object]:
-        output = self._run(command, timeout, on_log)
+        def emit_diagnostic(line: str) -> None:
+            # yt-dlp's final metadata object can be several megabytes on long videos.
+            # Keep it for parsing, but never forward it through line-oriented consoles.
+            if on_log is not None and not line.lstrip().startswith("{"):
+                on_log(line)
+
+        output = self._run(command, timeout, emit_diagnostic)
         candidates = [line for line in output.splitlines() if line.lstrip().startswith("{")]
         if not candidates:
             raise MediaDownloadError(

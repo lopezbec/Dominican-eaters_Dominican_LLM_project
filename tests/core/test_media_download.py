@@ -121,3 +121,26 @@ def test_ytdlp_uses_selected_python_and_audio_capable_format(
     download_command = commands[0]
     assert download_command[:3] == [sys.executable, "-m", "yt_dlp"]
     assert download_command[download_command.index("-f") + 1] == "bestaudio*/best"
+
+
+def test_ytdlp_does_not_forward_large_json_metadata_to_console() -> None:
+    downloader = YtDlpMediaDownloader()
+    logs: list[str] = []
+    payload_size = 128 * 1024
+
+    result = downloader._run_json(  # noqa: SLF001
+        [
+            sys.executable,
+            "-c",
+            (
+                "import json; "
+                "print('download progress'); "
+                f"print(json.dumps({{'title': 'x' * {payload_size}}}))"
+            ),
+        ],
+        30,
+        logs.append,
+    )
+
+    assert len(str(result["title"])) == payload_size
+    assert logs == ["download progress"]
