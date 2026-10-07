@@ -156,6 +156,26 @@ def test_stt_model_catalog_lists_all_presets_and_explains_blocked_models() -> No
     assert "reason=Published BF16 weights exceed T4 VRAM" in details.output
 
 
+def test_stt_manifest_build_includes_every_audio_file(tmp_path: Path) -> None:
+    audio_dir = tmp_path / "audio"
+    audio_dir.mkdir()
+    (audio_dir / "one.wav").write_bytes(b"one")
+    (audio_dir / "one.txt").write_text("Uno", encoding="utf-8")
+    (audio_dir / "two.mp3").write_bytes(b"two")
+    output = tmp_path / "stt-all.json"
+
+    result = CliRunner().invoke(
+        main,
+        ["stt", "manifest", "build", str(audio_dir), "--output-file", str(output)],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "samples=2" in result.output
+    assert "references=1" in result.output
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert [sample["audio_path"] for sample in payload["samples"]] == ["one.wav", "two.mp3"]
+
+
 def test_config_validation_has_nonzero_exit_for_invalid_config(tmp_path: Path) -> None:
     config = tmp_path / "invalid.yaml"
     config.write_text("schema_version: 1\ndata_root: data\n", encoding="utf-8")

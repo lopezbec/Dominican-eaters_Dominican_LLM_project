@@ -4,7 +4,7 @@ import pytest
 
 pytest.importorskip("textual")
 
-from textual.widgets import Input, RichLog, Select, Static  # noqa: E402
+from textual.widgets import Input, Label, RichLog, Select, Static  # noqa: E402
 
 from dominican_eaters.tui.app import DominicanEatersApp  # noqa: E402
 from dominican_eaters.tui.commands import Workflow  # noqa: E402
@@ -64,6 +64,21 @@ async def test_tui_stt_preflight_includes_environment_controls() -> None:
         await pilot.pause()
         assert "CANDIDATE" in str(app.query_one("#preset-state", Static).content)
         assert "--preset granite-speech-4.1-2b" in str(app.query_one("#preview", Static).content)
+
+
+@pytest.mark.asyncio
+async def test_tui_can_build_manifest_for_an_audio_directory() -> None:
+    app = DominicanEatersApp()
+
+    async with app.run_test(size=(110, 40)) as pilot:
+        app.query_one("#workflow", Select).value = Workflow.STT_MANIFEST_BUILD
+        await pilot.pause()
+
+        assert app.query_one("#source", Input).value == "data/audio"
+        assert app.query_one("#output", Input).value == "data/manifests/stt-all.json"
+        assert str(app.query_one("#source-label", Label).content) == "Audio directory"
+        assert str(app.query_one("#output-field-label", Label).content) == "Output manifest file"
+        assert "stt manifest build data/audio" in str(app.query_one("#preview", Static).content)
 
 
 @pytest.mark.asyncio

@@ -35,7 +35,13 @@ from dominican_eaters.collection.poems import (
 )
 from dominican_eaters.collection.providers import ScrapeTubeSearch
 from dominican_eaters.config import ConfigError, load_config
-from dominican_eaters.data import ConcurrentWriteError, ManifestValidationError, load_manifest
+from dominican_eaters.data import (
+    ConcurrentWriteError,
+    ManifestValidationError,
+    discover_stt_manifest,
+    load_manifest,
+    write_manifest,
+)
 from dominican_eaters.evaluation.asr import BenchmarkRunner, OutputCollisionError
 from dominican_eaters.speech.asr import WorkerProcessError
 from dominican_eaters.speech.asr.environment import preflight_asr_environment
@@ -315,6 +321,38 @@ def _echo_omitted_errors(total: int) -> None:
 @main.group("stt")
 def stt_group() -> None:
     """Validate and evaluate speech-to-text datasets."""
+
+
+@stt_group.group("manifest")
+def stt_manifest_group() -> None:
+    """Create canonical manifests from existing audio files."""
+
+
+@stt_manifest_group.command("build")
+@click.argument("audio_dir", type=click.Path(path_type=Path, file_okay=False))
+@click.option(
+    "--output-file",
+    type=click.Path(path_type=Path, dir_okay=False),
+    required=True,
+)
+@click.option("--require-references/--allow-missing-references", default=False, show_default=True)
+def build_stt_manifest(audio_dir: Path, output_file: Path, require_references: bool) -> None:
+    """Scan AUDIO_DIR recursively and write one sample per supported audio file."""
+
+    try:
+        manifest = discover_stt_manifest(
+            audio_dir,
+            require_references=require_references,
+        )
+        write_manifest(manifest, output_file)
+    except (ManifestValidationError, OSError) as error:
+        raise click.ClickException(str(error)) from error
+    references = sum(bool(sample.reference_text) for sample in manifest)
+    click.echo(f"dataset_root={manifest.dataset_root}")
+    click.echo(f"samples={len(manifest)}")
+    click.echo(f"references={references}")
+    click.echo(f"missing_references={len(manifest) - references}")
+    click.echo(f"manifest={output_file.expanduser().resolve()}")
 
 
 @stt_group.group("models")

@@ -29,6 +29,7 @@ class Workflow(StrEnum):
     POEMS_PREFLIGHT = "poems-preflight"
     POEMS_RUN = "poems-run"
     STT_PREFLIGHT = "stt-preflight"
+    STT_MANIFEST_BUILD = "stt-manifest-build"
     STT_BENCHMARK = "stt-benchmark"
 
 
@@ -41,11 +42,12 @@ WORKFLOW_OPTIONS: tuple[tuple[str, Workflow], ...] = (
     ("Preflight poems manifest", Workflow.POEMS_PREFLIGHT),
     ("Collect poems", Workflow.POEMS_RUN),
     ("Preflight speech-to-text manifest", Workflow.STT_PREFLIGHT),
+    ("Build speech-to-text manifest", Workflow.STT_MANIFEST_BUILD),
     ("Run speech-to-text benchmark", Workflow.STT_BENCHMARK),
 )
 
 COLLECTION_RUNS = {Workflow.BOOKS_RUN, Workflow.LYRICS_RUN, Workflow.POEMS_RUN}
-OUTPUT_WORKFLOWS = COLLECTION_RUNS | {Workflow.STT_BENCHMARK}
+OUTPUT_WORKFLOWS = COLLECTION_RUNS | {Workflow.STT_MANIFEST_BUILD, Workflow.STT_BENCHMARK}
 
 DEFAULT_SOURCE_PATHS: dict[Workflow, str] = {
     Workflow.CONFIG_VALIDATE: "config/default.yaml",
@@ -56,6 +58,7 @@ DEFAULT_SOURCE_PATHS: dict[Workflow, str] = {
     Workflow.POEMS_PREFLIGHT: "data/manifests/poems.json",
     Workflow.POEMS_RUN: "data/manifests/poems.json",
     Workflow.STT_PREFLIGHT: "data/manifests/stt.json",
+    Workflow.STT_MANIFEST_BUILD: "data/audio",
     Workflow.STT_BENCHMARK: "data/manifests/stt.json",
 }
 
@@ -64,6 +67,7 @@ DEFAULT_OUTPUT_DIRS: dict[Workflow, str] = {
     Workflow.LYRICS_RUN: "artifacts/lyrics",
     Workflow.POEMS_RUN: "artifacts/poems",
     Workflow.STT_BENCHMARK: "artifacts/stt-run",
+    Workflow.STT_MANIFEST_BUILD: "data/manifests/stt-all.json",
 }
 
 WORKER_PYTHON_ENV_VARS = (
@@ -175,6 +179,17 @@ def build_cli_args(request: WorkflowRequest) -> tuple[str, ...]:
             args.extend(("--output-dir", _required_output_dir(request)))
             if request.force:
                 args.append("--force")
+        return tuple(args)
+
+    if request.workflow is Workflow.STT_MANIFEST_BUILD:
+        args = [
+            "stt",
+            "manifest",
+            "build",
+            source_path,
+            "--output-file",
+            _required_output_dir(request),
+        ]
         return tuple(args)
 
     if request.workflow is Workflow.STT_PREFLIGHT:

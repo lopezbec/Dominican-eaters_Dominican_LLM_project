@@ -88,7 +88,7 @@ class DominicanEatersApp(App[None]):
                             id="source",
                         )
                     with Vertical(classes="field hidden", id="output-field"):
-                        yield Label("Output directory")
+                        yield Label("Output directory", id="output-field-label")
                         yield Input(placeholder="artifacts/my-run", id="output")
                     with Vertical(classes="field hidden", id="data-root-field"):
                         yield Label("Dataset/data root override (optional)")
@@ -339,6 +339,7 @@ class DominicanEatersApp(App[None]):
     def _sync_fields(self) -> None:
         workflow = self._selected_workflow()
         benchmark = workflow is Workflow.STT_BENCHMARK
+        manifest_build = workflow is Workflow.STT_MANIFEST_BUILD
         stt_workflow = workflow in {Workflow.STT_PREFLIGHT, Workflow.STT_BENCHMARK}
         source = self.query_one("#source", Input)
         output = self.query_one("#output", Input)
@@ -379,7 +380,14 @@ class DominicanEatersApp(App[None]):
         self._show("#verify", workflow in {Workflow.STT_PREFLIGHT, Workflow.STT_BENCHMARK})
         self._show("#timestamps", benchmark)
         self.query_one("#source-label", Label).update(
-            "Configuration file" if workflow is Workflow.CONFIG_VALIDATE else "Manifest file"
+            "Configuration file"
+            if workflow is Workflow.CONFIG_VALIDATE
+            else "Audio directory"
+            if manifest_build
+            else "Manifest file"
+        )
+        self.query_one("#output-field-label", Label).update(
+            "Output manifest file" if manifest_build else "Output directory"
         )
         self._update_preview()
 

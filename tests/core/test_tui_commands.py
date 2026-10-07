@@ -102,6 +102,23 @@ def test_stt_preflight_includes_optional_controls() -> None:
     )
 
 
+def test_stt_manifest_build_scans_audio_directory() -> None:
+    request = WorkflowRequest(
+        Workflow.STT_MANIFEST_BUILD,
+        "data/audio/full",
+        output_dir="data/manifests/stt-all.json",
+    )
+
+    assert build_cli_args(request) == (
+        "stt",
+        "manifest",
+        "build",
+        "data/audio/full",
+        "--output-file",
+        "data/manifests/stt-all.json",
+    )
+
+
 def test_stt_preflight_uses_candidate_preset() -> None:
     request = WorkflowRequest(
         Workflow.STT_PREFLIGHT,

@@ -1,5 +1,6 @@
 """Versioned data contracts for Dominican Eaters."""
 
+from .discovery import AUDIO_SUFFIXES, discover_stt_manifest
 from .locking import ConcurrentWriteError, exclusive_file_lock
 from .manifest import (
     STT_MANIFEST_SCHEMA_VERSION,
@@ -21,6 +22,8 @@ __all__ = [
     "ManifestPreflightError",
     "ManifestValidationError",
     "STTManifest",
+    "AUDIO_SUFFIXES",
+    "discover_stt_manifest",
     "atomic_write_json",
     "exclusive_file_lock",
     "load_manifest",
