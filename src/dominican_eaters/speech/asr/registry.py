@@ -22,7 +22,7 @@ BackendName = Literal[
     "granite_3_3",
 ]
 RuntimeExecution = Literal["inline", "worker"]
-PresetStatus = Literal["current", "planned", "experimental", "blocked"]
+PresetStatus = Literal["current", "candidate", "planned", "experimental", "blocked"]
 LongFormPolicy = Literal[
     "chunked",
     "runtime-managed",
@@ -184,7 +184,7 @@ class ModelPreset:
     def runnable(self) -> bool:
         """Whether this preset is currently supported by an integrated adapter."""
 
-        return self.status == "current"
+        return self.status in {"current", "candidate"}
 
 
 RUNTIME_SPECS: Mapping[str, RuntimeSpec] = MappingProxyType(
@@ -302,24 +302,24 @@ BACKEND_SPECS: Mapping[BackendName, BackendSpec] = MappingProxyType(
             "Granite Speech 4.1",
             "ibm-granite/granite-speech-4.1-2b",
             "granite-4.1-transformers",
-            "planned",
-            "Dedicated worker and reviewed T4 smoke evidence are not implemented yet.",
+            "candidate",
+            "Dedicated worker is integrated; reviewed T4 smoke evidence is pending.",
         ),
         "qwen3_asr": BackendSpec(
             "qwen3_asr",
             "Qwen3-ASR",
             "Qwen/Qwen3-ASR-1.7B-hf",
             "qwen3-asr-transformers",
-            "planned",
-            "Dedicated worker and reviewed T4 smoke evidence are not implemented yet.",
+            "candidate",
+            "Dedicated worker is integrated; reviewed T4 smoke evidence is pending.",
         ),
         "voxtral": BackendSpec(
             "voxtral",
             "Voxtral Mini",
             "mistralai/Voxtral-Mini-3B-2507",
             "voxtral-transformers",
-            "planned",
-            "Dedicated worker and constrained-context T4 smoke evidence are not implemented yet.",
+            "candidate",
+            "Dedicated worker is integrated; constrained-context T4 smoke evidence is pending.",
         ),
         "qwen2_audio": BackendSpec(
             "qwen2_audio",
@@ -438,7 +438,7 @@ MODEL_PRESETS: Mapping[str, ModelPreset] = MappingProxyType(
             "fp16",
             None,
             "es",
-            "planned",
+            "candidate",
             ModelCapabilities(
                 timestamps=False,
                 streaming=False,
@@ -447,7 +447,7 @@ MODEL_PRESETS: Mapping[str, ModelPreset] = MappingProxyType(
                 supported_devices=("cuda",),
                 supported_precisions=("fp16",),
             ),
-            "Worker implementation and clean T4 validation are pending.",
+            "Worker is integrated; clean T4 validation is pending.",
         ),
         "qwen3-asr-1.7b": ModelPreset(
             "qwen3-asr-1.7b",
@@ -459,7 +459,7 @@ MODEL_PRESETS: Mapping[str, ModelPreset] = MappingProxyType(
             "fp16",
             None,
             "es",
-            "planned",
+            "candidate",
             ModelCapabilities(
                 timestamps=False,
                 streaming=False,
@@ -468,7 +468,7 @@ MODEL_PRESETS: Mapping[str, ModelPreset] = MappingProxyType(
                 supported_devices=("cuda",),
                 supported_precisions=("fp16",),
             ),
-            "Offline worker and T4 validation are pending; timestamps require a separate aligner.",
+            "Offline worker is integrated; T4 validation and timestamps remain pending.",
         ),
         "voxtral-mini-3b-2507": ModelPreset(
             "voxtral-mini-3b-2507",
@@ -480,7 +480,7 @@ MODEL_PRESETS: Mapping[str, ModelPreset] = MappingProxyType(
             "fp16",
             None,
             "es",
-            "planned",
+            "candidate",
             ModelCapabilities(
                 timestamps=False,
                 streaming=False,
@@ -489,7 +489,7 @@ MODEL_PRESETS: Mapping[str, ModelPreset] = MappingProxyType(
                 supported_devices=("cuda",),
                 supported_precisions=("fp16",),
             ),
-            "Worker and conservative-context T4 validation are pending.",
+            "Worker is integrated; conservative-context T4 validation is pending.",
         ),
         "qwen2-audio-7b-instruct": ModelPreset(
             "qwen2-audio-7b-instruct",
@@ -539,7 +539,7 @@ MODEL_PRESETS: Mapping[str, ModelPreset] = MappingProxyType(
 
 
 CURRENT_BACKEND_SPECS: Mapping[BackendName, BackendSpec] = MappingProxyType(
-    {name: spec for name, spec in BACKEND_SPECS.items() if spec.status == "current"}
+    {name: spec for name, spec in BACKEND_SPECS.items() if spec.status in {"current", "candidate"}}
 )
 DEFAULT_MODELS: Mapping[BackendName, str] = MappingProxyType(
     {name: spec.default_model for name, spec in CURRENT_BACKEND_SPECS.items()}
@@ -559,7 +559,7 @@ def presets_with_status(*statuses: PresetStatus) -> tuple[ModelPreset, ...]:
 def runnable_presets() -> tuple[ModelPreset, ...]:
     """Return only presets backed by currently integrated adapters."""
 
-    return presets_with_status("current")
+    return presets_with_status("current", "candidate")
 
 
 def _validate_registry() -> None:
@@ -580,8 +580,11 @@ def _validate_registry() -> None:
             raise ValueError(f"preset {key!r} references unknown runtime {preset.runtime_id!r}")
         if BACKEND_SPECS[preset.backend].runtime_id != preset.runtime_id:
             raise ValueError(f"preset {key!r} does not use its backend runtime")
-        if preset.status == "current" and BACKEND_SPECS[preset.backend].status != "current":
-            raise ValueError(f"current preset {key!r} uses a non-current backend")
+        if preset.runnable and BACKEND_SPECS[preset.backend].status not in {
+            "current",
+            "candidate",
+        }:
+            raise ValueError(f"runnable preset {key!r} uses a non-runnable backend")
 
 
 _validate_registry()

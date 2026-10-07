@@ -119,6 +119,9 @@ def create_asr_backend(
                 "minimum_audio_seconds": minimum_audio_seconds,
             },
             request_timeout_seconds=request_timeout_seconds,
+            preset=None if preset is None else preset.preset_id,
+            model_revision=None if preset is None else preset.model_revision,
+            quantization=None if preset is None else preset.quantization,
         ),
         stderr_sink=worker_stderr_sink,
     )

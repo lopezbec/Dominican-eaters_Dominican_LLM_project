@@ -17,7 +17,14 @@ from dominican_eaters.speech.asr.registry import (
 
 
 def test_backend_registry_contains_only_currently_runnable_backends() -> None:
-    assert tuple(CURRENT_BACKEND_SPECS) == ("whisper", "parakeet", "canary")
+    assert tuple(CURRENT_BACKEND_SPECS) == (
+        "whisper",
+        "parakeet",
+        "canary",
+        "granite",
+        "qwen3_asr",
+        "voxtral",
+    )
     assert CURRENT_BACKEND_SPECS["whisper"].label == "Whisper"
     assert CURRENT_BACKEND_SPECS["whisper"].execution == "inline"
     assert CURRENT_BACKEND_SPECS["whisper"].worker_module is None
@@ -30,6 +37,9 @@ def test_backend_registry_contains_only_currently_runnable_backends() -> None:
         "whisper": "base",
         "parakeet": "nvidia/parakeet-tdt-0.6b-v3",
         "canary": "nvidia/canary-1b-v2",
+        "granite": "ibm-granite/granite-speech-4.1-2b",
+        "qwen3_asr": "Qwen/Qwen3-ASR-1.7B-hf",
+        "voxtral": "mistralai/Voxtral-Mini-3B-2507",
     }
 
 
@@ -199,6 +209,32 @@ def test_nemo_factories_use_isolated_worker_and_model_defaults(
     assert isinstance(backend, JsonlSubprocessBackend)
     assert backend.descriptor.model == model
     assert backend.descriptor.effective_device is None
+
+
+@pytest.mark.parametrize(
+    ("backend_name", "model"),
+    [
+        ("granite", "ibm-granite/granite-speech-4.1-2b"),
+        ("qwen3_asr", "Qwen/Qwen3-ASR-1.7B-hf"),
+        ("voxtral", "mistralai/Voxtral-Mini-3B-2507"),
+    ],
+)
+def test_candidate_worker_factories_are_available_without_loading(
+    backend_name: str, model: str
+) -> None:
+    backend = create_asr_backend(
+        backend=backend_name,  # type: ignore[arg-type]
+        model=None,
+        language="es",
+        device="cuda",
+        precision="fp16",
+        worker_python=Path(sys.executable),
+        request_timeout_seconds=300,
+        timestamps=False,
+    )
+
+    assert isinstance(backend, JsonlSubprocessBackend)
+    assert backend.descriptor.model == model
 
 
 def test_nemo_factory_requires_worker_interpreter() -> None:

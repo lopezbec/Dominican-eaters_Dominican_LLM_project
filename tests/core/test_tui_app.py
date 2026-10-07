@@ -62,7 +62,7 @@ async def test_tui_stt_preflight_includes_environment_controls() -> None:
 
         app.query_one("#preset", Select).value = "granite-speech-4.1-2b"
         await pilot.pause()
-        assert "PLANNED" in str(app.query_one("#preset-state", Static).content)
+        assert "CANDIDATE" in str(app.query_one("#preset-state", Static).content)
         assert "--preset granite-speech-4.1-2b" in str(app.query_one("#preview", Static).content)
 
 

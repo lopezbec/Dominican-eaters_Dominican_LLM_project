@@ -71,12 +71,12 @@ WORKER_PYTHON_ENV_VARS = (
     "NEMO_WORKER_PYTHON",
 )
 RUNTIME_VENV_DIRS = {
-    "nemo-worker": ".venv-nemo",
-    "granite-4.1-transformers": ".venv-granite",
-    "granite-3.3-transformers": ".venv-granite",
-    "qwen3-asr-transformers": ".venv-qwen3-asr",
-    "voxtral-transformers": ".venv-voxtral",
-    "qwen2-audio-transformers": ".venv-qwen2-audio",
+    "nemo-worker": (".venvs/nemo", ".venv-nemo"),
+    "granite-4.1-transformers": (".venvs/granite", ".venv-granite"),
+    "granite-3.3-transformers": (".venvs/granite", ".venv-granite"),
+    "qwen3-asr-transformers": (".venvs/qwen3-asr", ".venv-qwen3-asr"),
+    "voxtral-transformers": (".venvs/voxtral", ".venv-voxtral"),
+    "qwen2-audio-transformers": (".venvs/qwen2-audio", ".venv-qwen2-audio"),
 }
 
 
@@ -104,12 +104,11 @@ def discover_worker_python(
         for name in (*runtime_variables, *WORKER_PYTHON_ENV_VARS)
         if environment.get(name)
     ]
-    environment_dir = RUNTIME_VENV_DIRS.get(runtime_id)
-    if environment_dir is not None:
-        candidates.append(root / environment_dir / "bin" / "python")
+    environment_dirs = RUNTIME_VENV_DIRS.get(runtime_id, ())
+    candidates.extend(root / directory / "bin" / "python" for directory in environment_dirs)
 
     active_environment = environment.get("VIRTUAL_ENV", "")
-    runtime_hint = (environment_dir or runtime_id).removeprefix(".venv-").split("-")[0]
+    runtime_hint = runtime_id.split("-")[0]
     if runtime_hint in Path(active_environment).name.lower():
         candidates.append(Path(active_environment) / "bin" / "python")
 

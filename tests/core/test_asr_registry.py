@@ -32,18 +32,31 @@ def test_registry_contains_every_target_preset_with_exact_model_identity() -> No
 
 
 def test_only_integrated_presets_and_backends_are_runnable() -> None:
-    assert tuple(CURRENT_BACKEND_SPECS) == ("whisper", "parakeet", "canary")
+    assert tuple(CURRENT_BACKEND_SPECS) == (
+        "whisper",
+        "parakeet",
+        "canary",
+        "granite",
+        "qwen3_asr",
+        "voxtral",
+    )
     assert tuple(preset.preset_id for preset in runnable_presets()) == (
         "whisper-base",
         "whisper-large-v3",
         "whisper-turbo",
         "parakeet-tdt-0.6b-v3",
         "canary-1b-v2",
+        "granite-speech-4.1-2b",
+        "qwen3-asr-1.7b",
+        "voxtral-mini-3b-2507",
     )
     assert DEFAULT_MODELS == {
         "whisper": "base",
         "parakeet": "nvidia/parakeet-tdt-0.6b-v3",
         "canary": "nvidia/canary-1b-v2",
+        "granite": "ibm-granite/granite-speech-4.1-2b",
+        "qwen3_asr": "Qwen/Qwen3-ASR-1.7B-hf",
+        "voxtral": "mistralai/Voxtral-Mini-3B-2507",
     }
 
 

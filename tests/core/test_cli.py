@@ -13,6 +13,7 @@ from dominican_eaters.collection.lyrics import LyricsManifest, LyricsRequest, wr
 from dominican_eaters.collection.poems import PoemManifest, PoemSource, write_poem_manifest
 from dominican_eaters.speech.asr import BackendDescriptor, Transcript, WhisperSettings
 from dominican_eaters.speech.asr.environment import BackendEnvironmentReport, EnvironmentCheck
+from dominican_eaters.speech.asr.registry import MODEL_PRESETS
 
 
 class CliFakeBackend:
@@ -145,7 +146,7 @@ def test_stt_model_catalog_lists_all_presets_and_explains_blocked_models() -> No
     assert "whisper-base\tcurrent" in listing.output
     assert "whisper-large-v3\tcurrent" in listing.output
     assert "whisper-turbo\tcurrent" in listing.output
-    assert "granite-speech-4.1-2b\tplanned" in listing.output
+    assert "granite-speech-4.1-2b\tcandidate" in listing.output
     assert "qwen2-audio-7b-instruct\texperimental" in listing.output
     assert "granite-speech-3.3-8b\tblocked" in listing.output
     assert details.exit_code == 0, details.output
@@ -247,7 +248,7 @@ def test_stt_preflight_reports_selected_model_environment(
 @pytest.mark.parametrize(
     ("preset_id", "status"),
     [
-        ("granite-speech-4.1-2b", "planned"),
+        ("qwen2-audio-7b-instruct", "experimental"),
         ("granite-speech-3.3-8b", "blocked"),
     ],
 )
@@ -325,13 +326,13 @@ def test_stt_benchmark_rejects_non_runnable_preset_with_registered_reason(
             "--output-dir",
             str(tmp_path / "run"),
             "--preset",
-            "qwen3-asr-1.7b",
+            "qwen2-audio-7b-instruct",
         ],
     )
 
     assert result.exit_code != 0
-    assert "is planned and cannot benchmark" in result.output
-    assert "Offline worker and T4 validation are pending" in result.output
+    assert "is experimental and cannot benchmark" in result.output
+    assert "Spanish ASR" in result.output
 
 
 def test_stt_benchmark_success_uses_canonical_runner_and_artifacts(
@@ -387,6 +388,40 @@ def test_stt_benchmark_current_preset_resolves_registered_model(
     assert received["language"] == "es"
     assert received["device"] == "cuda"
     assert received["precision"] == "fp16"
+
+
+def test_stt_benchmark_candidate_preset_reaches_worker_factory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manifest = write_cli_manifest(tmp_path)
+    backend = CliFakeBackend(WhisperSettings(model="fixture"))
+    received: dict[str, object] = {}
+
+    def create_backend(**kwargs: object) -> CliFakeBackend:
+        received.update(kwargs)
+        return backend
+
+    monkeypatch.setattr("dominican_eaters.cli.app.create_asr_backend", create_backend)
+    result = CliRunner().invoke(
+        main,
+        [
+            "stt",
+            "benchmark",
+            str(manifest),
+            "--output-dir",
+            str(tmp_path / "candidate-run"),
+            "--preset",
+            "granite-speech-4.1-2b",
+            "--worker-python",
+            sys.executable,
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert received["backend"] == "granite"
+    assert received["model"] == "ibm-granite/granite-speech-4.1-2b"
+    assert received["worker_python"] == Path(sys.executable)
+    assert received["preset"] == MODEL_PRESETS["granite-speech-4.1-2b"]
 
 
 def test_stt_benchmark_failure_exits_nonzero_and_keeps_artifacts(

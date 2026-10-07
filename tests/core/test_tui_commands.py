@@ -102,7 +102,7 @@ def test_stt_preflight_includes_optional_controls() -> None:
     )
 
 
-def test_stt_preflight_uses_planned_preset_without_claiming_worker_is_ready() -> None:
+def test_stt_preflight_uses_candidate_preset() -> None:
     request = WorkflowRequest(
         Workflow.STT_PREFLIGHT,
         "stt.json",
@@ -124,7 +124,7 @@ def test_stt_preflight_uses_planned_preset_without_claiming_worker_is_ready() ->
     )
 
 
-def test_stt_benchmark_rejects_planned_preset_with_reason() -> None:
+def test_stt_benchmark_candidate_preset_requires_worker_python() -> None:
     request = WorkflowRequest(
         Workflow.STT_BENCHMARK,
         "stt.json",
@@ -132,8 +132,34 @@ def test_stt_benchmark_rejects_planned_preset_with_reason() -> None:
         preset="qwen3-asr-1.7b",
     )
 
-    with pytest.raises(CommandValidationError, match="Offline worker and T4 validation"):
+    with pytest.raises(CommandValidationError, match="isolated worker Python"):
         build_cli_args(request)
+
+
+def test_stt_benchmark_candidate_preset_builds_worker_command(tmp_path: Path) -> None:
+    worker = tmp_path / "python"
+    request = WorkflowRequest(
+        Workflow.STT_BENCHMARK,
+        "stt.json",
+        output_dir="artifacts/run",
+        preset="qwen3-asr-1.7b",
+        device="cuda",
+        precision="fp16",
+        worker_python=str(worker),
+    )
+
+    args = build_cli_args(request)
+
+    assert args[:7] == (
+        "stt",
+        "benchmark",
+        "stt.json",
+        "--output-dir",
+        "artifacts/run",
+        "--preset",
+        "qwen3-asr-1.7b",
+    )
+    assert args[-2:] == ("--worker-python", str(worker.resolve()))
 
 
 def test_stt_benchmark_current_worker_preset_requires_python() -> None:
@@ -248,6 +274,17 @@ def test_discovers_project_nemo_environment(tmp_path: Path) -> None:
     worker.chmod(0o755)
 
     assert discover_worker_python(cwd=tmp_path, environ={}) == str(worker.resolve())
+
+
+def test_discovers_project_runtime_environment_under_venvs(tmp_path: Path) -> None:
+    worker = tmp_path / ".venvs" / "voxtral" / "bin" / "python"
+    worker.parent.mkdir(parents=True)
+    worker.write_text("#!/bin/sh\n")
+    worker.chmod(0o755)
+
+    assert discover_worker_python(
+        runtime_id="voxtral-transformers", cwd=tmp_path, environ={}
+    ) == str(worker.resolve())
 
 
 def test_discovers_worker_python_from_runtime_specific_environment(tmp_path: Path) -> None:
