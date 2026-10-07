@@ -35,6 +35,8 @@ def test_only_integrated_presets_and_backends_are_runnable() -> None:
     assert tuple(CURRENT_BACKEND_SPECS) == ("whisper", "parakeet", "canary")
     assert tuple(preset.preset_id for preset in runnable_presets()) == (
         "whisper-base",
+        "whisper-large-v3",
+        "whisper-turbo",
         "parakeet-tdt-0.6b-v3",
         "canary-1b-v2",
     )

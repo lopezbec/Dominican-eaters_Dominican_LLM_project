@@ -386,9 +386,8 @@ MODEL_PRESETS: Mapping[str, ModelPreset] = MappingProxyType(
             "fp16",
             None,
             "es",
-            "planned",
+            "current",
             _WHISPER_CAPABILITIES,
-            "Preset identity, provenance, and reviewed Spanish T4 smoke evidence are pending.",
         ),
         "whisper-turbo": ModelPreset(
             "whisper-turbo",
@@ -400,9 +399,8 @@ MODEL_PRESETS: Mapping[str, ModelPreset] = MappingProxyType(
             "fp16",
             None,
             "es",
-            "planned",
+            "current",
             _WHISPER_CAPABILITIES,
-            "Preset identity, provenance, and reviewed Spanish T4 smoke evidence are pending.",
         ),
         "parakeet-tdt-0.6b-v3": ModelPreset(
             "parakeet-tdt-0.6b-v3",

@@ -143,6 +143,8 @@ def test_stt_model_catalog_lists_all_presets_and_explains_blocked_models() -> No
 
     assert listing.exit_code == 0, listing.output
     assert "whisper-base\tcurrent" in listing.output
+    assert "whisper-large-v3\tcurrent" in listing.output
+    assert "whisper-turbo\tcurrent" in listing.output
     assert "granite-speech-4.1-2b\tplanned" in listing.output
     assert "qwen2-audio-7b-instruct\texperimental" in listing.output
     assert "granite-speech-3.3-8b\tblocked" in listing.output
