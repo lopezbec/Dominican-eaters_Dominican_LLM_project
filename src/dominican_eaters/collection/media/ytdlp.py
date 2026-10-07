@@ -6,8 +6,10 @@ import json
 import selectors
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
+from importlib import metadata, util
 from pathlib import Path
 
 from .contracts import DownloadedMedia, LogSink, MediaDownloadError, MediaTask
@@ -15,10 +17,23 @@ from .contracts import DownloadedMedia, LogSink, MediaDownloadError, MediaTask
 
 class YtDlpMediaDownloader:
     def preflight(self) -> tuple[tuple[str, bool, str], ...]:
-        return tuple(
+        yt_dlp_available = util.find_spec("yt_dlp") is not None
+        try:
+            yt_dlp_version = metadata.version("yt-dlp")
+        except metadata.PackageNotFoundError:
+            yt_dlp_version = "not installed in selected Python"
+        checks = [
+            (
+                "python-module:yt-dlp",
+                yt_dlp_available,
+                f"{sys.executable} (yt-dlp {yt_dlp_version})",
+            )
+        ]
+        checks.extend(
             (name, (path := shutil.which(name)) is not None, path or "not found on PATH")
-            for name in ("yt-dlp", "ffmpeg", "ffprobe")
+            for name in ("ffmpeg", "ffprobe")
         )
+        return tuple(checks)
 
     def download(
         self,
@@ -32,13 +47,16 @@ class YtDlpMediaDownloader:
             template = str(Path(raw_dir) / "source.%(ext)s")
             metadata = self._run_json(
                 [
-                    "yt-dlp",
+                    sys.executable,
+                    "-m",
+                    "yt_dlp",
+                    "--ignore-config",
                     "--no-playlist",
                     "--newline",
                     "--no-warnings",
                     "--print-json",
                     "-f",
-                    "bestaudio/best",
+                    "bestaudio*/best",
                     "-o",
                     template,
                     task.source_url,

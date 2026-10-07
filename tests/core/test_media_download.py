@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 from dominican_eaters.collection.lyrics import (
@@ -18,6 +19,7 @@ from dominican_eaters.collection.media import (
     MediaDownloadRunner,
     MediaStatus,
     MediaTask,
+    YtDlpMediaDownloader,
 )
 
 
@@ -90,3 +92,32 @@ def test_retryable_failure_is_checkpointed_and_retried(tmp_path: Path) -> None:
     recovered = MediaDownloadRunner(FakeDownloader()).run(source, output)
     assert recovered.records[0].status is MediaStatus.COMPLETE
     assert recovered.records[0].attempt == 2
+
+
+def test_ytdlp_uses_selected_python_and_audio_capable_format(
+    tmp_path: Path, monkeypatch: object
+) -> None:
+    downloader = YtDlpMediaDownloader()
+    commands: list[list[str]] = []
+
+    def fake_run_json(command: list[str], timeout: float, on_log: object) -> dict[str, object]:
+        commands.append(command)
+        if "ffprobe" in command[0]:
+            return {"format": {"duration": "1.0"}}
+        Path(command[command.index("-o") + 1].replace("%(ext)s", "webm")).write_bytes(b"audio")
+        return {"id": "abcdefghijk", "title": "Song"}
+
+    def fake_run(command: list[str], timeout: float, on_log: object) -> str:
+        commands.append(command)
+        Path(command[-1]).write_bytes(b"RIFF" + b"audio" * 20)
+        return ""
+
+    monkeypatch.setattr(downloader, "_run_json", fake_run_json)  # type: ignore[attr-defined]
+    monkeypatch.setattr(downloader, "_run", fake_run)  # type: ignore[attr-defined]
+    task = MediaTask("song-1", "abcdefghijk", "https://youtu.be/abcdefghijk", "lyrics")
+
+    downloader.download(task, tmp_path / "song.wav", timeout_seconds=30)
+
+    download_command = commands[0]
+    assert download_command[:3] == [sys.executable, "-m", "yt_dlp"]
+    assert download_command[download_command.index("-f") + 1] == "bestaudio*/best"
