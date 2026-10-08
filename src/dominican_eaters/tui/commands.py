@@ -89,6 +89,12 @@ RUNTIME_VENV_DIRS = {
 }
 
 
+def _runtime_environment_hints(runtime_id: str) -> tuple[str, ...]:
+    base = runtime_id.removesuffix("-transformers").removesuffix("-worker")
+    values = {base, base.replace("-asr", ""), base.replace("-", "_")}
+    return tuple(value for value in values if value)
+
+
 def discover_worker_python(
     *,
     runtime_id: str = "nemo-worker",
@@ -115,6 +121,14 @@ def discover_worker_python(
     ]
     environment_dirs = RUNTIME_VENV_DIRS.get(runtime_id, ())
     candidates.extend(root / directory / "bin" / "python" for directory in environment_dirs)
+
+    hints = _runtime_environment_hints(runtime_id)
+    discovered = (*root.glob(".venv*/bin/python"), *root.glob(".venvs/*/bin/python"))
+    candidates.extend(
+        candidate
+        for candidate in discovered
+        if any(hint in str(candidate.parent.parent).lower() for hint in hints)
+    )
 
     active_environment = environment.get("VIRTUAL_ENV", "")
     runtime_hint = runtime_id.split("-")[0]

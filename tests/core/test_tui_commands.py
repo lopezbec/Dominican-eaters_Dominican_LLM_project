@@ -171,6 +171,19 @@ def test_stt_benchmark_candidate_preset_requires_worker_python() -> None:
         build_cli_args(request)
 
 
+def test_discovers_qwen_worker_from_common_underscore_environment_name(
+    tmp_path: Path,
+) -> None:
+    worker = tmp_path / ".venvs" / "qwen3_asr" / "bin" / "python"
+    worker.parent.mkdir(parents=True)
+    worker.write_text("#!/bin/sh\n", encoding="utf-8")
+    worker.chmod(0o755)
+
+    detected = discover_worker_python(runtime_id="qwen3-asr-transformers", cwd=tmp_path, environ={})
+
+    assert detected == str(worker.resolve())
+
+
 def test_stt_benchmark_candidate_preset_builds_worker_command(tmp_path: Path) -> None:
     worker = tmp_path / "python"
     request = WorkflowRequest(
