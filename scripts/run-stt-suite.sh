@@ -105,9 +105,7 @@ fi
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 export TOKENIZERS_PARALLELISM=false
 
-run_model "whisper-base" ""
 run_model "whisper-large-v3" ""
-run_model "whisper-turbo" ""
 run_model "parakeet-tdt-0.6b-v3" "${NEMO_PYTHON:-REQUIRED}"
 run_model "canary-1b-v2" "${NEMO_PYTHON:-REQUIRED}"
 run_model "granite-speech-4.1-2b" "${GRANITE_PYTHON:-REQUIRED}"
