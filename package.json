@@ -1,0 +1,14 @@
+{
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test:tui": "node --experimental-ffi --experimental-strip-types --test tests/opentui/*.test.ts"
+  },
+  "dependencies": {
+    "@opentui/core": "0.5.16"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "typescript": "5.9.3"
+  }
+}

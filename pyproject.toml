@@ -27,9 +27,7 @@ providers = [
 media = [
     "yt-dlp>=2025.1",
 ]
-tui = [
-    "textual>=8.2,<9",
-]
+tui = []
 
 [project.scripts]
 dominican-eaters = "dominican_eaters.cli:main"
@@ -41,7 +39,6 @@ dev = [
     "pytest>=8.3,<9",
     "pytest-asyncio>=0.25,<2",
     "ruff>=0.11,<1",
-    "textual>=8.2,<9",
     "types-PyYAML>=6.0,<7",
     "types-psutil>=5.9,<8",
 ]
@@ -54,7 +51,7 @@ where = ["src"]
 include = ["dominican_eaters*"]
 
 [tool.setuptools.package-data]
-dominican_eaters = ["py.typed", "tui/*.tcss"]
+dominican_eaters = ["py.typed", "tui/opentui/*.ts"]
 
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib", "--strict-config", "--strict-markers"]

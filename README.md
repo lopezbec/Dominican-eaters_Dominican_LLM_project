@@ -7,7 +7,7 @@ The supported runtime lives in `src/dominican_eaters`; model-specific workers li
 
 ## Platform Requirements
 
-> **Core environment:** Python 3.11+, pip, and Git. Python 3.12 is recommended for development and model workers.
+> **Core environment:** Python 3.11+, pip, Git, Node.js 26.4+, and npm. Python 3.12 is recommended for development and model workers.
 
 - Python 3.11 or newer for the core package
 - Python 3.11 or 3.12 for the isolated NeMo worker
@@ -20,7 +20,7 @@ The supported runtime lives in `src/dominican_eaters`; model-specific workers li
 - Base runtime dependencies and the `dominican-eaters` console command are declared in `pyproject.toml`.
 - `providers` installs the optional HTTP client for Genius and YouTube.
 - `whisper` installs the compatible OpenAI Whisper and PyTorch dependencies.
-- `tui` installs the interactive terminal workflow launcher.
+- `tui` keeps the optional launcher marker; OpenTUI uses a native Zig renderer with TypeScript bindings.
 - Parakeet and Canary run from the independently packaged `workers/nemo` environment.
 - Development tools are kept out of the published runtime dependencies.
 
@@ -52,6 +52,7 @@ python3.12 -m venv .venv
 
 # Interactive terminal launcher
 .venv/bin/python -m pip install -e '.[tui]'
+npm install
 ```
 
 4. Open the terminal launcher. It presents every workflow and builds the command for you.
