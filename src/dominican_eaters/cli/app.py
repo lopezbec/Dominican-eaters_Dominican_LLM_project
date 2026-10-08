@@ -529,8 +529,10 @@ def preflight_stt_manifest(
                     worker_stderr_sink=_echo_worker_stderr,
                     preset=preset,
                 )
-                worker_preflight = getattr(selected_backend, "preflight", None)
-                if callable(worker_preflight):
+                if CURRENT_BACKEND_SPECS[backend_name].execution == "worker":
+                    worker_preflight = getattr(selected_backend, "preflight", None)
+                    if not callable(worker_preflight):
+                        raise TypeError(f"{backend_name} worker does not expose preflight")
                     worker_report = worker_preflight(close_after=True)
     except ManifestValidationError as error:
         raise click.ClickException(str(error)) from error

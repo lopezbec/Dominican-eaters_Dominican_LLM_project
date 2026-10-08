@@ -265,6 +265,42 @@ def test_stt_preflight_reports_selected_model_environment(
     assert "environment_preflight=passed" in result.output
 
 
+def test_stt_preflight_does_not_request_worker_handshake_for_whisper_preset(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manifest = write_cli_manifest(tmp_path)
+    report = BackendEnvironmentReport(
+        backend="whisper",
+        interpreter=Path(sys.executable),
+        requested_device="cuda",
+        python_version="3.12.8",
+        checks=(EnvironmentCheck("cuda", "torch.cuda", True, "available"),),
+    )
+    monkeypatch.setattr(
+        "dominican_eaters.cli.app.preflight_asr_environment", lambda **_kwargs: report
+    )
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "stt",
+            "preflight",
+            str(manifest),
+            "--preset",
+            "whisper-large-v3",
+            "--device",
+            "cuda",
+            "--precision",
+            "fp16",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "preset=whisper-large-v3" in result.output
+    assert "environment_preflight=passed" in result.output
+    assert "worker_preflight" not in result.output
+
+
 @pytest.mark.parametrize(
     ("preset_id", "status"),
     [
