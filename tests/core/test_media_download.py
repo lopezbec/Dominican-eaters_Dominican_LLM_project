@@ -134,7 +134,7 @@ def test_ytdlp_does_not_forward_large_json_metadata_to_console() -> None:
             "-c",
             (
                 "import json; "
-                "print('download progress'); "
+                "print('[download] progress'); "
                 f"print(json.dumps({{'title': 'x' * {payload_size}}}))"
             ),
         ],
@@ -143,4 +143,22 @@ def test_ytdlp_does_not_forward_large_json_metadata_to_console() -> None:
     )
 
     assert len(str(result["title"])) == payload_size
-    assert logs == ["download progress"]
+    assert logs == ["[download] progress"]
+
+
+def test_ytdlp_parses_multiline_ffprobe_json_without_logging_it() -> None:
+    downloader = YtDlpMediaDownloader()
+    logs: list[str] = []
+
+    result = downloader._run_json(  # noqa: SLF001
+        [
+            sys.executable,
+            "-c",
+            "import json; print(json.dumps({'format': {'duration': '246.87'}}, indent=4))",
+        ],
+        30,
+        logs.append,
+    )
+
+    assert result == {"format": {"duration": "246.87"}}
+    assert logs == []

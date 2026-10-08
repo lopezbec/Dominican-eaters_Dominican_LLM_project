@@ -137,23 +137,19 @@ class YtDlpMediaDownloader:
         self, command: list[str], timeout: float, on_log: LogSink | None
     ) -> dict[str, object]:
         def emit_diagnostic(line: str) -> None:
-            # yt-dlp's final metadata object can be several megabytes on long videos.
-            # Keep it for parsing, but never forward it through line-oriented consoles.
-            if on_log is not None and not line.lstrip().startswith("{"):
+            # JSON may be a multi-megabyte line from yt-dlp or a pretty-printed
+            # ffprobe object. Only forward recognizable tool diagnostics.
+            visible_prefixes = ("[", "ERROR:", "WARNING:")
+            if on_log is not None and line.lstrip().startswith(visible_prefixes):
                 on_log(line)
 
         output = self._run(command, timeout, emit_diagnostic)
-        candidates = [line for line in output.splitlines() if line.lstrip().startswith("{")]
+        candidates = _decode_json_objects(output)
         if not candidates:
             raise MediaDownloadError(
                 f"{command[0]} returned no JSON", code="invalid_response", retryable=True
             )
-        try:
-            value = json.loads(candidates[-1])
-        except json.JSONDecodeError as error:
-            raise MediaDownloadError(
-                f"{command[0]} returned invalid JSON", code="invalid_response", retryable=True
-            ) from error
+        value = candidates[-1]
         if not isinstance(value, dict):
             raise MediaDownloadError(
                 f"{command[0]} returned a non-object", code="invalid_response", retryable=True
@@ -211,3 +207,17 @@ class YtDlpMediaDownloader:
                 retryable=True,
             )
         return stdout
+
+
+def _decode_json_objects(output: str) -> list[object]:
+    decoder = json.JSONDecoder()
+    values: list[object] = []
+    for offset, character in enumerate(output):
+        if character != "{" or (offset > 0 and output[offset - 1] != "\n"):
+            continue
+        try:
+            value, _ = decoder.raw_decode(output, offset)
+        except json.JSONDecodeError:
+            continue
+        values.append(value)
+    return values
