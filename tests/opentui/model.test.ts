@@ -6,3 +6,4 @@ test("default preview",()=>assert.equal(commandPreview(initialState(),presets),"
 test("domain defaults",()=>{const s=initialState();changeWorkflow(s,"books-run");assert.equal(s.source,"data/manifests/books.json");assert.equal(s.output,"artifacts/books");assert.deepEqual(buildArgs(s,presets),["collect","books","run","data/manifests/books.json","--output-dir","artifacts/books"])})
 test("benchmark controls",()=>{const s=initialState();changeWorkflow(s,"stt-benchmark");s.verifyHashes=true;s.timestamps=true;assert.match(commandPreview(s,presets),/--timestamps$/)})
 test("worker requires interpreter",()=>{const s=initialState();changeWorkflow(s,"stt-benchmark");s.preset="worker";assert.throws(()=>buildArgs(s,presets),/isolated worker Python/)})
+test("worker preflight requires interpreter",()=>{const s=initialState();changeWorkflow(s,"stt-preflight");s.preset="worker";assert.throws(()=>buildArgs(s,presets),/isolated worker Python/)})

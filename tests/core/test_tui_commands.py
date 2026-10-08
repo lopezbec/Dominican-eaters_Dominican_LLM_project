@@ -184,6 +184,23 @@ def test_discovers_qwen_worker_from_common_underscore_environment_name(
     assert detected == str(worker.resolve())
 
 
+def test_discovers_worker_module_installed_in_generic_environment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    worker = tmp_path / ".venv" / "bin" / "python"
+    worker.parent.mkdir(parents=True)
+    worker.write_text("#!/bin/sh\n", encoding="utf-8")
+    worker.chmod(0o755)
+    monkeypatch.setattr(
+        "dominican_eaters.tui.commands._python_provides_module",
+        lambda python, module: python == worker and module == "dominican_eaters_qwen3_asr",
+    )
+
+    detected = discover_worker_python(runtime_id="qwen3-asr-transformers", cwd=tmp_path, environ={})
+
+    assert detected == str(worker.resolve())
+
+
 def test_stt_benchmark_candidate_preset_builds_worker_command(tmp_path: Path) -> None:
     worker = tmp_path / "python"
     request = WorkflowRequest(

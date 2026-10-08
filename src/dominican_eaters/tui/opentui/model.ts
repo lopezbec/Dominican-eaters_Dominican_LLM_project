@@ -30,7 +30,7 @@ export function buildArgs(s:FormState,presets:Preset[]):string[]{
  if(s.workflow==="stt-manifest-build")return["stt","manifest","build",source,"--output-file",need(s.output,"Select an output directory.")]
  const p=presets.find(x=>x.id===s.preset);if(!p)throw Error(`Unsupported preset: ${s.preset}`)
  if(s.workflow==="stt-benchmark"&&!p.runnable)throw Error(`Preset ${p.id} is ${p.status} and cannot be benchmarked: ${p.reason}`)
- if(s.workflow==="stt-benchmark"&&p.execution==="worker"&&!s.workerPython.trim())throw Error("Select the isolated worker Python executable.")
+ if(p.execution==="worker"&&!s.workerPython.trim())throw Error("Select the isolated worker Python executable.")
  const a=["stt",s.workflow==="stt-preflight"?"preflight":"benchmark",source]
  if(s.workflow==="stt-preflight"&&s.dataRoot.trim())a.push("--dataset-root",s.dataRoot.trim());if(s.workflow==="stt-benchmark")a.push("--output-dir",need(s.output,"Select an output directory."))
  a.push("--preset",p.id,"--device",s.device,"--precision",s.precision)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import os
+import subprocess
 from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
@@ -95,6 +96,23 @@ def _runtime_environment_hints(runtime_id: str) -> tuple[str, ...]:
     return tuple(value for value in values if value)
 
 
+def _python_provides_module(python: Path, module: str) -> bool:
+    probe = f"import importlib.util,sys;sys.exit(0 if importlib.util.find_spec({module!r}) else 1)"
+    try:
+        return (
+            subprocess.run(
+                [python, "-c", probe],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=3,
+                check=False,
+            ).returncode
+            == 0
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
 def discover_worker_python(
     *,
     runtime_id: str = "nemo-worker",
@@ -139,6 +157,21 @@ def discover_worker_python(
         absolute = Path(os.path.abspath(candidate))
         if absolute.is_file() and os.access(absolute, os.X_OK):
             return str(absolute)
+
+    if runtime.worker_module is not None:
+        generic_candidates = (
+            root / ".venv" / "bin" / "python",
+            *root.glob(".venv*/bin/python"),
+            *root.glob(".venvs/*/bin/python"),
+        )
+        for candidate in generic_candidates:
+            absolute = Path(os.path.abspath(candidate))
+            if (
+                absolute.is_file()
+                and os.access(absolute, os.X_OK)
+                and _python_provides_module(absolute, runtime.worker_module)
+            ):
+                return str(absolute)
     return ""
 
 
