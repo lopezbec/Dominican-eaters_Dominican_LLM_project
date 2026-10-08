@@ -23,6 +23,7 @@ from dominican_eaters.speech.asr.registry import (
     BackendName,
     ModelPreset,
 )
+from dominican_eaters.speech.asr.worker_protocol import JSONValue
 
 
 class _PresetBackend:
@@ -104,6 +105,17 @@ def create_asr_backend(
     interpreter = Path(os.path.abspath(worker_python.expanduser()))
     if not interpreter.is_file() or not os.access(interpreter, os.X_OK):
         raise ValueError(f"worker Python is not an executable file: {interpreter}")
+    worker_options: dict[str, JSONValue]
+    if backend in {"parakeet", "canary"}:
+        worker_options = {
+            "timestamps": timestamps,
+            "short_audio_policy": short_audio_policy,
+            "minimum_audio_seconds": minimum_audio_seconds,
+        }
+    elif backend in {"qwen3_asr", "voxtral"}:
+        worker_options = {"timestamps": timestamps}
+    else:
+        worker_options = {}
     selected_backend = JsonlSubprocessBackend(
         SubprocessBackendSettings(
             interpreter=interpreter,
@@ -113,11 +125,7 @@ def create_asr_backend(
             language=language,
             device=device,
             precision=precision,
-            options={
-                "timestamps": timestamps,
-                "short_audio_policy": short_audio_policy,
-                "minimum_audio_seconds": minimum_audio_seconds,
-            },
+            options=worker_options,
             request_timeout_seconds=request_timeout_seconds,
             preset=None if preset is None else preset.preset_id,
             model_revision=None if preset is None else preset.model_revision,

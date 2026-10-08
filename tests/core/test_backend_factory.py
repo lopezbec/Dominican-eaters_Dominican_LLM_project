@@ -237,6 +237,46 @@ def test_candidate_worker_factories_are_available_without_loading(
     assert backend.descriptor.model == model
 
 
+@pytest.mark.parametrize(
+    ("backend_name", "expected_options"),
+    [
+        (
+            "parakeet",
+            {
+                "timestamps": False,
+                "short_audio_policy": "allow",
+                "minimum_audio_seconds": 0.25,
+            },
+        ),
+        (
+            "canary",
+            {"timestamps": False, "short_audio_policy": "allow", "minimum_audio_seconds": 0.25},
+        ),
+        ("granite", {}),
+        ("qwen3_asr", {"timestamps": False}),
+        ("voxtral", {"timestamps": False}),
+    ],
+)
+def test_worker_factory_only_forwards_backend_supported_options(
+    backend_name: str, expected_options: dict[str, object]
+) -> None:
+    backend = create_asr_backend(
+        backend=backend_name,  # type: ignore[arg-type]
+        model=None,
+        language="es",
+        device="cuda",
+        precision="fp16",
+        worker_python=Path(sys.executable),
+        request_timeout_seconds=300,
+        timestamps=False,
+        short_audio_policy="allow",
+        minimum_audio_seconds=0.25,
+    )
+
+    assert isinstance(backend, JsonlSubprocessBackend)
+    assert backend._settings.options == expected_options  # noqa: SLF001
+
+
 def test_nemo_factory_requires_worker_interpreter() -> None:
     with pytest.raises(ValueError, match="--worker-python is required"):
         create_asr_backend(
