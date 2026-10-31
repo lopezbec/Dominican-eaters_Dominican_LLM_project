@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
+from dataclasses import replace
 from pathlib import Path
 from subprocess import CompletedProcess
 
@@ -15,6 +16,9 @@ from dominican_eaters.evaluation.asr.artifacts import (
     capture_host_snapshot,
 )
 from dominican_eaters.evaluation.asr.runner import (
+    BenchmarkEvent,
+    BenchmarkEventKind,
+    BenchmarkPhase,
     BenchmarkRunner,
     Failure,
     FailureStage,
@@ -193,6 +197,79 @@ def test_success_owns_full_lifecycle_scores_and_persists(tmp_path: Path) -> None
     assert checkpoint["provenance"] == artifact["provenance"]
     assert checkpoint["scoring"]["status"] == "ok"
     assert checkpoint["active_sample_id"] is None
+
+
+def test_progress_events_expose_phases_and_per_sample_rows(tmp_path: Path) -> None:
+    events: list[BenchmarkEvent] = []
+
+    result = BenchmarkRunner(
+        backend=FakeBackend(),
+        warmup_runs=0,
+        host_snapshot=host_snapshot(),
+        on_event=events.append,
+    ).run(manifest(tmp_path), tmp_path / "events")
+
+    assert result.status is RunStatus.COMPLETE
+    assert events[0].kind is BenchmarkEventKind.RUN_STARTED
+    assert events[0].completed == 0
+    assert events[0].total == 2
+    phase_events = [
+        event.phase for event in events if event.kind is BenchmarkEventKind.PHASE_STARTED
+    ]
+    assert phase_events == [
+        BenchmarkPhase.PREFLIGHT,
+        BenchmarkPhase.LOADING,
+        BenchmarkPhase.WARMING_UP,
+        BenchmarkPhase.TRANSCRIBING,
+        BenchmarkPhase.SCORING,
+        BenchmarkPhase.CLOSING,
+    ]
+    started = [event for event in events if event.kind is BenchmarkEventKind.SAMPLE_STARTED]
+    completed = [event for event in events if event.kind is BenchmarkEventKind.SAMPLE_COMPLETED]
+    assert [(event.index, event.sample_id, event.completed) for event in started] == [
+        (1, "0", 0),
+        (2, "1", 1),
+    ]
+    assert [(event.index, event.sample_id, event.status) for event in completed] == [
+        (1, "0", SampleStatus.OK),
+        (2, "1", SampleStatus.OK),
+    ]
+    assert completed[0].audio_path == "sample-0.wav"
+    assert completed[0].group_id == "speaker-0"
+    assert completed[0].elapsed_seconds is not None
+    assert completed[0].audio_seconds == 2.0
+    assert completed[1].to_dict()["event"] == "sample_completed"
+    assert completed[1].to_dict()["completed"] == 2
+    assert events[-1].kind is BenchmarkEventKind.RUN_FINISHED
+    assert events[-1].run_status is RunStatus.COMPLETE
+
+
+def test_failed_sample_progress_event_exposes_structured_error(tmp_path: Path) -> None:
+    request = make_request("transcribe", {"audio_path": "/tmp/sample.wav"}, request_id="one")
+    error = WorkerRemoteError(
+        error_response(
+            request,
+            code="CudaOutOfMemory",
+            message="GPU memory exhausted",
+            retryable=True,
+        )
+    )
+    events: list[BenchmarkEvent] = []
+
+    BenchmarkRunner(
+        backend=FakeBackend({"transcribe:sample-0.wav": error}),
+        warmup_runs=0,
+        host_snapshot=host_snapshot(),
+        on_event=events.append,
+    ).run(manifest(tmp_path, count=1), tmp_path / "failed-event")
+
+    completed = next(event for event in events if event.kind is BenchmarkEventKind.SAMPLE_COMPLETED)
+    assert completed.status is SampleStatus.FAILED
+    assert completed.failed == 1
+    assert completed.error_type == "WorkerRemoteError"
+    assert completed.message == "worker failed (CudaOutOfMemory): GPU memory exhausted"
+    assert completed.error_code == "CudaOutOfMemory"
+    assert completed.retryable is True
 
 
 def test_v2_provenance_preserves_legacy_resolved_revision_without_inventing_values() -> None:
@@ -433,3 +510,168 @@ def test_keyboard_interrupt_preserves_completed_samples_and_active_sample(
     assert checkpoint["active_sample_id"] == "1"
     assert [sample["sample_id"] for sample in checkpoint["sample_results"]] == ["0"]
     assert backend.calls[-1] == "close"
+
+
+def test_resume_restores_completed_rows_and_retries_only_interrupted_tail(
+    tmp_path: Path,
+) -> None:
+    class InterruptingBackend(FakeBackend):
+        def transcribe(self, audio_path: Path) -> Transcript:
+            if audio_path.name == "sample-1.wav":
+                self.calls.append(f"transcribe:{audio_path.name}")
+                raise KeyboardInterrupt("operator cancelled")
+            return super().transcribe(audio_path)
+
+    source = manifest(tmp_path, count=3)
+    output = tmp_path / "resumable"
+    with pytest.raises(KeyboardInterrupt):
+        BenchmarkRunner(
+            backend=InterruptingBackend(),
+            warmup_runs=0,
+            host_snapshot=host_snapshot(),
+        ).run(source, output)
+
+    events: list[BenchmarkEvent] = []
+    resumed_backend = FakeBackend()
+    result = BenchmarkRunner(
+        backend=resumed_backend,
+        warmup_runs=0,
+        host_snapshot=host_snapshot(),
+        on_event=events.append,
+    ).run(source, output, resume=True)
+
+    assert result.status is RunStatus.COMPLETE
+    assert [item.sample_id for item in result.sample_results] == ["0", "1", "2"]
+    assert resumed_backend.calls == [
+        "load",
+        "transcribe:sample-1.wav",
+        "transcribe:sample-2.wav",
+        "close",
+    ]
+    assert events[0].kind is BenchmarkEventKind.RUN_RESUMED
+    restored = [event for event in events if event.kind is BenchmarkEventKind.SAMPLE_RESTORED]
+    assert [(event.index, event.sample_id, event.completed) for event in restored] == [(1, "0", 1)]
+
+
+def test_resume_preserves_completed_failure_without_retrying_it(tmp_path: Path) -> None:
+    class FailingThenInterruptingBackend(FakeBackend):
+        def transcribe(self, audio_path: Path) -> Transcript:
+            if audio_path.name == "sample-0.wav":
+                self.calls.append(f"transcribe:{audio_path.name}")
+                raise ValueError("invalid audio")
+            raise KeyboardInterrupt("operator cancelled")
+
+    source = manifest(tmp_path)
+    output = tmp_path / "failed-row"
+    with pytest.raises(KeyboardInterrupt):
+        BenchmarkRunner(
+            backend=FailingThenInterruptingBackend(),
+            warmup_runs=0,
+            host_snapshot=host_snapshot(),
+        ).run(source, output)
+
+    resumed_backend = FakeBackend()
+    result = BenchmarkRunner(
+        backend=resumed_backend,
+        warmup_runs=0,
+        host_snapshot=host_snapshot(),
+    ).run(source, output, resume=True)
+
+    assert result.status is RunStatus.PARTIAL
+    assert [item.status for item in result.sample_results] == [
+        SampleStatus.FAILED,
+        SampleStatus.OK,
+    ]
+    assert resumed_backend.calls == ["load", "transcribe:sample-1.wav", "close"]
+    assert result.failures[0].sample_id == "0"
+
+
+def test_resume_rejects_changed_manifest_and_corrupt_result_prefix(tmp_path: Path) -> None:
+    class InterruptingBackend(FakeBackend):
+        def transcribe(self, audio_path: Path) -> Transcript:
+            if audio_path.name == "sample-1.wav":
+                raise KeyboardInterrupt
+            return super().transcribe(audio_path)
+
+    source = manifest(tmp_path)
+    output = tmp_path / "strict-resume"
+    with pytest.raises(KeyboardInterrupt):
+        BenchmarkRunner(
+            backend=InterruptingBackend(),
+            warmup_runs=0,
+            host_snapshot=host_snapshot(),
+        ).run(source, output)
+
+    changed = STTManifest(
+        dataset_root=source.dataset_root,
+        samples=(
+            AudioSample("0", "sample-0.wav", "changed", group_id="speaker-0"),
+            source.samples[1],
+        ),
+    )
+    with pytest.raises(ValueError, match="manifest does not match"):
+        BenchmarkRunner(backend=FakeBackend(), host_snapshot=host_snapshot()).run(
+            changed, output, resume=True
+        )
+
+    checkpoint_path = output / "checkpoint.json"
+    checkpoint = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+    checkpoint["sample_results"][0]["sample_id"] = "wrong"
+    checkpoint_path.write_text(json.dumps(checkpoint), encoding="utf-8")
+    with pytest.raises(ValueError, match="ordered prefix"):
+        BenchmarkRunner(backend=FakeBackend(), host_snapshot=host_snapshot()).run(
+            source, output, resume=True
+        )
+
+
+def test_resume_mode_can_create_a_fresh_destination(tmp_path: Path) -> None:
+    backend = FakeBackend()
+    result = BenchmarkRunner(
+        backend=backend,
+        warmup_runs=0,
+        host_snapshot=host_snapshot(),
+    ).run(manifest(tmp_path, count=1), tmp_path / "fresh-resume", resume=True)
+
+    assert result.status is RunStatus.COMPLETE
+    assert backend.calls == ["load", "transcribe:sample-0.wav", "close"]
+
+
+def test_resume_rejects_changed_resolved_backend_without_replacing_checkpoint(
+    tmp_path: Path,
+) -> None:
+    class VersionedBackend(FakeBackend):
+        def __init__(self, version: str, *, interrupt: bool = False) -> None:
+            super().__init__()
+            self.version = version
+            self.interrupt = interrupt
+
+        @property
+        def descriptor(self) -> BackendDescriptor:
+            return replace(super().descriptor, runtime_versions={"runtime": self.version})
+
+        def transcribe(self, audio_path: Path) -> Transcript:
+            if self.interrupt and audio_path.name == "sample-1.wav":
+                raise KeyboardInterrupt
+            return super().transcribe(audio_path)
+
+    source = manifest(tmp_path)
+    output = tmp_path / "changed-runtime"
+    with pytest.raises(KeyboardInterrupt):
+        BenchmarkRunner(
+            backend=VersionedBackend("1", interrupt=True),
+            warmup_runs=0,
+            host_snapshot=host_snapshot(),
+        ).run(source, output)
+    original_checkpoint = (output / "checkpoint.json").read_text(encoding="utf-8")
+
+    changed_backend = VersionedBackend("2")
+    with pytest.raises(ValueError, match="Loaded backend identity differs"):
+        BenchmarkRunner(
+            backend=changed_backend,
+            warmup_runs=0,
+            host_snapshot=host_snapshot(),
+        ).run(source, output, resume=True)
+
+    assert changed_backend.calls == ["load", "close"]
+    assert (output / "checkpoint.json").read_text(encoding="utf-8") == original_checkpoint
+    assert not (output / "result.json").exists()

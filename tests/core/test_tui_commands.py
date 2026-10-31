@@ -192,7 +192,7 @@ def test_discovers_worker_module_installed_in_generic_environment(
     worker.write_text("#!/bin/sh\n", encoding="utf-8")
     worker.chmod(0o755)
     monkeypatch.setattr(
-        "dominican_eaters.tui.commands._python_provides_module",
+        "dominican_eaters.speech.asr.discovery._python_provides_module",
         lambda python, module: python == worker and module == "dominican_eaters_qwen3_asr",
     )
 

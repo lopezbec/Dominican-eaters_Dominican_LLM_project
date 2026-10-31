@@ -413,6 +413,37 @@ def test_stt_benchmark_success_uses_canonical_runner_and_artifacts(
     assert artifact["backend"]["model_revision"] == "fixture"
 
 
+def test_stt_benchmark_streams_machine_readable_sample_progress(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manifest = write_cli_manifest(tmp_path)
+    backend = CliFakeBackend(WhisperSettings())
+    monkeypatch.setattr("dominican_eaters.cli.app.create_asr_backend", lambda **_kwargs: backend)
+
+    result = CliRunner().invoke(
+        main,
+        ["stt", "benchmark", str(manifest), "--output-dir", str(tmp_path / "events")],
+    )
+
+    assert result.exit_code == 0, result.output
+    events = [
+        json.loads(line.removeprefix("stt_event="))
+        for line in result.output.splitlines()
+        if line.startswith("stt_event=")
+    ]
+    started = next(event for event in events if event["event"] == "sample_started")
+    completed = next(event for event in events if event["event"] == "sample_completed")
+    assert started["sample_id"] == "sample-001"
+    assert started["index"] == 1
+    assert started["total"] == 1
+    assert completed["status"] == "ok"
+    assert completed["completed"] == 1
+    assert completed["source"] == "human-reviewed"
+    assert completed["audio_seconds"] == 1.0
+    assert events[-1]["event"] == "run_finished"
+    assert events[-1]["run_status"] == "complete"
+
+
 def test_stt_benchmark_current_preset_resolves_registered_model(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -499,6 +530,142 @@ def test_stt_benchmark_failure_exits_nonzero_and_keeps_artifacts(
     artifact = json.loads((output / "result.json").read_text(encoding="utf-8"))
     assert artifact["status"] == "failed"
     assert artifact["failures"][0]["stage"] == "transcribe"
+
+
+def test_stt_suite_runs_named_dataset_and_resumes_completed_task(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manifest = write_cli_manifest(tmp_path)
+    backend = CliFakeBackend(WhisperSettings(model="large-v3"))
+    report = BackendEnvironmentReport(
+        backend="whisper",
+        interpreter=Path(sys.executable),
+        requested_device="cpu",
+        python_version="3.12.8",
+        checks=(EnvironmentCheck("module", "whisper", True, "available"),),
+    )
+    monkeypatch.setattr("dominican_eaters.cli.app.create_asr_backend", lambda **_kwargs: backend)
+    monkeypatch.setattr(
+        "dominican_eaters.cli.app.preflight_asr_environment", lambda **_kwargs: report
+    )
+    output = tmp_path / "suite"
+    arguments = [
+        "stt",
+        "suite",
+        "--dataset",
+        f"music={manifest}",
+        "--preset",
+        "whisper-large-v3",
+        "--output-dir",
+        str(output),
+        "--device",
+        "cpu",
+        "--precision",
+        "fp32",
+        "--no-verify-hashes",
+    ]
+
+    first = CliRunner().invoke(main, arguments)
+    calls_after_first = tuple(backend.calls)
+    resumed = CliRunner().invoke(main, arguments)
+
+    assert first.exit_code == 0, first.output
+    assert "suite_status=complete" in first.output
+    assert "suite_task[music,whisper-large-v3]=complete:1/1:attempt=1" in first.output
+    assert '"event":"suite_started"' in first.output
+    assert '"event":"sample_completed"' in first.output
+    assert resumed.exit_code == 0, resumed.output
+    assert '"event":"task_skipped"' in resumed.output
+    assert tuple(backend.calls) == calls_after_first
+    ledger = json.loads((output / "suite.json").read_text(encoding="utf-8"))
+    assert ledger["plan"]["datasets"][0]["dataset_id"] == "music"
+    assert ledger["tasks"][0]["attempt"] == 1
+
+
+def test_stt_suite_rejects_malformed_dataset_spec(tmp_path: Path) -> None:
+    result = CliRunner().invoke(
+        main,
+        ["stt", "suite", "--dataset", "missing-separator", "--output-dir", str(tmp_path)],
+    )
+
+    assert result.exit_code != 0
+    assert "ID=MANIFEST" in result.output
+
+
+def test_stt_suite_fails_before_audio_when_worker_environments_are_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manifest = write_cli_manifest(tmp_path)
+    monkeypatch.setattr("dominican_eaters.cli.app.discover_worker_python", lambda **_kwargs: "")
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "stt",
+            "suite",
+            "--dataset",
+            f"music={manifest}",
+            "--output-dir",
+            str(tmp_path / "suite"),
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "Missing isolated STT worker environments before suite start" in result.output
+    assert "parakeet-tdt-0.6b-v3" in result.output
+    assert not (tmp_path / "suite" / "suite.json").exists()
+
+
+def test_stt_suite_checks_every_environment_before_first_model_load(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manifest = write_cli_manifest(tmp_path)
+    backend = CliFakeBackend(WhisperSettings(model="large-v3"))
+
+    def environment_report(*, backend: str, **_kwargs: object) -> BackendEnvironmentReport:
+        ready = backend == "whisper"
+        return BackendEnvironmentReport(
+            backend=backend,
+            interpreter=Path(sys.executable),
+            requested_device="cuda",
+            python_version="3.12.8",
+            checks=(
+                EnvironmentCheck(
+                    "module",
+                    "runtime",
+                    ready,
+                    "available" if ready else "worker module is unavailable",
+                ),
+            ),
+        )
+
+    monkeypatch.setattr("dominican_eaters.cli.app.create_asr_backend", lambda **_kwargs: backend)
+    monkeypatch.setattr("dominican_eaters.cli.app.preflight_asr_environment", environment_report)
+    output = tmp_path / "suite"
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "stt",
+            "suite",
+            "--dataset",
+            f"music={manifest}",
+            "--preset",
+            "whisper-large-v3",
+            "--preset",
+            "parakeet-tdt-0.6b-v3",
+            "--worker-python",
+            f"nemo-worker={sys.executable}",
+            "--output-dir",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "failed before processing audio" in result.output
+    assert "parakeet-tdt-0.6b-v3" in result.output
+    assert backend.calls == []
+    assert not (output / "suite.json").exists()
 
 
 def test_book_manifest_preflight_uses_installed_cli(tmp_path: Path) -> None:

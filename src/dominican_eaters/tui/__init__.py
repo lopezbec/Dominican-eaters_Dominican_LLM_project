@@ -18,6 +18,56 @@ class TUIUnavailableError(RuntimeError):
     """Raised when the optional terminal-interface dependency is unavailable."""
 
 
+def _manifest_sample_count(path: Path) -> int | None:
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return None
+    if not isinstance(raw, dict):
+        return None
+    samples = raw.get("samples")
+    return len(samples) if isinstance(samples, list) and samples else None
+
+
+def _discover_stt_datasets(project_root: Path) -> list[dict[str, object]]:
+    """Return stable TUI dataset choices from canonical STT manifests."""
+
+    manifests = project_root / "data" / "manifests"
+    full_manifests = sorted(manifests.glob("stt-*.json"))
+    if not full_manifests:
+        smoke = manifests / "stt.json"
+        if smoke.is_file():
+            full_manifests = [smoke]
+        else:
+            full_manifests = [manifests / "stt-all.json"]
+
+    datasets: list[dict[str, object]] = []
+    seen: set[str] = set()
+    for path in full_manifests:
+        if path.name == "stt-all.json":
+            dataset_id = "music"
+            label = "Music / collected lyrics"
+        elif path.name == "stt.json":
+            dataset_id = "smoke"
+            label = "Smoke test"
+        else:
+            dataset_id = path.stem.removeprefix("stt-")
+            label = dataset_id.replace("-", " ").replace("_", " ").title()
+        if not dataset_id or dataset_id in seen:
+            continue
+        seen.add(dataset_id)
+        value: dict[str, object] = {
+            "id": dataset_id,
+            "label": label,
+            "manifest": path.relative_to(project_root).as_posix(),
+        }
+        sample_count = _manifest_sample_count(path)
+        if sample_count is not None:
+            value["sampleCount"] = sample_count
+        datasets.append(value)
+    return datasets
+
+
 def run_tui() -> None:
     """Start the OpenTUI application on its native Zig renderer."""
 
@@ -51,7 +101,12 @@ def run_tui() -> None:
         **os.environ,
         "NODE_NO_WARNINGS": "1",
         "DOMINICAN_EATERS_TUI_DATA": json.dumps(
-            {"python": sys.executable, "presets": presets}, ensure_ascii=False
+            {
+                "python": sys.executable,
+                "presets": presets,
+                "datasets": _discover_stt_datasets(project_root),
+            },
+            ensure_ascii=False,
         ),
     }
     result = subprocess.run(

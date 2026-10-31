@@ -47,8 +47,20 @@ from dominican_eaters.data import (
     load_manifest,
     write_manifest,
 )
-from dominican_eaters.evaluation.asr import BenchmarkRunner, OutputCollisionError
-from dominican_eaters.speech.asr import WorkerProcessError
+from dominican_eaters.evaluation.asr import BenchmarkEvent, BenchmarkRunner, OutputCollisionError
+from dominican_eaters.evaluation.asr.suite import (
+    DEFAULT_T4_PRESETS,
+    SuiteConflictError,
+    SuiteDataset,
+    SuiteEvent,
+    SuitePlan,
+    SuiteRunner,
+    SuiteStatus,
+    SuiteTaskOutcome,
+    SuiteTaskStatus,
+)
+from dominican_eaters.speech.asr import ASRBackend, WorkerProcessError
+from dominican_eaters.speech.asr.discovery import discover_worker_python
 from dominican_eaters.speech.asr.environment import preflight_asr_environment
 from dominican_eaters.speech.asr.registry import (
     CURRENT_BACKEND_SPECS,
@@ -689,6 +701,7 @@ def benchmark_stt(
             backend=selected_backend,
             warmup_runs=warmup_runs,
             verify_hashes=verify_hashes,
+            on_event=_echo_benchmark_event,
         ).run(manifest, output_dir)
     except (ManifestValidationError, ValueError, OutputCollisionError) as error:
         raise click.ClickException(str(error)) from error
@@ -740,6 +753,337 @@ def benchmark_stt(
         click.echo(f"failure={failure.stage.value}:{failure.error_type}:{failure.message}{sample}")
     if not result.successful:
         context.exit(1)
+
+
+@stt_group.command("suite")
+@click.option(
+    "--dataset",
+    "dataset_values",
+    multiple=True,
+    required=True,
+    metavar="ID=MANIFEST",
+    help="Named canonical STT manifest. Repeat for every dataset.",
+)
+@click.option(
+    "--preset",
+    "preset_ids",
+    multiple=True,
+    type=click.Choice(tuple(MODEL_PRESETS)),
+    help="Model preset. Repeat to override the recommended Tesla T4 suite.",
+)
+@click.option(
+    "--output-dir",
+    type=click.Path(path_type=Path, file_okay=False),
+    required=True,
+)
+@click.option(
+    "--worker-python",
+    "worker_values",
+    multiple=True,
+    metavar="PRESET_OR_RUNTIME=PYTHON",
+    help="Override one automatically discovered isolated worker.",
+)
+@click.option(
+    "--device", type=click.Choice(["auto", "cpu", "cuda"]), default="cuda", show_default=True
+)
+@click.option(
+    "--precision",
+    type=click.Choice(["auto", "fp16", "fp32", "bf16"]),
+    default="fp16",
+    show_default=True,
+)
+@click.option("--warmup-runs", type=click.IntRange(min=0), default=1, show_default=True)
+@click.option(
+    "--request-timeout",
+    type=click.FloatRange(min=0, min_open=True),
+    default=1800.0,
+    show_default=True,
+)
+@click.option("--timestamps/--no-timestamps", default=False, show_default=True)
+@click.option(
+    "--short-audio-policy",
+    type=click.Choice(["reject", "allow"]),
+    default="reject",
+    show_default=True,
+)
+@click.option(
+    "--minimum-audio-seconds",
+    type=click.FloatRange(min=0, min_open=True),
+    default=0.1,
+    show_default=True,
+)
+@click.option("--verify-hashes/--no-verify-hashes", default=True, show_default=True)
+@click.option("--resume/--no-resume", default=True, show_default=True)
+@click.pass_context
+def run_stt_suite(
+    context: click.Context,
+    dataset_values: tuple[str, ...],
+    preset_ids: tuple[str, ...],
+    output_dir: Path,
+    worker_values: tuple[str, ...],
+    device: str,
+    precision: str,
+    warmup_runs: int,
+    request_timeout: float,
+    timestamps: bool,
+    short_audio_policy: str,
+    minimum_audio_seconds: float,
+    verify_hashes: bool,
+    resume: bool,
+) -> None:
+    """Run a resumable dataset-by-model STT benchmark suite."""
+
+    try:
+        datasets = _suite_datasets(dataset_values)
+        selected_presets = preset_ids or DEFAULT_T4_PRESETS
+        presets = tuple(MODEL_PRESETS[preset_id] for preset_id in selected_presets)
+        unavailable = tuple(preset for preset in presets if not preset.runnable)
+        if unavailable:
+            details = "; ".join(
+                f"{preset.preset_id}: {preset.reason or preset.status}" for preset in unavailable
+            )
+            raise ValueError(f"STT suite contains unavailable presets: {details}")
+        explicit_workers = _suite_worker_overrides(worker_values)
+        worker_by_preset = _suite_workers(presets, explicit_workers)
+        _preflight_suite_models(
+            presets,
+            worker_by_preset,
+            device=device,
+            precision=precision,
+            request_timeout=request_timeout,
+            timestamps=timestamps,
+            short_audio_policy=short_audio_policy,
+            minimum_audio_seconds=minimum_audio_seconds,
+        )
+        plan = SuitePlan(
+            datasets=datasets,
+            presets=tuple(preset.preset_id for preset in presets),
+            device=device,
+            precision=precision,
+            warmup_runs=warmup_runs,
+            request_timeout_seconds=request_timeout,
+            short_audio_policy=short_audio_policy,
+            minimum_audio_seconds=minimum_audio_seconds,
+            verify_hashes=verify_hashes,
+            timestamps=timestamps,
+        )
+
+        def execute(dataset: SuiteDataset, preset_id: str, task_output: Path) -> SuiteTaskOutcome:
+            preset = MODEL_PRESETS[preset_id]
+            worker_python = worker_by_preset[preset_id]
+            selected_backend = _create_suite_backend(
+                preset,
+                worker_python,
+                device=device,
+                precision=precision,
+                request_timeout=request_timeout,
+                timestamps=timestamps,
+                short_audio_policy=short_audio_policy,
+                minimum_audio_seconds=minimum_audio_seconds,
+            )
+            manifest = load_manifest(Path(dataset.manifest_path))
+            result = BenchmarkRunner(
+                backend=selected_backend,
+                warmup_runs=warmup_runs,
+                verify_hashes=verify_hashes,
+                on_event=_echo_benchmark_event,
+            ).run(manifest, task_output, resume=True)
+            return SuiteTaskOutcome(
+                status=SuiteTaskStatus(result.status.value),
+                expected_samples=result.expected_samples,
+                succeeded_samples=result.succeeded_samples,
+                failed_samples=result.failed_samples,
+            )
+
+        ledger = SuiteRunner(execute, on_event=_echo_suite_event).run(
+            plan, output_dir, resume=resume
+        )
+    except (
+        ConcurrentWriteError,
+        ManifestValidationError,
+        SuiteConflictError,
+        ValueError,
+    ) as error:
+        raise click.ClickException(str(error)) from error
+
+    click.echo(f"suite_status={ledger.status.value}")
+    click.echo(f"suite_id={ledger.suite_id}")
+    click.echo(f"suite_ledger={output_dir.expanduser().resolve() / 'suite.json'}")
+    for task in ledger.tasks:
+        click.echo(
+            f"suite_task[{task.dataset_id},{task.preset_id}]={task.status.value}:"
+            f"{task.succeeded_samples}/{task.expected_samples}:attempt={task.attempt}"
+        )
+    if ledger.status is not SuiteStatus.COMPLETE:
+        context.exit(1)
+
+
+def _echo_benchmark_event(event: BenchmarkEvent) -> None:
+    click.echo("stt_event=" + dumps(event.to_dict(), ensure_ascii=False, separators=(",", ":")))
+
+
+def _echo_suite_event(event: SuiteEvent) -> None:
+    click.echo("stt_event=" + dumps(event.to_dict(), ensure_ascii=False, separators=(",", ":")))
+
+
+def _suite_datasets(values: tuple[str, ...]) -> tuple[SuiteDataset, ...]:
+    datasets: list[SuiteDataset] = []
+    seen: set[str] = set()
+    for value in values:
+        dataset_id, separator, manifest = value.partition("=")
+        if not separator or not dataset_id.strip() or not manifest.strip():
+            raise ValueError(f"--dataset must use ID=MANIFEST syntax: {value!r}")
+        identifier = dataset_id.strip()
+        if identifier in seen:
+            raise ValueError(f"duplicate suite dataset ID: {identifier}")
+        datasets.append(SuiteDataset.from_manifest(identifier, Path(manifest.strip())))
+        seen.add(identifier)
+    return tuple(datasets)
+
+
+def _suite_worker_overrides(values: tuple[str, ...]) -> dict[str, Path]:
+    workers: dict[str, Path] = {}
+    for value in values:
+        name, separator, python = value.partition("=")
+        if not separator or not name.strip() or not python.strip():
+            raise ValueError(f"--worker-python must use PRESET_OR_RUNTIME=PYTHON syntax: {value!r}")
+        key = name.strip()
+        if key in workers:
+            raise ValueError(f"duplicate worker Python override: {key}")
+        workers[key] = Path(os.path.abspath(Path(python.strip()).expanduser()))
+    return workers
+
+
+def _suite_workers(
+    presets: tuple[ModelPreset, ...],
+    explicit: dict[str, Path],
+) -> dict[str, Path | None]:
+    valid_keys = {preset.preset_id for preset in presets} | {
+        preset.runtime_id for preset in presets
+    }
+    unknown = sorted(set(explicit) - valid_keys)
+    if unknown:
+        raise ValueError(
+            f"worker Python overrides do not match selected presets: {', '.join(unknown)}"
+        )
+    workers: dict[str, Path | None] = {}
+    for preset in presets:
+        runtime = RUNTIME_SPECS[preset.runtime_id]
+        if runtime.execution == "inline":
+            workers[preset.preset_id] = None
+            continue
+        configured = explicit.get(preset.preset_id) or explicit.get(preset.runtime_id)
+        if configured is None:
+            discovered = discover_worker_python(runtime_id=preset.runtime_id)
+            configured = Path(discovered) if discovered else None
+        workers[preset.preset_id] = configured
+    missing = [
+        preset
+        for preset in presets
+        if RUNTIME_SPECS[preset.runtime_id].execution == "worker"
+        and workers[preset.preset_id] is None
+    ]
+    if missing:
+        details = "; ".join(
+            f"{preset.preset_id} ({RUNTIME_SPECS[preset.runtime_id].interpreter_env_var})"
+            for preset in missing
+        )
+        raise ValueError("Missing isolated STT worker environments before suite start: " + details)
+    return workers
+
+
+def _create_suite_backend(
+    preset: ModelPreset,
+    worker_python: Path | None,
+    *,
+    device: str,
+    precision: str,
+    request_timeout: float,
+    timestamps: bool,
+    short_audio_policy: str,
+    minimum_audio_seconds: float,
+) -> ASRBackend:
+    selected_precision = (
+        preset.precision if precision == "auto" and preset.precision is not None else precision
+    )
+    return create_asr_backend(
+        backend=preset.backend,
+        model=preset.model,
+        language=preset.language,
+        device=device,
+        precision=selected_precision,
+        worker_python=worker_python,
+        request_timeout_seconds=request_timeout,
+        timestamps=timestamps,
+        short_audio_policy=short_audio_policy,
+        minimum_audio_seconds=minimum_audio_seconds,
+        worker_stderr_sink=_echo_worker_stderr,
+        preset=preset,
+    )
+
+
+def _preflight_suite_models(
+    presets: tuple[ModelPreset, ...],
+    worker_by_preset: dict[str, Path | None],
+    *,
+    device: str,
+    precision: str,
+    request_timeout: float,
+    timestamps: bool,
+    short_audio_policy: str,
+    minimum_audio_seconds: float,
+) -> None:
+    """Validate every runtime before the first long-running model begins."""
+
+    failures: list[str] = []
+    for preset in presets:
+        worker_python = worker_by_preset[preset.preset_id]
+        environment = preflight_asr_environment(
+            backend=preset.backend,
+            worker_python=worker_python,
+            requested_device=device,
+        )
+        if not environment.ready:
+            missing = ", ".join(
+                f"{check.kind}:{check.name}: {check.detail}"
+                for check in environment.checks
+                if not check.available
+            )
+            failures.append(f"{preset.preset_id}: {missing}")
+            click.echo(f"suite_preflight[{preset.preset_id}]=failed:{missing}")
+            continue
+        if RUNTIME_SPECS[preset.runtime_id].execution == "worker":
+            try:
+                backend = _create_suite_backend(
+                    preset,
+                    worker_python,
+                    device=device,
+                    precision=precision,
+                    request_timeout=request_timeout,
+                    timestamps=timestamps,
+                    short_audio_policy=short_audio_policy,
+                    minimum_audio_seconds=minimum_audio_seconds,
+                )
+                worker_preflight = getattr(backend, "preflight", None)
+                if not callable(worker_preflight):
+                    raise TypeError(f"{preset.preset_id} worker does not expose preflight")
+                report = worker_preflight(close_after=True)
+                if not report.ready:
+                    checks = ", ".join(
+                        f"{check.name}: {check.message}"
+                        for check in report.checks
+                        if check.status != "passed"
+                    )
+                    raise ValueError(checks or "worker reported that it is not ready")
+            except Exception as error:
+                failures.append(f"{preset.preset_id}: {error}")
+                click.echo(f"suite_preflight[{preset.preset_id}]=failed:{error}")
+                continue
+        click.echo(f"suite_preflight[{preset.preset_id}]=passed:{environment.interpreter}")
+    if failures:
+        raise ValueError(
+            "STT suite preflight failed before processing audio: " + "; ".join(failures)
+        )
 
 
 def _resolve_stt_selection(
