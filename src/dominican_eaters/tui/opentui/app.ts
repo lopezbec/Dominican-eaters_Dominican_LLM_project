@@ -58,7 +58,7 @@ type Field = {
 export class DominicanEatersTui {
   readonly renderer: CliRenderer
   readonly bootstrap: Bootstrap
-  readonly state = initialState()
+  readonly state: FormState
   readonly fields: Field[] = []
   readonly presets: Preset[]
   readonly datasets: Dataset[]
@@ -84,6 +84,7 @@ export class DominicanEatersTui {
   private child: ChildProcessWithoutNullStreams | null = null
   private logs: string[] = []
   private started = 0
+  private autoRunStarted = false
   private timer?: NodeJS.Timeout
   private progress: SuiteProgress
   private activeTask: { dataset: string; preset: string } | null = null
@@ -93,6 +94,19 @@ export class DominicanEatersTui {
     this.bootstrap = bootstrap
     this.presets = bootstrap.presets
     this.datasets = bootstrap.datasets?.length ? bootstrap.datasets : defaultDatasets
+    this.state = initialState(bootstrap.initialState)
+    if (
+      this.state.dataset !== "all" &&
+      !this.datasets.some((dataset) => dataset.id === this.state.dataset)
+    ) {
+      this.state.dataset = "all"
+    }
+    if (
+      !this.presets.some((preset) => preset.id === this.state.preset) &&
+      this.presets.length
+    ) {
+      this.state.preset = this.presets[0]!.id
+    }
     const suiteIds = bootstrap.suitePresets?.length
       ? bootstrap.suitePresets
       : t4SuitePresetIds
@@ -101,6 +115,12 @@ export class DominicanEatersTui {
       .filter((preset): preset is Preset => preset !== undefined && preset.runnable)
     this.progress = seedSuiteProgress(this.datasets, this.suitePresets)
     this.build()
+  }
+
+  async start() {
+    if (!this.bootstrap.autoRun || this.autoRunStarted) return
+    this.autoRunStarted = true
+    await this.run()
   }
 
   private text(ctx: RenderContext, content: string, fg = C.fg, options: object = {}) {
@@ -372,7 +392,12 @@ export class DominicanEatersTui {
   }
 
   private refresh() {
-    this.preview.content = commandPreview(this.state, this.presets, this.datasets)
+    this.preview.content = commandPreview(
+      this.state,
+      this.presets,
+      this.datasets,
+      this.suitePresets.map((preset) => preset.id),
+    )
   }
 
   private focusField(index: number) {
@@ -575,7 +600,12 @@ export class DominicanEatersTui {
     if (this.child) return
     let args: string[]
     try {
-      args = buildArgs(this.state, this.presets, this.datasets)
+      args = buildArgs(
+        this.state,
+        this.presets,
+        this.datasets,
+        this.suitePresets.map((preset) => preset.id),
+      )
     } catch (error) {
       const message = (error as Error).message
       this.setStatus(message, C.red)
@@ -602,7 +632,14 @@ export class DominicanEatersTui {
     })
     this.child = child
     this.line(`RUN   Starting ${this.state.workflow}`)
-    this.line(`CMD   ${commandPreview(this.state, this.presets, this.datasets)}`)
+    this.line(
+      `CMD   ${commandPreview(
+        this.state,
+        this.presets,
+        this.datasets,
+        this.suitePresets.map((preset) => preset.id),
+      )}`,
+    )
     const flushStdout = this.consume(child.stdout)
     const flushStderr = this.consume(child.stderr)
     this.timer = setInterval(() => this.metrics(), 1000)
@@ -650,7 +687,8 @@ export async function main() {
     targetFps: 30,
     backgroundColor: C.bg,
   })
-  new DominicanEatersTui(renderer, bootstrap)
+  const app = new DominicanEatersTui(renderer, bootstrap)
+  await app.start()
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) await main()

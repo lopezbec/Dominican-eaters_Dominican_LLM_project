@@ -43,6 +43,7 @@ from dominican_eaters.config import ConfigError, load_config
 from dominican_eaters.data import (
     ConcurrentWriteError,
     ManifestValidationError,
+    STTManifest,
     discover_stt_manifest,
     load_manifest,
     write_manifest,
@@ -379,6 +380,82 @@ def _echo_omitted_errors(total: int) -> None:
 @main.group("stt")
 def stt_group() -> None:
     """Validate and evaluate speech-to-text datasets."""
+
+
+def _project_root() -> Path:
+    return Path(__file__).resolve().parents[3]
+
+
+def _require_collected_lyrics_manifest(manifest: STTManifest, project_root: Path) -> None:
+    lyrics_root = (project_root / "data" / "audio" / "lyrics").resolve()
+    audio_root = (project_root / "data" / "audio").resolve()
+    is_lyrics_root = manifest.dataset_root == lyrics_root
+    is_lyrics_subset = manifest.dataset_root == audio_root and all(
+        sample.audio_path.startswith("lyrics/") for sample in manifest
+    )
+    if is_lyrics_root or is_lyrics_subset:
+        return
+
+    raise click.ClickException(
+        "The full STT manifest is not limited to collected lyrics. Expected dataset_root "
+        f"to be {lyrics_root}, or {audio_root} with every audio_path below lyrics/. "
+        "Rebuild it with `dominican-eaters stt manifest build data/audio/lyrics "
+        "--output-file data/manifests/stt-all.json`."
+    )
+
+
+@stt_group.command("launch")
+@click.option(
+    "--session",
+    "session_name",
+    default="stt-lyrics",
+    show_default=True,
+    help="tmux session to create or attach.",
+)
+@click.option(
+    "--output-dir",
+    type=click.Path(path_type=Path, file_okay=False),
+    default=Path("artifacts/stt-suite/t4-all-models"),
+    show_default=True,
+)
+def launch_stt_suite(session_name: str, output_dir: Path) -> None:
+    """Open tmux and auto-run every T4 model on collected lyrics."""
+
+    project_root = _project_root()
+    manifest_path = project_root / "data" / "manifests" / "stt-all.json"
+    if not manifest_path.is_file():
+        raise click.ClickException(
+            "The full lyrics STT manifest is missing at data/manifests/stt-all.json. "
+            "Build it first with `dominican-eaters stt manifest build data/audio/lyrics "
+            "--output-file data/manifests/stt-all.json`."
+        )
+    try:
+        manifest = load_manifest(manifest_path)
+    except ManifestValidationError as error:
+        raise click.ClickException(f"The full lyrics STT manifest is invalid: {error}") from error
+    if not manifest:
+        raise click.ClickException("The full lyrics STT manifest contains no audio samples.")
+    _require_collected_lyrics_manifest(manifest, project_root)
+
+    from dominican_eaters.tui import TUIUnavailableError, launch_tui_in_tmux
+
+    try:
+        launch_tui_in_tmux(
+            session_name=session_name,
+            initial_state={
+                "workflow": "stt-suite",
+                "dataset": "music",
+                "output": str(output_dir),
+                "device": "cuda",
+                "precision": "fp16",
+                "warmupRuns": "1",
+                "requestTimeout": "1800",
+                "verifyHashes": True,
+            },
+            auto_run=True,
+        )
+    except TUIUnavailableError as error:
+        raise click.ClickException(str(error)) from error
 
 
 @stt_group.group("manifest")

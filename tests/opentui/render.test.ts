@@ -18,5 +18,28 @@ test("suite rendering keeps dataset and progress visible",async()=>{
  assert.match(frame,/music \/ whisper-large/)
  assert.match(frame,/song-001/)
  assert.match(frame,/dominican-eaters stt suite/)
+ const preview=(tui as any).preview.content.chunks.map((chunk:{text:string})=>chunk.text).join("")
+ assert.match(preview,/--preset whisper-large-v3/)
+ screen.renderer.destroy()
+})
+test("bootstrap selects the lyrics suite and auto-runs through the startup hook",async()=>{
+ const screen=await createTestRenderer({width:140,height:44})
+ const tui=new DominicanEatersTui(screen.renderer,{
+  ...bootstrap,
+  initialState:{workflow:"stt-suite",dataset:"music",output:"artifacts/stt-suite/t4-all-models"},
+  autoRun:true,
+ })
+ let runs=0
+ tui.run=async()=>{runs+=1}
+ await tui.start()
+ await tui.start()
+ await screen.renderOnce()
+ const frame=screen.captureCharFrame()
+ assert.equal(runs,1)
+ assert.equal(tui.state.workflow,"stt-suite")
+ assert.equal(tui.state.dataset,"music")
+ assert.equal(tui.state.output,"artifacts/stt-suite/t4-all-models")
+ assert.match(frame,/Music \/ collected lyrics/)
+ assert.match(frame,/dominican-eaters stt suite/)
  screen.renderer.destroy()
 })

@@ -115,6 +115,29 @@ def write_cli_manifest(tmp_path: Path) -> Path:
     return manifest
 
 
+def write_launch_manifest(project_root: Path, dataset_root: Path, audio_paths: list[str]) -> Path:
+    manifest = project_root / "data" / "manifests" / "stt-all.json"
+    manifest.parent.mkdir(parents=True, exist_ok=True)
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "dataset_root": str(dataset_root),
+                "samples": [
+                    {
+                        "sample_id": f"sample-{index}",
+                        "audio_path": audio_path,
+                        "reference_text": "Hola, mundo.",
+                    }
+                    for index, audio_path in enumerate(audio_paths, start=1)
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    return manifest
+
+
 def test_help_and_version_do_not_import_model_dependencies() -> None:
     runner = CliRunner()
 
@@ -134,6 +157,105 @@ def test_bare_noninteractive_command_shows_help() -> None:
     assert result.exit_code == 0
     assert "Run without a subcommand" in result.output
     assert "tui" in result.output
+
+
+def test_stt_launch_opens_autorunning_lyrics_suite_in_tmux(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    write_launch_manifest(tmp_path, tmp_path / "data" / "audio" / "lyrics", ["sample.wav"])
+    launch_arguments: dict[str, object] = {}
+
+    def launch(**kwargs: object) -> None:
+        launch_arguments.update(kwargs)
+
+    monkeypatch.setattr("dominican_eaters.cli.app._project_root", lambda: tmp_path)
+    monkeypatch.setattr("dominican_eaters.tui.launch_tui_in_tmux", launch)
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "stt",
+            "launch",
+            "--session",
+            "research-stt",
+            "--output-dir",
+            "artifacts/custom-suite",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert launch_arguments == {
+        "session_name": "research-stt",
+        "initial_state": {
+            "workflow": "stt-suite",
+            "dataset": "music",
+            "output": "artifacts/custom-suite",
+            "device": "cuda",
+            "precision": "fp16",
+            "warmupRuns": "1",
+            "requestTimeout": "1800",
+            "verifyHashes": True,
+        },
+        "auto_run": True,
+    }
+
+
+def test_stt_launch_accepts_lyrics_subset_of_shared_audio_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    write_launch_manifest(
+        tmp_path,
+        tmp_path / "data" / "audio",
+        ["lyrics/one.wav", "lyrics/album/two.mp3"],
+    )
+    launched = False
+
+    def launch(**_kwargs: object) -> None:
+        nonlocal launched
+        launched = True
+
+    monkeypatch.setattr("dominican_eaters.cli.app._project_root", lambda: tmp_path)
+    monkeypatch.setattr("dominican_eaters.tui.launch_tui_in_tmux", launch)
+
+    result = CliRunner().invoke(main, ["stt", "launch"])
+
+    assert result.exit_code == 0, result.output
+    assert launched
+
+
+@pytest.mark.parametrize(
+    ("dataset_root", "audio_paths"),
+    [
+        ("data/audio/books", ["sample.wav"]),
+        ("data/audio", ["lyrics/one.wav", "books/two.wav"]),
+    ],
+)
+def test_stt_launch_rejects_manifest_that_is_not_limited_to_collected_lyrics(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    dataset_root: str,
+    audio_paths: list[str],
+) -> None:
+    write_launch_manifest(tmp_path, tmp_path / dataset_root, audio_paths)
+    monkeypatch.setattr("dominican_eaters.cli.app._project_root", lambda: tmp_path)
+
+    result = CliRunner().invoke(main, ["stt", "launch"])
+
+    assert result.exit_code != 0
+    assert "not limited to collected lyrics" in result.output
+    assert "stt manifest build data/audio/lyrics" in result.output
+
+
+def test_stt_launch_requires_full_lyrics_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("dominican_eaters.cli.app._project_root", lambda: tmp_path)
+
+    result = CliRunner().invoke(main, ["stt", "launch"])
+
+    assert result.exit_code != 0
+    assert "full lyrics STT manifest is missing" in result.output
+    assert "stt manifest build" in result.output
 
 
 def test_stt_model_catalog_lists_all_presets_and_explains_blocked_models() -> None:

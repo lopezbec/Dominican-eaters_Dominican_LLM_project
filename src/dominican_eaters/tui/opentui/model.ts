@@ -36,6 +36,8 @@ export interface Bootstrap {
   presets: Preset[]
   datasets?: Dataset[]
   suitePresets?: string[]
+  initialState?: Partial<FormState>
+  autoRun?: boolean
 }
 
 export const defaultDatasets: Dataset[] = [
@@ -114,25 +116,40 @@ export interface FormState {
   timestamps: boolean
 }
 
-export const initialState = (): FormState => ({
-  workflow: "config-validate",
-  dataset: "all",
-  source: sources["config-validate"],
-  output: "",
-  dataRoot: "",
-  artifactsRoot: "",
-  preset: "whisper-large-v3",
-  device: "cuda",
-  precision: "fp16",
-  workerPython: "",
-  warmupRuns: "1",
-  requestTimeout: "1800",
-  shortAudioPolicy: "reject",
-  minimumAudioSeconds: "0.1",
-  force: false,
-  verifyHashes: true,
-  timestamps: false,
-})
+export function initialState(overrides: Partial<FormState> = {}): FormState {
+  const state: FormState = {
+    workflow: "config-validate",
+    dataset: "all",
+    source: sources["config-validate"],
+    output: "",
+    dataRoot: "",
+    artifactsRoot: "",
+    preset: "whisper-large-v3",
+    device: "cuda",
+    precision: "fp16",
+    workerPython: "",
+    warmupRuns: "1",
+    requestTimeout: "1800",
+    shortAudioPolicy: "reject",
+    minimumAudioSeconds: "0.1",
+    force: false,
+    verifyHashes: true,
+    timestamps: false,
+  }
+
+  const workflow = overrides.workflow
+  if (workflows.some((candidate) => candidate.value === workflow)) {
+    changeWorkflow(state, workflow as Workflow)
+  }
+  for (const [key, value] of Object.entries(overrides)) {
+    if (key === "workflow" || !(key in state)) continue
+    const stateKey = key as keyof FormState
+    if (typeof value === typeof state[stateKey]) {
+      ;(state as unknown as Record<string, unknown>)[key] = value
+    }
+  }
+  return state
+}
 
 export const hasOutput = (workflow: Workflow) => outputs[workflow] !== undefined
 export const isStt = (workflow: Workflow) =>
@@ -176,6 +193,7 @@ export function buildArgs(
   state: FormState,
   presets: Preset[],
   datasets: Dataset[] = defaultDatasets,
+  suitePresetIds: readonly string[] = t4SuitePresetIds,
 ): string[] {
   if (state.workflow === "stt-suite") {
     const selected = selectedDatasets(state, datasets)
@@ -183,11 +201,14 @@ export function buildArgs(
     if (!/^\d+$/.test(state.warmupRuns.trim())) {
       throw Error("Warmup runs must be a nonnegative integer.")
     }
-    const missingWorkers = presets.filter(
-      (preset) =>
-        t4SuitePresetIds.includes(preset.id as (typeof t4SuitePresetIds)[number]) &&
-        preset.execution === "worker" &&
-        !preset.workerPython.trim(),
+    const suitePresets = [...new Set(suitePresetIds)]
+      .map((id) => presets.find((preset) => preset.id === id))
+      .filter((preset): preset is Preset => preset !== undefined && preset.runnable)
+    if (!suitePresets.length) {
+      throw Error("No runnable speech-to-text model presets are configured.")
+    }
+    const missingWorkers = suitePresets.filter(
+      (preset) => preset.execution === "worker" && !preset.workerPython.trim(),
     )
     if (missingWorkers.length) {
       throw Error(
@@ -201,6 +222,7 @@ export function buildArgs(
         `${dataset.id}=${need(dataset.manifest, `Dataset ${dataset.id} has no manifest.`)}`,
       )
     }
+    for (const preset of suitePresets) args.push("--preset", preset.id)
     args.push(
       "--output-dir",
       need(state.output, "Select an output directory."),
@@ -318,9 +340,12 @@ export function commandPreview(
   state: FormState,
   presets: Preset[],
   datasets: Dataset[] = defaultDatasets,
+  suitePresetIds: readonly string[] = t4SuitePresetIds,
 ) {
   try {
-    return ["dominican-eaters", ...buildArgs(state, presets, datasets)].map(quote).join(" ")
+    return ["dominican-eaters", ...buildArgs(state, presets, datasets, suitePresetIds)]
+      .map(quote)
+      .join(" ")
   } catch (error) {
     return `Complete the form: ${(error as Error).message}`
   }
