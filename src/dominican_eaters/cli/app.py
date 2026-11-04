@@ -62,7 +62,10 @@ from dominican_eaters.evaluation.asr.suite import (
 )
 from dominican_eaters.speech.asr import ASRBackend, WorkerProcessError
 from dominican_eaters.speech.asr.discovery import discover_worker_python
-from dominican_eaters.speech.asr.environment import preflight_asr_environment
+from dominican_eaters.speech.asr.environment import (
+    DEFAULT_ENVIRONMENT_PROBE_TIMEOUT_SECONDS,
+    preflight_asr_environment,
+)
 from dominican_eaters.speech.asr.registry import (
     CURRENT_BACKEND_SPECS,
     MODEL_PRESETS,
@@ -1119,6 +1122,7 @@ def _preflight_suite_models(
             backend=preset.backend,
             worker_python=worker_python,
             requested_device=device,
+            timeout_seconds=DEFAULT_ENVIRONMENT_PROBE_TIMEOUT_SECONDS,
         )
         if not environment.ready:
             missing = ", ".join(

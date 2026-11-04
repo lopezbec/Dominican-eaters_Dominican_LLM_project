@@ -744,7 +744,12 @@ def test_stt_suite_checks_every_environment_before_first_model_load(
     manifest = write_cli_manifest(tmp_path)
     backend = CliFakeBackend(WhisperSettings(model="large-v3"))
 
-    def environment_report(*, backend: str, **_kwargs: object) -> BackendEnvironmentReport:
+    environment_timeouts: list[float] = []
+
+    def environment_report(
+        *, backend: str, timeout_seconds: float, **_kwargs: object
+    ) -> BackendEnvironmentReport:
+        environment_timeouts.append(timeout_seconds)
         ready = backend == "whisper"
         return BackendEnvironmentReport(
             backend=backend,
@@ -780,12 +785,15 @@ def test_stt_suite_checks_every_environment_before_first_model_load(
             f"nemo-worker={sys.executable}",
             "--output-dir",
             str(output),
+            "--request-timeout",
+            "30",
         ],
     )
 
     assert result.exit_code != 0
     assert "failed before processing audio" in result.output
     assert "parakeet-tdt-0.6b-v3" in result.output
+    assert environment_timeouts == [120.0, 120.0]
     assert backend.calls == []
     assert not (output / "suite.json").exists()
 

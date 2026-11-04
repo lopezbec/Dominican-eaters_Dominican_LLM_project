@@ -14,6 +14,7 @@ from typing import Literal
 from .registry import BACKEND_SPECS, BackendName, RuntimeSpec
 
 EnvironmentCheckKind = Literal["interpreter", "module", "executable", "cuda", "probe"]
+DEFAULT_ENVIRONMENT_PROBE_TIMEOUT_SECONDS = 120.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,7 +71,7 @@ def preflight_asr_environment(
     backend: BackendName,
     worker_python: Path | None,
     requested_device: str,
-    timeout_seconds: float = 15.0,
+    timeout_seconds: float = DEFAULT_ENVIRONMENT_PROBE_TIMEOUT_SECONDS,
 ) -> BackendEnvironmentReport:
     """Check a backend's registered runtime without loading model weights."""
 
@@ -152,7 +153,19 @@ def _probe_environment(
             text=True,
             timeout=timeout_seconds,
         )
-    except (OSError, subprocess.TimeoutExpired) as error:
+    except subprocess.TimeoutExpired:
+        checks.append(
+            EnvironmentCheck(
+                "probe",
+                "python",
+                False,
+                f"Python environment probe timed out after {timeout_seconds:g} seconds",
+            )
+        )
+        return BackendEnvironmentReport(
+            backend, selected_interpreter, requested_device, None, tuple(checks)
+        )
+    except OSError as error:
         checks.append(EnvironmentCheck("probe", "python", False, str(error)))
         return BackendEnvironmentReport(
             backend, selected_interpreter, requested_device, None, tuple(checks)
@@ -203,6 +216,7 @@ def _probe_environment(
 
 __all__ = [
     "BackendEnvironmentReport",
+    "DEFAULT_ENVIRONMENT_PROBE_TIMEOUT_SECONDS",
     "EnvironmentCheck",
     "EnvironmentCheckKind",
     "preflight_asr_environment",

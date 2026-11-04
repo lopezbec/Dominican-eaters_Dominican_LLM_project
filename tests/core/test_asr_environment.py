@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from subprocess import CompletedProcess
+from subprocess import CompletedProcess, TimeoutExpired
 
 import pytest
 
@@ -47,6 +47,60 @@ def test_worker_preflight_uses_exact_virtualenv_symlink(
         ("module", "torch"),
         ("cuda", "torch.cuda"),
     ]
+
+
+def test_environment_probe_allows_slow_cold_runtime_imports_by_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    interpreter = tmp_path / "worker-python"
+    interpreter.write_text("#!/bin/sh\n")
+    interpreter.chmod(0o755)
+    received_timeout: list[float] = []
+
+    def run(argv: list[str], **kwargs: object) -> CompletedProcess[str]:
+        received_timeout.append(float(kwargs["timeout"]))
+        return CompletedProcess(
+            argv,
+            0,
+            '{"python_version":"3.12.8","modules":'
+            '{"dominican_eaters_qwen3_asr":true,"transformers":true,'
+            '"torch":true,"soundfile":true},"cuda_available":true}',
+            "",
+        )
+
+    monkeypatch.setattr("dominican_eaters.speech.asr.environment.subprocess.run", run)
+
+    report = preflight_asr_environment(
+        backend="qwen3_asr",
+        worker_python=interpreter,
+        requested_device="cuda",
+    )
+
+    assert report.ready
+    assert received_timeout == [120.0]
+
+
+def test_environment_probe_timeout_omits_inline_script_from_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    interpreter = tmp_path / "worker-python"
+    interpreter.write_text("#!/bin/sh\n")
+    interpreter.chmod(0o755)
+
+    def run(argv: list[str], **kwargs: object) -> CompletedProcess[str]:
+        raise TimeoutExpired(argv, float(kwargs["timeout"]))
+
+    monkeypatch.setattr("dominican_eaters.speech.asr.environment.subprocess.run", run)
+
+    report = preflight_asr_environment(
+        backend="qwen3_asr",
+        worker_python=interpreter,
+        requested_device="cuda",
+    )
+
+    assert not report.ready
+    assert report.checks[-1].detail == "Python environment probe timed out after 120 seconds"
+    assert "import importlib" not in report.checks[-1].detail
 
 
 def test_inline_preflight_uses_current_python_and_checks_executables(
