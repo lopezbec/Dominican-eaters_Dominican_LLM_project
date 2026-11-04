@@ -60,6 +60,8 @@ class FakeModel:
         self.precisions: list[str] = []
         self.calls: list[tuple[list[str], dict[str, object]]] = []
         self.eval_calls = 0
+        self.attention_changes: list[tuple[str, list[int]]] = []
+        self.subsampling_chunking_factors: list[int] = []
 
     def transcribe(self, audio: list[str], **options: object) -> list[object]:
         self.calls.append((audio, options))
@@ -84,6 +86,14 @@ class FakeModel:
     def float(self) -> FakeModel:
         self.precisions.append("fp32")
         return self
+
+    def change_attention_model(
+        self, *, self_attention_model: str, att_context_size: list[int]
+    ) -> None:
+        self.attention_changes.append((self_attention_model, att_context_size))
+
+    def change_subsampling_conv_chunking_factor(self, factor: int) -> None:
+        self.subsampling_chunking_factors.append(factor)
 
 
 class FakeFactory:
@@ -148,6 +158,8 @@ def test_parakeet_lifecycle_and_primitive_result(tmp_path: Path) -> None:
     assert model.devices == ["cpu"]
     assert model.precisions == ["fp32"]
     assert model.eval_calls == 1
+    assert model.attention_changes == [("rel_pos_local_attn", [256, 256])]
+    assert model.subsampling_chunking_factors == [1]
     assert model.calls[0][1] == {"timestamps": True}
     assert model.calls[1][1] == {"timestamps": True}
     assert result.text == "Hola, mi gente"
@@ -172,6 +184,7 @@ def test_canary_always_sets_explicit_spanish_source_and_target(tmp_path: Path) -
         "timestamps": False,
         "source_lang": "es",
         "target_lang": "es",
+        "batch_size": 1,
     }
     assert result.language == "es"
     assert result.gpu_peak_allocated_bytes == 100
@@ -180,6 +193,17 @@ def test_canary_always_sets_explicit_spanish_source_and_target(tmp_path: Path) -
     assert torch.cuda.synchronize_calls == 1
     assert backend.descriptor.options["source_lang"] == "es"
     assert backend.descriptor.options["target_lang"] == "es"
+    assert backend.descriptor.options["long_form_strategy"] == "dynamic-overlap-chunking"
+    assert backend.descriptor.options["batch_size"] == 1
+
+
+def test_parakeet_requires_long_form_model_apis(monkeypatch: pytest.MonkeyPatch) -> None:
+    bundle, model, _factory, _torch = runtime()
+    monkeypatch.setattr(model, "change_attention_model", None)
+    backend = ParakeetBackend(NeMoSettings(model="model"), runtime_loader=lambda: bundle)
+
+    with pytest.raises(RuntimeError, match="change_attention_model"):
+        backend.load()
 
 
 def test_short_audio_reject_policy_is_strict_and_configurable(tmp_path: Path) -> None:

@@ -21,6 +21,10 @@ class NeMoDependencyError(ImportError):
     """Raised when this isolated environment lacks NeMo runtime dependencies."""
 
 
+class NeMoCompatibilityError(RuntimeError):
+    """Raised when the installed NeMo runtime lacks a required model API."""
+
+
 class ShortAudioError(ValueError):
     """Raised when a sample violates the configured minimum-duration policy."""
 
@@ -183,6 +187,7 @@ class NeMoBackend:
             else self.settings.precision
         )
         model = runtime.nemo_asr.models.ASRModel.from_pretrained(model_name=self.settings.model)
+        self._configure_model(model)
         model = model.to(device)
         model = self._apply_precision(model, precision)
         model.eval()
@@ -268,6 +273,9 @@ class NeMoBackend:
             return model.bfloat16()
         return model.float()
 
+    def _configure_model(self, model: _NeMoModel) -> None:
+        """Apply backend-specific model configuration before device and dtype conversion."""
+
     def _enforce_short_audio_policy(self, duration_seconds: float | None) -> None:
         if self.settings.short_audio_policy is ShortAudioPolicy.ALLOW:
             return
@@ -293,6 +301,10 @@ class NeMoBackend:
 class ParakeetBackend(NeMoBackend):
     backend_name = "parakeet"
 
+    _ATTENTION_MODEL: ClassVar[str] = "rel_pos_local_attn"
+    _ATTENTION_CONTEXT: ClassVar[tuple[int, int]] = (256, 256)
+    _SUBSAMPLING_CHUNKING_FACTOR: ClassVar[int] = 1
+
     def __init__(
         self,
         settings: NeMoSettings,
@@ -300,6 +312,40 @@ class ParakeetBackend(NeMoBackend):
         runtime_loader: RuntimeLoader = load_nemo_runtime,
     ) -> None:
         super().__init__(settings, runtime_loader)
+
+    def _configure_model(self, model: _NeMoModel) -> None:
+        change_attention = getattr(model, "change_attention_model", None)
+        change_subsampling = getattr(model, "change_subsampling_conv_chunking_factor", None)
+        missing = [
+            name
+            for name, method in (
+                ("change_attention_model", change_attention),
+                ("change_subsampling_conv_chunking_factor", change_subsampling),
+            )
+            if not callable(method)
+        ]
+        if missing:
+            raise NeMoCompatibilityError(
+                "Parakeet long-form inference requires NeMo model APIs: "
+                + ", ".join(missing)
+            )
+        cast(Callable[..., object], change_attention)(
+            self_attention_model=self._ATTENTION_MODEL,
+            att_context_size=list(self._ATTENTION_CONTEXT),
+        )
+        cast(Callable[[int], object], change_subsampling)(self._SUBSAMPLING_CHUNKING_FACTOR)
+
+    def _descriptor_options(self) -> dict[str, object]:
+        options = super()._descriptor_options()
+        options.update(
+            {
+                "long_form_strategy": "local-attention",
+                "self_attention_model": self._ATTENTION_MODEL,
+                "attention_context_size": list(self._ATTENTION_CONTEXT),
+                "subsampling_conv_chunking_factor": self._SUBSAMPLING_CHUNKING_FACTOR,
+            }
+        )
+        return options
 
 
 class CanaryBackend(NeMoBackend):
@@ -315,12 +361,19 @@ class CanaryBackend(NeMoBackend):
 
     def _descriptor_options(self) -> dict[str, object]:
         options = super()._descriptor_options()
-        options.update({"source_lang": "es", "target_lang": "es"})
+        options.update(
+            {
+                "source_lang": "es",
+                "target_lang": "es",
+                "long_form_strategy": "dynamic-overlap-chunking",
+                "batch_size": 1,
+            }
+        )
         return options
 
     def _transcribe_options(self) -> dict[str, object]:
         options = super()._transcribe_options()
-        options.update({"source_lang": "es", "target_lang": "es"})
+        options.update({"source_lang": "es", "target_lang": "es", "batch_size": 1})
         return options
 
 
