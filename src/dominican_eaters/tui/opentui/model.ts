@@ -393,6 +393,7 @@ export interface SuiteEvent {
   elapsed_seconds?: number | null
   audio_seconds?: number | null
   error_type?: string | null
+  error_code?: string | null
   message?: string | null
 }
 
@@ -408,7 +409,10 @@ export interface ModelProgress {
   failed: number
   total: number
   activeSample: string
-  elapsedSeconds: number
+  elapsedSeconds: number | null
+  startedAtMilliseconds: number | null
+  failureType: string
+  failureMessage: string
 }
 
 export interface SampleProgress {
@@ -421,6 +425,8 @@ export interface SampleProgress {
   total: number
   status: string
   elapsedSeconds: number
+  errorType: string
+  errorCode: string
   message: string
 }
 
@@ -454,7 +460,10 @@ export function seedSuiteProgress(datasets: Dataset[], presets: Preset[]): Suite
         failed: 0,
         total: dataset.sampleCount ?? 0,
         activeSample: "",
-        elapsedSeconds: 0,
+        elapsedSeconds: null,
+        startedAtMilliseconds: null,
+        failureType: "",
+        failureMessage: "",
       })
     }
   }
@@ -479,7 +488,11 @@ export function parseSuiteEvent(line: string): SuiteEvent | null {
   }
 }
 
-export function applySuiteEvent(progress: SuiteProgress, event: SuiteEvent): SuiteProgress {
+export function applySuiteEvent(
+  progress: SuiteProgress,
+  event: SuiteEvent,
+  nowMilliseconds = Date.now(),
+): SuiteProgress {
   const dataset = textValue(event.dataset_id) || textValue(event.dataset) || "dataset"
   const preset = textValue(event.preset_id) || textValue(event.preset) || "model"
   const modelKey = `${dataset}::${preset}`
@@ -498,7 +511,10 @@ export function applySuiteEvent(progress: SuiteProgress, event: SuiteEvent): Sui
         failed: 0,
         total: numberValue(event.total),
         activeSample: "",
-        elapsedSeconds: 0,
+        elapsedSeconds: null,
+        startedAtMilliseconds: null,
+        failureType: "",
+        failureMessage: "",
       }
   model.model = textValue(event.model) || model.model
   model.phase = textValue(event.phase) || model.phase
@@ -510,11 +526,14 @@ export function applySuiteEvent(progress: SuiteProgress, event: SuiteEvent): Sui
     model.completed = numberValue(event.completed)
     model.succeeded = numberValue(event.succeeded)
     model.failed = numberValue(event.failed)
-    model.elapsedSeconds = numberValue(event.elapsed_seconds) || model.elapsedSeconds
   }
 
   if (["run_started", "run_resumed", "task_started"].includes(event.event)) {
     model.status = "running"
+    if (model.startedAtMilliseconds == null) {
+      model.startedAtMilliseconds = nowMilliseconds
+      model.elapsedSeconds = 0
+    }
     if (event.event === "task_started" && model.phase === "queued") model.phase = "preflight"
   } else if (["phase_started", "phase_changed"].includes(event.event)) {
     model.status = "running"
@@ -532,6 +551,11 @@ export function applySuiteEvent(progress: SuiteProgress, event: SuiteEvent): Sui
   } else if (event.event === "task_skipped") {
     model.status = textValue(event.task_status) || "complete"
     model.phase = "resumed"
+    model.succeeded = numberValue(event.succeeded)
+    model.failed = numberValue(event.failed)
+    model.total = numberValue(event.total) || model.total
+    model.completed = model.succeeded + model.failed
+    model.activeSample = ""
   } else if (event.event === "task_completed") {
     model.status = textValue(event.task_status) || "complete"
     model.succeeded = numberValue(event.succeeded)
@@ -539,12 +563,18 @@ export function applySuiteEvent(progress: SuiteProgress, event: SuiteEvent): Sui
     model.total = numberValue(event.total) || model.total
     model.completed = model.succeeded + model.failed
     model.activeSample = ""
+    model.failureType = textValue(event.error_type)
+    model.failureMessage = textValue(event.message)
   } else if (event.event === "run_finished") {
     model.status = textValue(event.run_status) || textValue(event.status) || "complete"
     model.activeSample = ""
   } else if (event.event === "run_interrupted") {
     model.status = "interrupted"
     model.activeSample = ""
+  }
+
+  if (model.startedAtMilliseconds != null) {
+    model.elapsedSeconds = Math.max(0, (nowMilliseconds - model.startedAtMilliseconds) / 1000)
   }
 
   const models = new Map(progress.models)
@@ -563,6 +593,8 @@ export function applySuiteEvent(progress: SuiteProgress, event: SuiteEvent): Sui
       total: numberValue(event.total),
       status: event.event === "sample_started" ? "running" : textValue(event.status) || "ok",
       elapsedSeconds: numberValue(event.elapsed_seconds),
+      errorType: textValue(event.error_type),
+      errorCode: textValue(event.error_code),
       message: textValue(event.message) || textValue(event.error_type),
     }
     samples.delete(sample.key)
@@ -584,7 +616,8 @@ export function applySuiteEvent(progress: SuiteProgress, event: SuiteEvent): Sui
 
 const compact = (value: string, width: number) =>
   value.length <= width ? value.padEnd(width) : `${value.slice(0, Math.max(1, width - 1))}…`
-const duration = (seconds: number) => {
+const duration = (seconds: number | null) => {
+  if (seconds == null) return "--:--"
   const value = Math.max(0, Math.floor(seconds))
   return `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`
 }
@@ -600,7 +633,66 @@ export function renderModelProgress(progress: SuiteProgress, width = 100): strin
     )
     return `${compact(label, nameWidth)}  ${compact(terminal ? model.status : model.phase || model.status, 13)}  ${count}  ${String(model.failed).padStart(4)}  ${duration(model.elapsedSeconds)}`
   })
-  return [header, ...(rows.length ? rows : ["Waiting for the pipeline to start..."])].join("\n")
+  const failures = dominantFailures(progress)
+  const failureRows = failures.map((failure) => {
+    const label = compact(`${failure.dataset} / ${failure.preset}`, nameWidth)
+    const detailWidth = Math.max(20, width - nameWidth - 10)
+    return `${label}  ${String(failure.count).padStart(4)}x  ${compact(failure.detail, detailWidth).trimEnd()}`
+  })
+  return [
+    header,
+    ...(rows.length ? rows : ["Waiting for the pipeline to start..."]),
+    ...(failureRows.length ? ["", "DOMINANT FAILURES", ...failureRows] : []),
+  ].join("\n")
+}
+
+interface FailureSummary {
+  dataset: string
+  preset: string
+  count: number
+  detail: string
+}
+
+function dominantFailures(progress: SuiteProgress): FailureSummary[] {
+  const grouped = new Map<string, Map<string, FailureSummary>>()
+  for (const sample of progress.samples.values()) {
+    if (sample.status !== "failed") continue
+    const modelKey = `${sample.dataset}::${sample.preset}`
+    const detail = [sample.errorCode || sample.errorType, sample.message]
+      .filter((part, index, all) => part && all.indexOf(part) === index)
+      .join(": ") || "Unknown sample failure"
+    const failures = grouped.get(modelKey) ?? new Map<string, FailureSummary>()
+    const current = failures.get(detail)
+    failures.set(detail, {
+      dataset: sample.dataset,
+      preset: sample.preset,
+      count: (current?.count ?? 0) + 1,
+      detail,
+    })
+    grouped.set(modelKey, failures)
+  }
+  const summaries: FailureSummary[] = []
+  for (const model of progress.models.values()) {
+    const failures = grouped.get(model.key)
+    const dominant = failures
+      ? [...failures.values()].sort(
+          (left, right) => right.count - left.count || left.detail.localeCompare(right.detail),
+        )[0]
+      : undefined
+    if (dominant) {
+      summaries.push(dominant)
+    } else if (model.failureMessage || model.failureType) {
+      summaries.push({
+        dataset: model.dataset,
+        preset: model.preset,
+        count: Math.max(1, model.failed),
+        detail: [model.failureType, model.failureMessage]
+          .filter((part, index, all) => part && all.indexOf(part) === index)
+          .join(": "),
+      })
+    }
+  }
+  return summaries
 }
 
 export function renderSampleProgress(progress: SuiteProgress, width = 100): string {
@@ -608,11 +700,17 @@ export function renderSampleProgress(progress: SuiteProgress, width = 100): stri
   const presetWidth = Math.max(16, Math.min(28, width - 76))
   const sampleWidth = Math.max(18, Math.min(42, width - presetWidth - 52))
   const header = `${compact("DATASET", 12)}  ${compact("MODEL", presetWidth)}  ${compact("SAMPLE", sampleWidth)}  POSITION     STATUS    TIME`
+  const detailedFailures = new Set<string>()
   const rows = [...progress.samples.values()]
     .reverse()
     .map((sample) => {
       const position = sample.total ? `${sample.index}/${sample.total}` : String(sample.index || "-")
-      const detail = sample.message ? ` · ${sample.message}` : ""
+      const failureKey = `${sample.dataset}::${sample.preset}::${sample.errorCode || sample.errorType}::${sample.message}`
+      const showDetail =
+        Boolean(sample.message) &&
+        (sample.status !== "failed" || !detailedFailures.has(failureKey))
+      if (sample.status === "failed") detailedFailures.add(failureKey)
+      const detail = showDetail ? ` · ${sample.message}` : ""
       return `${compact(sample.dataset, 12)}  ${compact(sample.preset, presetWidth)}  ${compact(sample.sampleId, sampleWidth)}  ${position.padEnd(11)}  ${sample.status.padEnd(8)}  ${duration(sample.elapsedSeconds)}${detail}`
     })
   return [header, ...rows].join("\n")

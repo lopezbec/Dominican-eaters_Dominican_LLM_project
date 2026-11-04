@@ -67,6 +67,28 @@ test("structured progress events update model and sample rows",()=>{
  assert.match(renderSampleProgress(progress),/whisper-large-v3/)
  assert.match(renderSampleProgress(progress),/decode failed/)
 })
+test("model timing uses task wall time instead of the last sample duration",()=>{
+ let progress=seedSuiteProgress([datasets[0]!],[presets[0]!])
+ progress=applySuiteEvent(progress,{event:"task_started",dataset_id:"music",preset:"whisper-large-v3"},1_000)
+ progress=applySuiteEvent(progress,{event:"sample_completed",dataset_id:"music",preset:"whisper-large-v3",index:1,total:558,sample_id:"song-001",status:"ok",elapsed_seconds:2.5},11_000)
+ progress=applySuiteEvent(progress,{event:"task_completed",dataset_id:"music",preset:"whisper-large-v3",succeeded:558,failed:0,total:558,task_status:"complete"},66_000)
+ const model=progress.models.get("music::whisper-large-v3")
+ assert.equal(model?.elapsedSeconds,65)
+ assert.match(renderModelProgress(progress),/01:05/)
+})
+test("dominant failures are counted once and repeated sample details are collapsed",()=>{
+ let progress=seedSuiteProgress([datasets[0]!],[presets[0]!])
+ for(let index=1;index<=3;index++){
+  progress=applySuiteEvent(progress,{event:"sample_completed",dataset_id:"music",preset:"whisper-large-v3",index,total:3,sample_id:`song-${index}`,status:"failed",error_type:"WorkerRemoteError",error_code:"dependency_missing",message:"TorchCodec is required"})
+ }
+ const models=renderModelProgress(progress,140)
+ assert.match(models,/DOMINANT FAILURES/)
+ assert.match(models,/3x\s+dependency_missing: TorchCodec is required/)
+ const samples=renderSampleProgress(progress,140)
+ assert.equal(samples.match(/TorchCodec is required/g)?.length,1)
+ assert.match(samples,/song-1/)
+ assert.match(samples,/song-3/)
+})
 test("sample progress keeps every dataset row instead of a recent-only window",()=>{
  let progress=seedSuiteProgress([datasets[0]!],[presets[0]!])
  for(let index=1;index<=12;index++){
@@ -90,4 +112,15 @@ test("suite task boundaries preserve per-sample counts",()=>{
  const model=progress.models.get("music::whisper-large-v3")
  assert.equal(model?.completed,558)
  assert.equal(model?.status,"partial")
+})
+test("resumed suite tasks restore their persisted sample counts",()=>{
+ let progress=seedSuiteProgress([datasets[0]!],[presets[0]!])
+ progress=applySuiteEvent(progress,{event:"task_skipped",dataset_id:"music",preset:"whisper-large-v3",succeeded:557,failed:0,total:557,task_status:"complete"})
+ const model=progress.models.get("music::whisper-large-v3")
+ assert.equal(model?.completed,557)
+ assert.equal(model?.succeeded,557)
+ assert.equal(model?.failed,0)
+ assert.equal(model?.total,557)
+ assert.equal(model?.status,"complete")
+ assert.equal(model?.phase,"resumed")
 })
