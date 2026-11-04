@@ -96,6 +96,8 @@ def test_runtime_specs_capture_isolation_and_compatibility_fields() -> None:
     assert nemo.interpreter_env_var == "DOMINICAN_EATERS_NEMO_PYTHON"
     assert granite.interpreter_env_var == "DOMINICAN_EATERS_GRANITE_PYTHON"
     assert "transformers" in granite.required_modules
+    assert "soundfile" in granite.required_modules
+    assert "torchaudio" not in granite.required_modules
 
 
 def test_backend_compatibility_properties_are_derived_from_runtime() -> None:

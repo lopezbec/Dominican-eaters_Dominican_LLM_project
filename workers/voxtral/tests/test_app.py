@@ -103,6 +103,7 @@ def install_fake_runtime(monkeypatch: pytest.MonkeyPatch) -> list[str]:
             AutoProcessor=object(), VoxtralForConditionalGeneration=ModelFactory
         ),
         "torch": SimpleNamespace(cuda=FakeCudaInspector()),
+        "mistral_common": SimpleNamespace(),
         "soundfile": SimpleNamespace(),
     }
     monkeypatch.setattr(app_module.importlib, "import_module", modules.__getitem__)
@@ -143,6 +144,7 @@ def test_preflight_imports_runtime_without_loading_weights(
         "platform": app_module.platform.platform(),
         "transformers_version": "fixture-1",
         "torch_version": "fixture-1",
+        "mistral_common_version": "fixture-1",
         "soundfile_version": "fixture-1",
         "cuda_available": True,
         "cuda_device_count": 1,

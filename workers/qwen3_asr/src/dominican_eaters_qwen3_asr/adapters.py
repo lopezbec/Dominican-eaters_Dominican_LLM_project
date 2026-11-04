@@ -16,6 +16,9 @@ from typing import Any, Literal, Protocol, cast
 
 from dominican_eaters.speech.asr import BackendDescriptor, Transcript
 
+TARGET_SAMPLE_RATE = 16_000
+DEFAULT_MAX_NEW_TOKENS = 1_024
+
 
 class Qwen3ASRDependencyError(ImportError):
     """Raised when the isolated environment lacks its runtime dependencies."""
@@ -41,6 +44,10 @@ class _TorchRuntime(Protocol):
     float32: object
 
     def inference_mode(self) -> AbstractContextManager[None]: ...
+
+
+class _SoundFileRuntime(Protocol):
+    def read(self, file: str, *, dtype: str, always_2d: bool) -> tuple[Any, int]: ...
 
 
 class _QwenModel(Protocol):
@@ -73,6 +80,14 @@ class Qwen3RuntimeBundle:
     torch: _TorchRuntime
     model_factory: _ModelFactory
     processor_factory: _ProcessorFactory
+    soundfile: _SoundFileRuntime
+
+
+@dataclass(frozen=True, slots=True)
+class _DecodedAudio:
+    waveform: Any
+    sample_rate: int
+    duration_seconds: float
 
 
 RuntimeLoader = Callable[[], Qwen3RuntimeBundle]
@@ -84,6 +99,7 @@ def load_qwen3_runtime() -> Qwen3RuntimeBundle:
     try:
         torch = importlib.import_module("torch")
         transformers = importlib.import_module("transformers")
+        soundfile = importlib.import_module("soundfile")
     except ImportError as error:
         raise Qwen3ASRDependencyError(
             "Qwen3-ASR requires the isolated workers/qwen3_asr environment"
@@ -92,6 +108,7 @@ def load_qwen3_runtime() -> Qwen3RuntimeBundle:
         torch=cast(_TorchRuntime, torch),
         model_factory=cast(_ModelFactory, transformers.AutoModelForMultimodalLM),
         processor_factory=cast(_ProcessorFactory, transformers.AutoProcessor),
+        soundfile=cast(_SoundFileRuntime, soundfile),
     )
 
 
@@ -102,7 +119,7 @@ class Qwen3Settings:
     language: Literal["es", "auto"] = "es"
     device: Literal["auto", "cpu", "cuda"] = "auto"
     precision: Literal["auto", "fp32", "fp16"] = "auto"
-    max_new_tokens: int = 256
+    max_new_tokens: int = DEFAULT_MAX_NEW_TOKENS
 
     def __post_init__(self) -> None:
         if not self.model.strip():
@@ -214,10 +231,16 @@ class Qwen3ASRBackend:
             raise ValueError("audio_path must be absolute")
         if not audio_path.is_file():
             raise FileNotFoundError(f"Audio file does not exist: {audio_path}")
-        duration = duration_seconds if duration_seconds is not None else _wav_duration(audio_path)
+        decoded_audio = _decode_normalized_wav(runtime.soundfile, audio_path)
+        duration = (
+            duration_seconds if duration_seconds is not None else decoded_audio.duration_seconds
+        )
         if self._resolved_device == "cuda":
             runtime.torch.cuda.reset_peak_memory_stats()
-        request: dict[str, object] = {"audio": str(audio_path)}
+        request: dict[str, object] = {
+            "audio": decoded_audio.waveform,
+            "audio_kwargs": {"sampling_rate": decoded_audio.sample_rate},
+        }
         if self.settings.language == "es":
             request["language"] = "Spanish"
         inputs = processor.apply_transcription_request(**request).to(model.device, model.dtype)
@@ -251,6 +274,9 @@ class Qwen3ASRBackend:
                 "language_mode": "forced" if self.settings.language == "es" else "detected",
                 "batch_size": 1,
                 "timestamps": False,
+                "audio_decoder": "soundfile",
+                "audio_sample_rate": decoded_audio.sample_rate,
+                "audio_channels": 1,
             },
         )
 
@@ -268,22 +294,37 @@ class Qwen3ASRBackend:
         return self._model, self._processor, self._runtime
 
     def _capture_versions(self) -> None:
-        for package in ("torch", "transformers"):
+        for package in ("torch", "transformers", "soundfile"):
             try:
                 self._runtime_versions[package] = importlib.metadata.version(package)
             except importlib.metadata.PackageNotFoundError:
                 self._runtime_versions[package] = "unknown"
 
 
-def _wav_duration(path: Path) -> float | None:
+def _decode_normalized_wav(soundfile: _SoundFileRuntime, path: Path) -> _DecodedAudio:
     if path.suffix.lower() != ".wav":
-        return None
+        raise ValueError(f"Qwen3-ASR requires a normalized WAV input: {path}")
     try:
-        with wave.open(str(path), "rb") as audio:
-            rate = audio.getframerate()
-            return audio.getnframes() / rate if rate > 0 else None
-    except (EOFError, wave.Error):
-        return None
+        frames, sample_rate = soundfile.read(str(path), dtype="float32", always_2d=True)
+    except Exception as error:
+        raise ValueError(f"Unable to decode normalized WAV {path}: {error}") from error
+    shape = getattr(frames, "shape", None)
+    if not isinstance(shape, tuple) or len(shape) != 2:
+        raise ValueError(f"Decoded WAV must have a frames-by-channels shape: {path}")
+    frame_count, channel_count = shape
+    if frame_count <= 0 or channel_count <= 0:
+        raise ValueError(f"Decoded WAV contains no audio samples: {path}")
+    if sample_rate != TARGET_SAMPLE_RATE:
+        raise ValueError(
+            f"Qwen3-ASR requires normalized {TARGET_SAMPLE_RATE} Hz WAV input; "
+            f"received {sample_rate} Hz: {path}"
+        )
+    waveform = frames.mean(axis=1)
+    return _DecodedAudio(
+        waveform=waveform,
+        sample_rate=sample_rate,
+        duration_seconds=frame_count / sample_rate,
+    )
 
 
 def _normalize_decoded(decoded: list[object], requested_language: str) -> tuple[str, str]:

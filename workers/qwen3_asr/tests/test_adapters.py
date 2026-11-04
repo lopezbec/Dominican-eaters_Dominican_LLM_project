@@ -50,6 +50,33 @@ class FakeTorch:
         return contextlib.nullcontext()
 
 
+class FakeMonoAudio:
+    shape = (8_000,)
+
+
+class FakeAudioFrames:
+    shape = (8_000, 2)
+
+    def __init__(self) -> None:
+        self.mono = FakeMonoAudio()
+        self.mean_axes: list[int] = []
+
+    def mean(self, *, axis: int) -> FakeMonoAudio:
+        self.mean_axes.append(axis)
+        return self.mono
+
+
+class FakeSoundFile:
+    def __init__(self, sample_rate: int = 16_000) -> None:
+        self.sample_rate = sample_rate
+        self.frames = FakeAudioFrames()
+        self.calls: list[tuple[str, str, bool]] = []
+
+    def read(self, file: str, *, dtype: str, always_2d: bool):
+        self.calls.append((file, dtype, always_2d))
+        return self.frames, self.sample_rate
+
+
 class FakeTensor:
     def __init__(self, width: int = 4) -> None:
         self.shape = (1, width)
@@ -133,7 +160,13 @@ def runtime(*, cuda: bool, parsed: object):
     processor = FakeProcessor(parsed)
     model_factory = FakeFactory(model)
     processor_factory = FakeFactory(processor)
-    bundle = Qwen3RuntimeBundle(torch, model_factory, processor_factory)  # type: ignore[arg-type]
+    soundfile = FakeSoundFile()
+    bundle = Qwen3RuntimeBundle(
+        torch,
+        model_factory,
+        processor_factory,
+        soundfile,  # type: ignore[arg-type]
+    )
     return bundle, torch, model, processor, model_factory, processor_factory
 
 
@@ -166,9 +199,15 @@ def test_official_flow_forces_spanish_and_uses_fp16_batch_one(tmp_path: Path) ->
         )
     ]
     assert processor.requests == [
-        {"audio": str((tmp_path / "sample.wav").resolve()), "language": "Spanish"}
+        {
+            "audio": bundle.soundfile.frames.mono,
+            "audio_kwargs": {"sampling_rate": 16_000},
+            "language": "Spanish",
+        }
     ]
-    assert model.generate_calls[0]["max_new_tokens"] == 256
+    assert bundle.soundfile.calls == [(str((tmp_path / "sample.wav").resolve()), "float32", True)]
+    assert bundle.soundfile.frames.mean_axes == [1]
+    assert model.generate_calls[0]["max_new_tokens"] == 1_024
     assert model.generate_calls[0]["do_sample"] is False
     assert result.text == "Hola mundo"
     assert result.language == "es"
@@ -191,7 +230,12 @@ def test_auto_language_omits_hint_and_normalizes_detected_language(tmp_path: Pat
 
     result = backend.transcribe(wav_file(tmp_path / "sample.wav"), duration_seconds=1.25)
 
-    assert processor.requests == [{"audio": str((tmp_path / "sample.wav").resolve())}]
+    assert processor.requests == [
+        {
+            "audio": bundle.soundfile.frames.mono,
+            "audio_kwargs": {"sampling_rate": 16_000},
+        }
+    ]
     assert result.language == "en"
     assert result.audio_duration_seconds == 1.25
 
@@ -224,3 +268,18 @@ def test_cuda_request_never_falls_back() -> None:
     with pytest.raises(RuntimeError, match="CUDA.*unavailable"):
         backend.load()
     assert model_factory.loads == []
+
+
+def test_normalized_wav_contract_rejects_wrong_sample_rate(tmp_path: Path) -> None:
+    bundle, _torch, _model, _processor, _model_factory, _processor_factory = runtime(
+        cuda=False, parsed={"language": "Spanish", "transcription": "Hola"}
+    )
+    bundle.soundfile.sample_rate = 44_100
+    backend = Qwen3ASRBackend(
+        Qwen3Settings(model="model", device="cpu", precision="fp32"),
+        runtime_loader=lambda: bundle,
+    )
+    backend.load()
+
+    with pytest.raises(ValueError, match="requires normalized 16000 Hz"):
+        backend.transcribe(wav_file(tmp_path / "sample.wav"))

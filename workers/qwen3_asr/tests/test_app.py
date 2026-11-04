@@ -103,12 +103,17 @@ def test_preflight_imports_runtime_without_loading_weights(
             AutoProcessor=object(), AutoModelForMultimodalLM=ModelFactory
         ),
         "torch": SimpleNamespace(cuda=FakeCuda()),
+        "soundfile": SimpleNamespace(),
     }
     monkeypatch.setattr(app_module.importlib, "import_module", modules.__getitem__)
     monkeypatch.setattr(
         app_module.importlib.metadata,
         "version",
-        lambda package: {"transformers": "5.13.0", "torch": "2.7.0"}[package],
+        lambda package: {
+            "transformers": "5.13.0",
+            "torch": "2.7.0",
+            "soundfile": "0.13.1",
+        }[package],
     )
     monkeypatch.setattr(app_module.sys, "version_info", (3, 12, 9))
     output = io.BytesIO()
@@ -125,6 +130,7 @@ def test_preflight_imports_runtime_without_loading_weights(
     assert isinstance(response, SuccessResponse)
     assert response.result["ready"] is True
     assert response.result["environment"]["weights_loaded"] is False  # type: ignore[index]
+    assert response.result["checks"][0]["details"]["max_new_tokens"] == 1_024  # type: ignore[index]
     assert model_loads == []
 
 

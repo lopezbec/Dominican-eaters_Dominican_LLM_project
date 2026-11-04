@@ -16,7 +16,7 @@ from dominican_eaters.speech.asr import BackendDescriptor, Transcript
 DEFAULT_MODEL = "ibm-granite/granite-speech-4.1-2b"
 PROMPT_TEMPLATE_ID = "granite-speech-4.1-asr-punctuated-v1"
 PROMPT = "<|audio|>transcribe the speech with proper punctuation and capitalization."
-ENVIRONMENT_LOCK_ID = "dominican-eaters-granite-transformers-v1"
+ENVIRONMENT_LOCK_ID = "dominican-eaters-granite-transformers-v2"
 
 
 class GraniteDependencyError(ImportError):
@@ -40,16 +40,24 @@ class _Tensor(Protocol):
     def unsqueeze(self, dimension: int) -> _Tensor: ...
 
 
+class _AudioSamples(Protocol):
+    @property
+    def shape(self) -> tuple[int, ...]: ...
+
+
 class _TorchRuntime(Protocol):
     cuda: _CudaRuntime
     float16: object
     float32: object
 
     def zeros(self, size: int) -> _Tensor: ...
+    def from_numpy(self, samples: _AudioSamples) -> _Tensor: ...
 
 
 class _AudioRuntime(Protocol):
-    def load(self, path: str, *, normalize: bool) -> tuple[_Tensor, int]: ...
+    def read(
+        self, path: str, *, dtype: str, always_2d: bool
+    ) -> tuple[_AudioSamples, int]: ...
 
 
 class _Batch(Protocol):
@@ -92,7 +100,7 @@ class _ModelFactory(Protocol):
 @dataclass(frozen=True, slots=True)
 class GraniteRuntimeBundle:
     torch: _TorchRuntime
-    torchaudio: _AudioRuntime
+    soundfile: _AudioRuntime
     processor_factory: _ProcessorFactory
     model_factory: _ModelFactory
 
@@ -105,7 +113,7 @@ def load_granite_runtime() -> GraniteRuntimeBundle:
 
     try:
         torch = importlib.import_module("torch")
-        torchaudio = importlib.import_module("torchaudio")
+        soundfile = importlib.import_module("soundfile")
         transformers = importlib.import_module("transformers")
         processor_factory = transformers.AutoProcessor
         model_factory = transformers.AutoModelForSpeechSeq2Seq
@@ -115,7 +123,7 @@ def load_granite_runtime() -> GraniteRuntimeBundle:
         ) from error
     return GraniteRuntimeBundle(
         torch=cast(_TorchRuntime, torch),
-        torchaudio=cast(_AudioRuntime, torchaudio),
+        soundfile=cast(_AudioRuntime, soundfile),
         processor_factory=cast(_ProcessorFactory, processor_factory),
         model_factory=cast(_ModelFactory, model_factory),
     )
@@ -236,9 +244,12 @@ class GraniteBackend:
         if not audio_path.is_file():
             raise FileNotFoundError(f"Audio file does not exist: {audio_path}")
         runtime = self._require_runtime()
-        waveform, sample_rate = runtime.torchaudio.load(str(audio_path), normalize=True)
-        if len(waveform.shape) != 2 or waveform.shape[0] != 1 or sample_rate != 16_000:
+        samples, sample_rate = runtime.soundfile.read(
+            str(audio_path), dtype="float32", always_2d=False
+        )
+        if len(samples.shape) != 1 or sample_rate != 16_000:
             raise ValueError("Granite input must be mono 16 kHz audio")
+        waveform = runtime.torch.from_numpy(samples).unsqueeze(0)
         if self._resolved_device == "cuda":
             runtime.torch.cuda.reset_peak_memory_stats()
         text = self._infer(waveform)
@@ -305,7 +316,7 @@ class GraniteBackend:
         return self._runtime
 
     def _capture_versions(self) -> None:
-        for package in ("torch", "torchaudio", "transformers", "soundfile"):
+        for package in ("torch", "transformers", "soundfile"):
             try:
                 self._runtime_versions[package] = importlib.metadata.version(package)
             except importlib.metadata.PackageNotFoundError:

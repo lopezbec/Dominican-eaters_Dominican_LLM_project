@@ -228,6 +228,7 @@ def inspect_voxtral_runtime(device: str, precision: str) -> RuntimeInspection:
     )
     transformers = _import_runtime_module("transformers", checks, environment)
     torch = _import_runtime_module("torch", checks, environment)
+    _import_runtime_module("mistral_common", checks, environment)
     _import_runtime_module("soundfile", checks, environment)
     if transformers is None:
         checks.append(

@@ -69,16 +69,26 @@ class FakeTorch:
         self.zero_calls.append(size)
         return FakeTensor((size,))
 
+    def from_numpy(self, samples: FakeAudioSamples) -> FakeTensor:
+        return FakeTensor(samples.shape)
 
-class FakeAudio:
-    def __init__(self, waveform: FakeTensor | None = None, rate: int = 16_000) -> None:
-        self.waveform = waveform or FakeTensor((1, 3200))
+
+class FakeAudioSamples:
+    def __init__(self, shape: tuple[int, ...] = (3200,)) -> None:
+        self.shape = shape
+
+
+class FakeSoundFile:
+    def __init__(self, samples: FakeAudioSamples | None = None, rate: int = 16_000) -> None:
+        self.samples = samples or FakeAudioSamples()
         self.rate = rate
-        self.calls: list[tuple[str, bool]] = []
+        self.calls: list[tuple[str, str, bool]] = []
 
-    def load(self, path: str, *, normalize: bool) -> tuple[FakeTensor, int]:
-        self.calls.append((path, normalize))
-        return self.waveform, self.rate
+    def read(
+        self, path: str, *, dtype: str, always_2d: bool
+    ) -> tuple[FakeAudioSamples, int]:
+        self.calls.append((path, dtype, always_2d))
+        return self.samples, self.rate
 
 
 class FakeTokenizer:
@@ -170,7 +180,7 @@ class FakeModelFactory:
 
 def runtime(cuda: bool = True):
     torch = FakeTorch(cuda)
-    audio = FakeAudio()
+    audio = FakeSoundFile()
     processor = FakeProcessor()
     model = FakeModel()
     processor_factory = FakeProcessorFactory(processor)
@@ -182,6 +192,7 @@ def runtime(cuda: bool = True):
 def test_import_does_not_load_heavy_runtime() -> None:
     assert "transformers" not in sys.modules
     assert "torchaudio" not in sys.modules
+    assert "soundfile" not in sys.modules
 
 
 def test_official_fp16_flow_is_deterministic_and_slices_input(tmp_path: Path) -> None:
@@ -224,7 +235,8 @@ def test_official_fp16_flow_is_deterministic_and_slices_input(tmp_path: Path) ->
     assert transcript.language == "es"
     assert transcript.gpu_peak_allocated_bytes == 123
     assert transcript.gpu_peak_reserved_bytes == 456
-    assert audio.calls == [(str(path.resolve()), True)]
+    assert audio.calls == [(str(path.resolve()), "float32", False)]
+    assert processor.calls[0][1].shape == (1, 3200)
     assert torch.cuda.reset_calls == 1
     assert torch.cuda.sync_calls == 1
 
@@ -246,7 +258,7 @@ def test_audio_contract_rejects_non_mono_or_non_16khz(tmp_path: Path) -> None:
     path = tmp_path / "sample.wav"
     path.write_bytes(b"fixture")
     bundle, *_ = runtime(False)
-    bundle.torchaudio.waveform = FakeTensor((2, 3200))  # type: ignore[attr-defined]
+    bundle.soundfile.samples = FakeAudioSamples((3200, 2))  # type: ignore[attr-defined]
     backend = GraniteBackend(
         GraniteSettings(device="cpu", precision="fp32"), runtime_loader=lambda: bundle
     )

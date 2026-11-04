@@ -207,7 +207,6 @@ def inspect_granite_runtime(device: str, precision: str) -> RuntimeInspection:
     for module_name, distribution in (
         ("transformers", "transformers"),
         ("torch", "torch"),
-        ("torchaudio", "torchaudio"),
         ("soundfile", "soundfile"),
     ):
         modules[module_name] = _import_runtime_module(

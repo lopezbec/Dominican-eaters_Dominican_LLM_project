@@ -47,6 +47,33 @@ class FakeTorch:
         self.cuda = FakeCuda(available)
 
 
+class FakeMonoAudio:
+    shape = (4_000,)
+
+
+class FakeAudioFrames:
+    shape = (4_000, 2)
+
+    def __init__(self) -> None:
+        self.mono = FakeMonoAudio()
+        self.mean_axes: list[int] = []
+
+    def mean(self, *, axis: int) -> FakeMonoAudio:
+        self.mean_axes.append(axis)
+        return self.mono
+
+
+class FakeSoundFile:
+    def __init__(self, sample_rate: int = 16_000) -> None:
+        self.sample_rate = sample_rate
+        self.frames = FakeAudioFrames()
+        self.calls: list[tuple[str, str, bool]] = []
+
+    def read(self, file: str, *, dtype: str, always_2d: bool):
+        self.calls.append((file, dtype, always_2d))
+        return self.frames, self.sample_rate
+
+
 class FakeIds:
     shape = (1, 12)
 
@@ -79,10 +106,10 @@ class FakeOutputs:
 class FakeProcessor:
     def __init__(self) -> None:
         self.inputs = FakeInputs()
-        self.requests: list[dict[str, str]] = []
+        self.requests: list[dict[str, object]] = []
         self.decodes: list[tuple[object, bool]] = []
 
-    def apply_transcription_request(self, **request: str) -> FakeInputs:
+    def apply_transcription_request(self, **request: object) -> FakeInputs:
         self.requests.append(request)
         return self.inputs
 
@@ -123,7 +150,8 @@ def runtime(*, cuda: bool = True):
     processor_factory = FakeFactory(processor)
     model_factory = FakeFactory(model)
     torch = FakeTorch(cuda)
-    bundle = VoxtralRuntimeBundle(processor_factory, model_factory, torch)
+    soundfile = FakeSoundFile()
+    bundle = VoxtralRuntimeBundle(processor_factory, model_factory, torch, soundfile)
     return bundle, processor, model, processor_factory, model_factory, torch
 
 
@@ -168,10 +196,14 @@ def test_official_transcription_request_flow_and_fp16_policy(tmp_path: Path) -> 
     assert processor.requests == [
         {
             "language": "es",
-            "audio": str(tmp_path / "sample.wav"),
+            "audio": bundle.soundfile.frames.mono,
             "model_id": "mistralai/Voxtral-Mini-3B-2507",
+            "sampling_rate": 16_000,
+            "format": "WAV",
         }
     ]
+    assert bundle.soundfile.calls == [(str(tmp_path / "sample.wav"), "float32", True)]
+    assert bundle.soundfile.frames.mean_axes == [1]
     assert processor.inputs.to_calls == [("cuda", "fake-fp16")]
     assert model.generate_calls == [
         {"input_ids": "ids", "input_features": "features", "max_new_tokens": 64}
@@ -228,3 +260,13 @@ def test_explicit_cuda_never_falls_back_and_close_is_idempotent() -> None:
 def test_settings_enforce_initial_profile(settings: dict[str, object], message: str) -> None:
     with pytest.raises(ValueError, match=message):
         VoxtralSettings(**settings)  # type: ignore[arg-type]
+
+
+def test_normalized_wav_contract_rejects_wrong_sample_rate(tmp_path: Path) -> None:
+    bundle, _processor, _model, *_rest = runtime()
+    bundle.soundfile.sample_rate = 44_100
+    backend = VoxtralBackend(VoxtralSettings(), runtime_loader=lambda: bundle)
+    backend.load()
+
+    with pytest.raises(AudioPolicyError, match="requires normalized 16000 Hz"):
+        backend.transcribe(wav_file(tmp_path / "sample.wav"), duration_seconds=0.25)

@@ -10,6 +10,7 @@ requires-python = ">=3.11,<3.13"
 dependencies = [
     "accelerate>=1,<2",
     "dominican-eaters==0.2.0",
+    "mistral-common[audio]>=1.6.3,<2",
     "soundfile>=0.12,<1",
     "torch>=2.2,<3",
     "transformers>=4.54,<6",

@@ -19,6 +19,7 @@ DEFAULT_MODEL = "mistralai/Voxtral-Mini-3B-2507"
 PROMPT_TEMPLATE_ID = "voxtral-transcription-request-v1"
 DEFAULT_MAX_AUDIO_SECONDS = 600.0
 DEFAULT_MAX_NEW_TOKENS = 500
+TARGET_SAMPLE_RATE = 16_000
 
 
 class VoxtralDependencyError(ImportError):
@@ -48,6 +49,10 @@ class _TorchRuntime(Protocol):
     float16: object
 
 
+class _SoundFileRuntime(Protocol):
+    def read(self, file: str, *, dtype: str, always_2d: bool) -> tuple[Any, int]: ...
+
+
 class _BatchInputs(Protocol):
     input_ids: Any
 
@@ -60,7 +65,13 @@ class _BatchInputs(Protocol):
 
 class _Processor(Protocol):
     def apply_transcription_request(
-        self, *, language: str, audio: str, model_id: str
+        self,
+        *,
+        language: str,
+        audio: object,
+        model_id: str,
+        sampling_rate: int,
+        format: str,
     ) -> _BatchInputs: ...
 
     def batch_decode(self, outputs: object, *, skip_special_tokens: bool) -> Sequence[str]: ...
@@ -83,6 +94,14 @@ class VoxtralRuntimeBundle:
     processor_factory: _Factory
     model_factory: _Factory
     torch: _TorchRuntime
+    soundfile: _SoundFileRuntime
+
+
+@dataclass(frozen=True, slots=True)
+class _DecodedAudio:
+    waveform: Any
+    sample_rate: int
+    duration_seconds: float
 
 
 RuntimeLoader = Callable[[], VoxtralRuntimeBundle]
@@ -94,6 +113,8 @@ def load_voxtral_runtime() -> VoxtralRuntimeBundle:
     try:
         transformers = importlib.import_module("transformers")
         torch = importlib.import_module("torch")
+        importlib.import_module("mistral_common")
+        soundfile = importlib.import_module("soundfile")
         processor_factory = transformers.AutoProcessor
         model_factory = transformers.VoxtralForConditionalGeneration
     except (ImportError, AttributeError) as error:
@@ -104,6 +125,7 @@ def load_voxtral_runtime() -> VoxtralRuntimeBundle:
         processor_factory=cast(_Factory, processor_factory),
         model_factory=cast(_Factory, model_factory),
         torch=cast(_TorchRuntime, torch),
+        soundfile=cast(_SoundFileRuntime, soundfile),
     )
 
 
@@ -213,7 +235,9 @@ class VoxtralBackend:
                 audio.setsampwidth(2)
                 audio.setframerate(16_000)
                 audio.writeframes(b"\0\0" * 16_000)
-            self._generate(Path(temporary.name))
+            runtime = cast(VoxtralRuntimeBundle, self._runtime)
+            decoded_audio = _decode_normalized_wav(runtime.soundfile, Path(temporary.name))
+            self._generate(decoded_audio)
 
     def transcribe(self, audio_path: Path, *, duration_seconds: float | None = None) -> Transcript:
         self._require_loaded()
@@ -234,8 +258,11 @@ class VoxtralBackend:
                 f"of {self.settings.max_audio_seconds:.6g}s"
             )
         runtime = cast(VoxtralRuntimeBundle, self._runtime)
+        decoded_audio = _decode_normalized_wav(runtime.soundfile, audio_path)
+        if duration_seconds is None:
+            duration = decoded_audio.duration_seconds
         runtime.torch.cuda.reset_peak_memory_stats()
-        text = self._generate(audio_path)
+        text = self._generate(decoded_audio)
         runtime.torch.cuda.synchronize()
         return Transcript(
             text=text,
@@ -249,6 +276,9 @@ class VoxtralBackend:
                 "max_new_tokens": self.settings.max_new_tokens,
                 "prompt_template_id": PROMPT_TEMPLATE_ID,
                 "timestamps": False,
+                "audio_decoder": "soundfile",
+                "audio_sample_rate": decoded_audio.sample_rate,
+                "audio_channels": 1,
             },
         )
 
@@ -261,12 +291,14 @@ class VoxtralBackend:
             runtime.torch.cuda.empty_cache()
         self._runtime = None
 
-    def _generate(self, audio_path: Path) -> str:
+    def _generate(self, audio: _DecodedAudio) -> str:
         model, processor, runtime = self._require_loaded()
         inputs = processor.apply_transcription_request(
             language=self.settings.language,
-            audio=str(audio_path),
+            audio=audio.waveform,
             model_id=self.settings.model,
+            sampling_rate=audio.sample_rate,
+            format="WAV",
         )
         inputs = inputs.to("cuda", dtype=runtime.torch.float16)
         generate_inputs = {key: inputs[key] for key in cast(Sequence[str], inputs.keys())}
@@ -284,7 +316,13 @@ class VoxtralBackend:
         return self._model, self._processor, self._runtime
 
     def _capture_versions(self) -> None:
-        for package in ("transformers", "torch", "accelerate", "soundfile"):
+        for package in (
+            "transformers",
+            "torch",
+            "accelerate",
+            "mistral-common",
+            "soundfile",
+        ):
             try:
                 self._runtime_versions[package] = importlib.metadata.version(package)
             except importlib.metadata.PackageNotFoundError:
@@ -300,3 +338,29 @@ def _wav_duration(path: Path) -> float | None:
             return audio.getnframes() / rate if rate > 0 else None
     except (EOFError, wave.Error):
         return None
+
+
+def _decode_normalized_wav(soundfile: _SoundFileRuntime, path: Path) -> _DecodedAudio:
+    if path.suffix.lower() != ".wav":
+        raise AudioPolicyError(f"Voxtral requires a normalized WAV input: {path}")
+    try:
+        frames, sample_rate = soundfile.read(str(path), dtype="float32", always_2d=True)
+    except Exception as error:
+        raise AudioPolicyError(f"Unable to decode normalized WAV {path}: {error}") from error
+    shape = getattr(frames, "shape", None)
+    if not isinstance(shape, tuple) or len(shape) != 2:
+        raise AudioPolicyError(f"Decoded WAV must have a frames-by-channels shape: {path}")
+    frame_count, channel_count = shape
+    if frame_count <= 0 or channel_count <= 0:
+        raise AudioPolicyError(f"Decoded WAV contains no audio samples: {path}")
+    if sample_rate != TARGET_SAMPLE_RATE:
+        raise AudioPolicyError(
+            f"Voxtral requires normalized {TARGET_SAMPLE_RATE} Hz WAV input; "
+            f"received {sample_rate} Hz: {path}"
+        )
+    waveform = frames.mean(axis=1)
+    return _DecodedAudio(
+        waveform=waveform,
+        sample_rate=sample_rate,
+        duration_seconds=frame_count / sample_rate,
+    )

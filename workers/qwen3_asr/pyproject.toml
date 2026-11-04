@@ -9,6 +9,7 @@ description = "Isolated Qwen3-ASR worker for Dominican Eaters"
 requires-python = ">=3.11,<3.14"
 dependencies = [
     "dominican-eaters==0.2.0",
+    "soundfile>=0.12,<1",
     "torch>=2.2,<3",
     "transformers>=5.13,<6",
 ]

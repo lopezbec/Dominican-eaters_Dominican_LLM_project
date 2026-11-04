@@ -25,7 +25,12 @@ from dominican_eaters.speech.asr.worker_server import WorkerDispatcher, WorkerEr
 from dominican_eaters.speech.asr.worker_server import serve as serve_worker
 
 from . import __version__
-from .adapters import Qwen3ASRBackend, Qwen3ASRDependencyError, Qwen3Settings
+from .adapters import (
+    DEFAULT_MAX_NEW_TOKENS,
+    Qwen3ASRBackend,
+    Qwen3ASRDependencyError,
+    Qwen3Settings,
+)
 
 LOGGER = logging.getLogger("dominican_eaters_qwen3_asr")
 
@@ -108,6 +113,7 @@ class WorkerService:
                 "device": settings.device,
                 "precision": settings.precision,
                 "batch_size": 1,
+                "max_new_tokens": settings.max_new_tokens,
                 "attention_implementation": "sdpa",
             },
         )
@@ -176,7 +182,7 @@ class WorkerService:
         timestamps = options.get("timestamps", False)
         if timestamps is not False:
             raise ValueError("Qwen3-ASR timestamps require a separate forced-aligner preset")
-        max_new_tokens = options.get("max_new_tokens", 256)
+        max_new_tokens = options.get("max_new_tokens", DEFAULT_MAX_NEW_TOKENS)
         if isinstance(max_new_tokens, bool) or not isinstance(max_new_tokens, int):
             raise TypeError("max_new_tokens must be an integer")
         quantization = params.get("quantization")
@@ -218,6 +224,7 @@ def inspect_qwen3_runtime(device: str, precision: str) -> RuntimeInspection:
     )
     transformers = _import_runtime_module("transformers", checks, environment)
     torch = _import_runtime_module("torch", checks, environment)
+    _import_runtime_module("soundfile", checks, environment)
     if transformers is None:
         checks.append(
             PreflightCheck(
