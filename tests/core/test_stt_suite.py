@@ -60,6 +60,23 @@ def test_suite_persists_matrix_and_continues_after_task_failure(tmp_path: Path) 
     assert len(payload["tasks"]) == 2
 
 
+def test_task_events_keep_manifest_total_when_executor_crashes(tmp_path: Path) -> None:
+    events: list[SuiteEvent] = []
+
+    def execute(_dataset: SuiteDataset, _preset: str, _output: Path) -> SuiteTaskOutcome:
+        raise RuntimeError("backend crashed before processing audio")
+
+    ledger = SuiteRunner(execute, on_event=events.append).run(
+        SuitePlan((dataset(),), ("whisper-large-v3",)), tmp_path / "suite"
+    )
+
+    started = next(event for event in events if event.kind is SuiteEventKind.TASK_STARTED)
+    completed = next(event for event in events if event.kind is SuiteEventKind.TASK_COMPLETED)
+    assert (started.total, started.succeeded, started.failed) == (3, 0, 0)
+    assert (completed.total, completed.succeeded, completed.failed) == (3, 0, 0)
+    assert ledger.tasks[0].expected_samples == 3
+
+
 def test_resume_skips_valid_complete_tasks_and_retries_failed_tasks(tmp_path: Path) -> None:
     first_calls: list[str] = []
 

@@ -89,6 +89,27 @@ test("dominant failures are counted once and repeated sample details are collaps
  assert.match(samples,/song-1/)
  assert.match(samples,/song-3/)
 })
+test("variable CUDA OOM details collapse under one actionable failure code",()=>{
+ let progress=seedSuiteProgress([datasets[0]!],[presets[0]!])
+ for(let index=1;index<=3;index++){
+  progress=applySuiteEvent(progress,{event:"sample_completed",dataset_id:"music",preset:"whisper-large-v3",index,total:3,sample_id:`song-${index}`,status:"failed",error_type:"WorkerRemoteError",error_code:"cuda_oom",message:`CUDA out of memory. Tried to allocate ${index} GiB`})
+ }
+ const models=renderModelProgress(progress,140)
+ assert.match(models,/3x\s+cuda_oom: CUDA out of memory/)
+ const samples=renderSampleProgress(progress,140)
+ assert.equal(samples.match(/CUDA out of memory/g)?.length,1)
+ assert.ok(samples.split("\n").every(line=>line.length<=140))
+})
+test("global worker failures survive the following task completion event",()=>{
+ let progress=seedSuiteProgress([datasets[0]!],[presets[0]!])
+ progress=applySuiteEvent(progress,{event:"task_started",dataset_id:"music",preset:"whisper-large-v3",total:558})
+ progress=applySuiteEvent(progress,{event:"run_finished",dataset_id:"music",preset:"whisper-large-v3",total:558,run_status:"failed",error_type:"WorkerRemoteError",error_code:"dependency_missing",message:"librosa is required"})
+ progress=applySuiteEvent(progress,{event:"task_completed",dataset_id:"music",preset:"whisper-large-v3",total:558,task_status:"failed"})
+ const model=progress.models.get("music::whisper-large-v3")
+ assert.equal(model?.failureCode,"dependency_missing")
+ assert.equal(model?.failureMessage,"librosa is required")
+ assert.match(renderModelProgress(progress,140),/dependency_missing: librosa is required/)
+})
 test("sample progress keeps every dataset row instead of a recent-only window",()=>{
  let progress=seedSuiteProgress([datasets[0]!],[presets[0]!])
  for(let index=1;index<=12;index++){
@@ -115,12 +136,14 @@ test("suite task boundaries preserve per-sample counts",()=>{
 })
 test("resumed suite tasks restore their persisted sample counts",()=>{
  let progress=seedSuiteProgress([datasets[0]!],[presets[0]!])
- progress=applySuiteEvent(progress,{event:"task_skipped",dataset_id:"music",preset:"whisper-large-v3",succeeded:557,failed:0,total:557,task_status:"complete"})
+ progress=applySuiteEvent(progress,{event:"task_skipped",dataset_id:"music",preset:"whisper-large-v3",attempt:3,succeeded:557,failed:0,total:557,task_status:"complete"})
  const model=progress.models.get("music::whisper-large-v3")
+ assert.equal(model?.attempt,3)
  assert.equal(model?.completed,557)
  assert.equal(model?.succeeded,557)
  assert.equal(model?.failed,0)
  assert.equal(model?.total,557)
  assert.equal(model?.status,"complete")
  assert.equal(model?.phase,"resumed")
+ assert.match(renderModelProgress(progress),/complete a3\s+557\/557/)
 })

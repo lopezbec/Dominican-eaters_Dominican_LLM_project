@@ -404,6 +404,9 @@ class SuiteRunner:
                         message="complete",
                     )
                     continue
+                dataset = next(
+                    item for item in plan.datasets if item.dataset_id == task.dataset_id
+                )
                 resumable_output = _resumable_task_output(task)
                 if resumable_output is None:
                     attempt = task.attempt + 1
@@ -422,7 +425,7 @@ class SuiteRunner:
                     status=SuiteTaskStatus.RUNNING,
                     attempt=attempt,
                     output_dir=str(attempt_dir),
-                    expected_samples=0,
+                    expected_samples=dataset.samples,
                     succeeded_samples=0,
                     failed_samples=0,
                     error_type=None,
@@ -431,9 +434,6 @@ class SuiteRunner:
                 ledger = ledger.with_task(running)
                 self._save(ledger_path, ledger)
                 self._emit(ledger, SuiteEventKind.TASK_STARTED, task_index, task=running)
-                dataset = next(
-                    item for item in plan.datasets if item.dataset_id == running.dataset_id
-                )
                 try:
                     outcome = self._executor(dataset, running.preset_id, attempt_dir)
                 except (KeyboardInterrupt, SystemExit) as error:
