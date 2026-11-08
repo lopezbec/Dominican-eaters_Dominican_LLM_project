@@ -77,6 +77,10 @@ class FakeAudioSamples:
     def __init__(self, shape: tuple[int, ...] = (3200,)) -> None:
         self.shape = shape
 
+    def __getitem__(self, key: slice) -> FakeAudioSamples:
+        start, stop, step = key.indices(self.shape[0])
+        return FakeAudioSamples((len(range(start, stop, step)), *self.shape[1:]))
+
 
 class FakeSoundFile:
     def __init__(self, samples: FakeAudioSamples | None = None, rate: int = 16_000) -> None:
@@ -154,6 +158,7 @@ class FakeModel:
         self.eval_calls = 0
         self.generate_calls: list[dict[str, object]] = []
         self.output = FakeTensor((1, 12))
+        self.generate_error: Exception | None = None
 
     def to(self, device: str) -> FakeModel:
         self.devices.append(device)
@@ -165,6 +170,8 @@ class FakeModel:
 
     def generate(self, **kwargs: object) -> FakeTensor:
         self.generate_calls.append(kwargs)
+        if self.generate_error is not None:
+            raise self.generate_error
         return self.output
 
 
@@ -239,6 +246,52 @@ def test_official_fp16_flow_is_deterministic_and_slices_input(tmp_path: Path) ->
     assert processor.calls[0][1].shape == (1, 3200)
     assert torch.cuda.reset_calls == 1
     assert torch.cuda.sync_calls == 1
+    assert torch.cuda.empty_calls == 1
+
+
+def test_long_audio_uses_fixed_windows_joins_text_and_derives_duration(tmp_path: Path) -> None:
+    bundle, torch, audio, processor, _model, *_ = runtime()
+    audio.samples = FakeAudioSamples((65 * 16_000,))
+    backend = GraniteBackend(
+        GraniteSettings(device="cuda", precision="fp16", chunk_length_seconds=30.0),
+        runtime_loader=lambda: bundle,
+    )
+    path = tmp_path / "song.wav"
+    path.write_bytes(b"fixture")
+
+    backend.load()
+    transcript = backend.transcribe(path.resolve())
+
+    assert [call[1].shape for call in processor.calls] == [
+        (1, 30 * 16_000),
+        (1, 30 * 16_000),
+        (1, 5 * 16_000),
+    ]
+    assert transcript.text == "Hola, mi gente. Hola, mi gente. Hola, mi gente."
+    assert transcript.audio_duration_seconds == 65.0
+    assert transcript.metadata["segmentation"] == "fixed"
+    assert transcript.metadata["chunk_length_seconds"] == 30.0
+    assert transcript.metadata["chunk_count"] == 3
+    assert torch.cuda.reset_calls == 1
+    assert torch.cuda.sync_calls == 1
+    assert torch.cuda.empty_calls == 1
+
+
+def test_failed_generation_releases_cuda_cache_for_next_sample(tmp_path: Path) -> None:
+    bundle, torch, _audio, _processor, model, *_ = runtime()
+    model.generate_error = RuntimeError("CUDA out of memory")
+    backend = GraniteBackend(
+        GraniteSettings(device="cuda", precision="fp16"), runtime_loader=lambda: bundle
+    )
+    path = tmp_path / "song.wav"
+    path.write_bytes(b"fixture")
+
+    backend.load()
+    with pytest.raises(RuntimeError, match="out of memory"):
+        backend.transcribe(path.resolve())
+
+    assert torch.cuda.empty_calls == 1
+    assert torch.cuda.sync_calls == 0
 
 
 def test_warmup_uses_one_second_synthetic_audio() -> None:
@@ -267,6 +320,19 @@ def test_audio_contract_rejects_non_mono_or_non_16khz(tmp_path: Path) -> None:
         backend.transcribe(path.resolve())
 
 
+def test_audio_contract_rejects_empty_audio(tmp_path: Path) -> None:
+    path = tmp_path / "sample.wav"
+    path.write_bytes(b"fixture")
+    bundle, *_ = runtime(False)
+    bundle.soundfile.samples = FakeAudioSamples((0,))  # type: ignore[attr-defined]
+    backend = GraniteBackend(
+        GraniteSettings(device="cpu", precision="fp32"), runtime_loader=lambda: bundle
+    )
+    backend.load()
+    with pytest.raises(ValueError, match="contain audio samples"):
+        backend.transcribe(path.resolve())
+
+
 def test_cuda_and_precision_policies_fail_before_weight_load() -> None:
     bundle, *_rest, model_factory = runtime(False)
     backend = GraniteBackend(
@@ -279,6 +345,8 @@ def test_cuda_and_precision_policies_fail_before_weight_load() -> None:
         GraniteSettings(device="cpu", precision="fp16")
     with pytest.raises(ValueError, match="Unsupported Granite precision"):
         GraniteSettings(precision="bf16")  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="finite and positive"):
+        GraniteSettings(chunk_length_seconds=float("inf"))
 
 
 def test_close_releases_cuda_resources() -> None:
@@ -298,7 +366,12 @@ def test_descriptor_records_effective_policy() -> None:
     descriptor = backend.descriptor
     assert descriptor.effective_device == "cuda"
     assert descriptor.effective_precision == "fp16"
-    assert descriptor.options == {"max_new_tokens": 200, "batch_size": 1}
+    assert descriptor.options == {
+        "max_new_tokens": 200,
+        "batch_size": 1,
+        "segmentation": "fixed",
+        "chunk_length_seconds": 30.0,
+    }
     assert descriptor.audio_preprocessing == {
         "channels": 1,
         "sample_rate_hz": 16000,

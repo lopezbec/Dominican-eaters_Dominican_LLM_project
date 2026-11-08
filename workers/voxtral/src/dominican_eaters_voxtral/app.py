@@ -26,6 +26,7 @@ from dominican_eaters.speech.asr.worker_server import serve as serve_worker
 
 from . import __version__
 from .adapters import (
+    DEFAULT_CHUNK_SECONDS,
     DEFAULT_MAX_AUDIO_SECONDS,
     DEFAULT_MAX_NEW_TOKENS,
     AudioPolicyError,
@@ -117,6 +118,7 @@ class WorkerService:
                 "batch_size": 1,
                 "max_audio_seconds": settings.max_audio_seconds,
                 "max_new_tokens": settings.max_new_tokens,
+                "chunk_seconds": settings.segment_seconds,
                 "timestamps": False,
             },
         )
@@ -179,19 +181,22 @@ class WorkerService:
         if backend_name not in self._factories:
             raise ValueError("Unsupported Voxtral backend; expected 'voxtral'")
         options = cast(dict[str, JSONValue], params["options"])
-        allowed = {"max_audio_seconds", "max_new_tokens", "timestamps"}
+        allowed = {"chunk_seconds", "max_audio_seconds", "max_new_tokens", "timestamps"}
         unknown = sorted(set(options) - allowed)
         if unknown:
             raise ValueError(f"Unknown Voxtral options: {', '.join(unknown)}")
         max_audio = options.get("max_audio_seconds", DEFAULT_MAX_AUDIO_SECONDS)
         max_tokens = options.get("max_new_tokens", DEFAULT_MAX_NEW_TOKENS)
         timestamps = options.get("timestamps", False)
+        chunk_seconds = options.get("chunk_seconds", DEFAULT_CHUNK_SECONDS)
         if isinstance(max_audio, bool) or not isinstance(max_audio, int | float):
             raise TypeError("max_audio_seconds must be a number")
         if isinstance(max_tokens, bool) or not isinstance(max_tokens, int):
             raise TypeError("max_new_tokens must be an integer")
         if not isinstance(timestamps, bool):
             raise TypeError("timestamps must be a boolean")
+        if isinstance(chunk_seconds, bool) or not isinstance(chunk_seconds, int | float):
+            raise TypeError("chunk_seconds must be a number")
         return backend_name, VoxtralSettings(
             model=cast(str, params["model"]),
             model_revision=cast(str | None, params.get("model_revision")),
@@ -200,6 +205,7 @@ class WorkerService:
             precision=cast(str, params["precision"]),  # type: ignore[arg-type]
             max_audio_seconds=float(max_audio),
             max_new_tokens=max_tokens,
+            chunk_seconds=float(chunk_seconds),
             timestamps=timestamps,
         )
 
@@ -389,5 +395,5 @@ def _map_error(error: Exception) -> WorkerError:
     if isinstance(error, RuntimeError):
         message = str(error)
         code = "cuda_oom" if "out of memory" in message.lower() else "invalid_state"
-        return WorkerError(code, message)
+        return WorkerError(code, message, retryable=code == "cuda_oom")
     return WorkerError("backend_error", str(error))

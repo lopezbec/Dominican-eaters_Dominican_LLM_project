@@ -5,10 +5,11 @@ from __future__ import annotations
 import gc
 import importlib
 import importlib.metadata
+import math
 import platform
 import tempfile
 import wave
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal, Protocol, cast
@@ -19,6 +20,7 @@ DEFAULT_MODEL = "mistralai/Voxtral-Mini-3B-2507"
 PROMPT_TEMPLATE_ID = "voxtral-transcription-request-v1"
 DEFAULT_MAX_AUDIO_SECONDS = 600.0
 DEFAULT_MAX_NEW_TOKENS = 500
+DEFAULT_CHUNK_SECONDS = 120.0
 TARGET_SAMPLE_RATE = 16_000
 
 
@@ -138,6 +140,7 @@ class VoxtralSettings:
     precision: Literal["auto", "fp16"] = "auto"
     max_audio_seconds: float = DEFAULT_MAX_AUDIO_SECONDS
     max_new_tokens: int = DEFAULT_MAX_NEW_TOKENS
+    chunk_seconds: float = DEFAULT_CHUNK_SECONDS
     timestamps: bool = False
 
     def __post_init__(self) -> None:
@@ -155,6 +158,14 @@ class VoxtralSettings:
             raise ValueError(f"max_audio_seconds must be in (0, {DEFAULT_MAX_AUDIO_SECONDS:g}]")
         if self.max_new_tokens <= 0 or self.max_new_tokens > DEFAULT_MAX_NEW_TOKENS:
             raise ValueError(f"max_new_tokens must be in [1, {DEFAULT_MAX_NEW_TOKENS}]")
+        if not math.isfinite(self.chunk_seconds) or self.chunk_seconds <= 0:
+            raise ValueError("chunk_seconds must be positive and finite")
+
+    @property
+    def segment_seconds(self) -> float:
+        """Bound each request by both the T4 profile and the model context policy."""
+
+        return min(self.chunk_seconds, self.max_audio_seconds)
 
 
 @dataclass(slots=True)
@@ -189,6 +200,8 @@ class VoxtralBackend:
                 "batch_size": 1,
                 "max_audio_seconds": self.settings.max_audio_seconds,
                 "max_new_tokens": self.settings.max_new_tokens,
+                "chunk_seconds": self.settings.segment_seconds,
+                "long_form_policy": "fixed-segment",
                 "timestamps": False,
                 "transcription_method": "apply_transcription_request",
             },
@@ -252,18 +265,19 @@ class VoxtralBackend:
             )
         if duration <= 0:
             raise AudioPolicyError("Audio duration must be positive")
-        if duration > self.settings.max_audio_seconds:
-            raise AudioPolicyError(
-                f"Audio duration {duration:.6g}s exceeds the configured Voxtral maximum "
-                f"of {self.settings.max_audio_seconds:.6g}s"
-            )
         runtime = cast(VoxtralRuntimeBundle, self._runtime)
         decoded_audio = _decode_normalized_wav(runtime.soundfile, audio_path)
         if duration_seconds is None:
             duration = decoded_audio.duration_seconds
         runtime.torch.cuda.reset_peak_memory_stats()
-        text = self._generate(decoded_audio)
-        runtime.torch.cuda.synchronize()
+        texts: list[str] = []
+        segment_count = 0
+        for segment in _iter_audio_segments(decoded_audio, self.settings.segment_seconds):
+            segment_count += 1
+            text = self._generate(segment)
+            if text:
+                texts.append(text)
+        text = "\n".join(texts)
         return Transcript(
             text=text,
             language=self.settings.language,
@@ -274,6 +288,9 @@ class VoxtralBackend:
                 "batch_size": 1,
                 "max_audio_seconds": self.settings.max_audio_seconds,
                 "max_new_tokens": self.settings.max_new_tokens,
+                "long_form_policy": "fixed-segment",
+                "segment_seconds": self.settings.segment_seconds,
+                "segment_count": segment_count,
                 "prompt_template_id": PROMPT_TEMPLATE_ID,
                 "timestamps": False,
                 "audio_decoder": "soundfile",
@@ -293,22 +310,41 @@ class VoxtralBackend:
 
     def _generate(self, audio: _DecodedAudio) -> str:
         model, processor, runtime = self._require_loaded()
-        inputs = processor.apply_transcription_request(
-            language=self.settings.language,
-            audio=audio.waveform,
-            model_id=self.settings.model,
-            sampling_rate=audio.sample_rate,
-            format="WAV",
-        )
-        inputs = inputs.to("cuda", dtype=runtime.torch.float16)
-        generate_inputs = {key: inputs[key] for key in cast(Sequence[str], inputs.keys())}
-        outputs = model.generate(**generate_inputs, max_new_tokens=self.settings.max_new_tokens)
-        prompt_length = inputs.input_ids.shape[1]
-        generated = outputs[:, prompt_length:]
-        decoded = processor.batch_decode(generated, skip_special_tokens=True)
-        if len(decoded) != 1 or not isinstance(decoded[0], str):
-            raise RuntimeError("Voxtral batch-one inference must return exactly one string")
-        return decoded[0].strip()
+        inputs: Any = None
+        generate_inputs: dict[str, object] | None = None
+        outputs: Any = None
+        generated: Any = None
+        decoded: Sequence[str] | None = None
+        try:
+            inputs = processor.apply_transcription_request(
+                language=self.settings.language,
+                audio=audio.waveform,
+                model_id=self.settings.model,
+                sampling_rate=audio.sample_rate,
+                format="WAV",
+            )
+            inputs = inputs.to("cuda", dtype=runtime.torch.float16)
+            generate_inputs = {
+                key: inputs[key] for key in cast(Sequence[str], inputs.keys())
+            }
+            outputs = model.generate(
+                **generate_inputs, max_new_tokens=self.settings.max_new_tokens
+            )
+            runtime.torch.cuda.synchronize()
+            prompt_length = inputs.input_ids.shape[1]
+            generated = outputs[:, prompt_length:]
+            decoded = processor.batch_decode(generated, skip_special_tokens=True)
+            if len(decoded) != 1 or not isinstance(decoded[0], str):
+                raise RuntimeError("Voxtral batch-one inference must return exactly one string")
+            return decoded[0].strip()
+        finally:
+            inputs = None
+            generate_inputs = None
+            outputs = None
+            generated = None
+            decoded = None
+            gc.collect()
+            runtime.torch.cuda.empty_cache()
 
     def _require_loaded(self) -> tuple[_Model, _Processor, VoxtralRuntimeBundle]:
         if self._model is None or self._processor is None or self._runtime is None:
@@ -364,3 +400,18 @@ def _decode_normalized_wav(soundfile: _SoundFileRuntime, path: Path) -> _Decoded
         sample_rate=sample_rate,
         duration_seconds=frame_count / sample_rate,
     )
+
+
+def _iter_audio_segments(audio: _DecodedAudio, chunk_seconds: float) -> Iterator[_DecodedAudio]:
+    frame_count = int(audio.waveform.shape[0])
+    chunk_frames = max(1, int(audio.sample_rate * chunk_seconds))
+    if frame_count <= chunk_frames:
+        yield audio
+        return
+    for start in range(0, frame_count, chunk_frames):
+        stop = min(start + chunk_frames, frame_count)
+        yield _DecodedAudio(
+            waveform=audio.waveform[start:stop],
+            sample_rate=audio.sample_rate,
+            duration_seconds=(stop - start) / audio.sample_rate,
+        )

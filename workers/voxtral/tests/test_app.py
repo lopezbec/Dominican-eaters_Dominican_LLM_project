@@ -155,6 +155,7 @@ def test_preflight_imports_runtime_without_loading_weights(
     }
     assert created == []
     assert weight_loads == []
+    assert response.result["checks"][0]["details"]["chunk_seconds"] == 120.0  # type: ignore[index]
 
 
 def test_complete_protocol_lifecycle() -> None:
@@ -189,6 +190,7 @@ def test_complete_protocol_lifecycle() -> None:
     assert responses[0].result["worker"] == "dominican-eaters-voxtral"  # type: ignore[union-attr]
     assert responses[3].result["text"] == "Hola"  # type: ignore[union-attr]
     assert created[0].settings.max_audio_seconds == 30
+    assert created[0].settings.segment_seconds == 30
     assert created[0].calls == [
         "load",
         "warmup",
@@ -202,6 +204,7 @@ def test_complete_protocol_lifecycle() -> None:
     [
         ({"timestamps": True}, "timestamps are not supported"),
         ({"max_audio_seconds": 900}, "must be in"),
+        ({"chunk_seconds": 0}, "positive and finite"),
         ({"batch_size": 2}, "Unknown Voxtral options"),
     ],
 )

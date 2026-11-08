@@ -26,6 +26,7 @@ from dominican_eaters.speech.asr.worker_server import serve as serve_worker
 
 from . import __version__
 from .adapters import (
+    DEFAULT_CHUNK_SECONDS,
     DEFAULT_MAX_NEW_TOKENS,
     Qwen3ASRBackend,
     Qwen3ASRDependencyError,
@@ -114,6 +115,7 @@ class WorkerService:
                 "precision": settings.precision,
                 "batch_size": 1,
                 "max_new_tokens": settings.max_new_tokens,
+                "chunk_seconds": settings.chunk_seconds,
                 "attention_implementation": "sdpa",
             },
         )
@@ -175,7 +177,7 @@ class WorkerService:
                 f"Unsupported Qwen3-ASR backend {backend_name!r}; expected: {supported}"
             )
         options = cast(dict[str, JSONValue], params["options"])
-        allowed_options = {"max_new_tokens", "timestamps"}
+        allowed_options = {"chunk_seconds", "max_new_tokens", "timestamps"}
         unknown_options = sorted(set(options) - allowed_options)
         if unknown_options:
             raise ValueError(f"Unknown Qwen3-ASR options: {', '.join(unknown_options)}")
@@ -185,6 +187,9 @@ class WorkerService:
         max_new_tokens = options.get("max_new_tokens", DEFAULT_MAX_NEW_TOKENS)
         if isinstance(max_new_tokens, bool) or not isinstance(max_new_tokens, int):
             raise TypeError("max_new_tokens must be an integer")
+        chunk_seconds = options.get("chunk_seconds", DEFAULT_CHUNK_SECONDS)
+        if isinstance(chunk_seconds, bool) or not isinstance(chunk_seconds, int | float):
+            raise TypeError("chunk_seconds must be a number")
         quantization = params.get("quantization")
         if quantization is not None:
             raise ValueError("The initial Qwen3-ASR worker does not support quantization")
@@ -195,6 +200,7 @@ class WorkerService:
             device=cast(str, params["device"]),  # type: ignore[arg-type]
             precision=cast(str, params["precision"]),  # type: ignore[arg-type]
             max_new_tokens=max_new_tokens,
+            chunk_seconds=float(chunk_seconds),
         )
 
     def _require_backend(self) -> WorkerBackend:

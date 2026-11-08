@@ -5,10 +5,11 @@ from __future__ import annotations
 import gc
 import importlib
 import importlib.metadata
+import math
 import platform
 import tempfile
 import wave
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -18,6 +19,7 @@ from dominican_eaters.speech.asr import BackendDescriptor, Transcript
 
 TARGET_SAMPLE_RATE = 16_000
 DEFAULT_MAX_NEW_TOKENS = 1_024
+DEFAULT_CHUNK_SECONDS = 300.0
 
 
 class Qwen3ASRDependencyError(ImportError):
@@ -120,6 +122,7 @@ class Qwen3Settings:
     device: Literal["auto", "cpu", "cuda"] = "auto"
     precision: Literal["auto", "fp32", "fp16"] = "auto"
     max_new_tokens: int = DEFAULT_MAX_NEW_TOKENS
+    chunk_seconds: float = DEFAULT_CHUNK_SECONDS
 
     def __post_init__(self) -> None:
         if not self.model.strip():
@@ -134,6 +137,8 @@ class Qwen3Settings:
             raise ValueError("Qwen3-ASR FP16 precision requires CUDA")
         if self.max_new_tokens <= 0:
             raise ValueError("max_new_tokens must be positive")
+        if not math.isfinite(self.chunk_seconds) or self.chunk_seconds <= 0:
+            raise ValueError("chunk_seconds must be positive and finite")
 
 
 @dataclass(slots=True)
@@ -168,6 +173,8 @@ class Qwen3ASRBackend:
             options={
                 "batch_size": 1,
                 "max_new_tokens": self.settings.max_new_tokens,
+                "chunk_seconds": self.settings.chunk_seconds,
+                "long_form_policy": "fixed-segment",
                 "attention_implementation": "sdpa",
                 "timestamps": False,
             },
@@ -237,25 +244,19 @@ class Qwen3ASRBackend:
         )
         if self._resolved_device == "cuda":
             runtime.torch.cuda.reset_peak_memory_stats()
-        request: dict[str, object] = {
-            "audio": decoded_audio.waveform,
-            "audio_kwargs": {"sampling_rate": decoded_audio.sample_rate},
-        }
-        if self.settings.language == "es":
-            request["language"] = "Spanish"
-        inputs = processor.apply_transcription_request(**request).to(model.device, model.dtype)
-        with runtime.torch.inference_mode():
-            output_ids = model.generate(
-                **inputs,
-                max_new_tokens=self.settings.max_new_tokens,
-                do_sample=False,
+        texts: list[str] = []
+        detected_languages: list[str] = []
+        segment_count = 0
+        for segment in _iter_audio_segments(decoded_audio, self.settings.chunk_seconds):
+            segment_count += 1
+            text, detected_language = self._transcribe_segment(
+                model, processor, runtime, segment
             )
-        if self._resolved_device == "cuda":
-            runtime.torch.cuda.synchronize()
-        input_ids = inputs["input_ids"]
-        generated_ids = output_ids[:, input_ids.shape[1] :]
-        decoded = processor.decode(generated_ids, return_format="parsed")
-        text, detected_language = _normalize_decoded(decoded, self.settings.language)
+            if text:
+                texts.append(text)
+            detected_languages.append(detected_language)
+        text = "\n".join(texts)
+        detected_language = detected_languages[0] if detected_languages else self.settings.language
         allocated: int | None = None
         reserved: int | None = None
         if self._resolved_device == "cuda":
@@ -274,11 +275,58 @@ class Qwen3ASRBackend:
                 "language_mode": "forced" if self.settings.language == "es" else "detected",
                 "batch_size": 1,
                 "timestamps": False,
+                "long_form_policy": "fixed-segment",
+                "segment_seconds": self.settings.chunk_seconds,
+                "segment_count": segment_count,
                 "audio_decoder": "soundfile",
                 "audio_sample_rate": decoded_audio.sample_rate,
                 "audio_channels": 1,
             },
         )
+
+    def _transcribe_segment(
+        self,
+        model: _QwenModel,
+        processor: _Processor,
+        runtime: Qwen3RuntimeBundle,
+        audio: _DecodedAudio,
+    ) -> tuple[str, str]:
+        inputs: Any = None
+        output_ids: Any = None
+        input_ids: Any = None
+        generated_ids: Any = None
+        decoded: Any = None
+        try:
+            request: dict[str, object] = {
+                "audio": audio.waveform,
+                "audio_kwargs": {"sampling_rate": audio.sample_rate},
+            }
+            if self.settings.language == "es":
+                request["language"] = "Spanish"
+            inputs = processor.apply_transcription_request(**request).to(
+                model.device, model.dtype
+            )
+            with runtime.torch.inference_mode():
+                output_ids = model.generate(
+                    **inputs,
+                    max_new_tokens=self.settings.max_new_tokens,
+                    do_sample=False,
+                )
+            if self._resolved_device == "cuda":
+                runtime.torch.cuda.synchronize()
+            input_ids = inputs["input_ids"]
+            generated_ids = output_ids[:, input_ids.shape[1] :]
+            decoded = processor.decode(generated_ids, return_format="parsed")
+            return _normalize_decoded(decoded, self.settings.language)
+        finally:
+            inputs = None
+            output_ids = None
+            input_ids = None
+            generated_ids = None
+            decoded = None
+            gc.collect()
+            if self._resolved_device == "cuda":
+                runtime.torch.cuda.empty_cache()
 
     def close(self) -> None:
         self._processor = None
@@ -325,6 +373,21 @@ def _decode_normalized_wav(soundfile: _SoundFileRuntime, path: Path) -> _Decoded
         sample_rate=sample_rate,
         duration_seconds=frame_count / sample_rate,
     )
+
+
+def _iter_audio_segments(audio: _DecodedAudio, chunk_seconds: float) -> Iterator[_DecodedAudio]:
+    frame_count = int(audio.waveform.shape[0])
+    chunk_frames = max(1, int(audio.sample_rate * chunk_seconds))
+    if frame_count <= chunk_frames:
+        yield audio
+        return
+    for start in range(0, frame_count, chunk_frames):
+        stop = min(start + chunk_frames, frame_count)
+        yield _DecodedAudio(
+            waveform=audio.waveform[start:stop],
+            sample_rate=audio.sample_rate,
+            duration_seconds=(stop - start) / audio.sample_rate,
+        )
 
 
 def _normalize_decoded(decoded: list[object], requested_language: str) -> tuple[str, str]:

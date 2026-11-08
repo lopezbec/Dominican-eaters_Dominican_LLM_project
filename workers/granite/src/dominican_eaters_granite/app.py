@@ -100,6 +100,8 @@ class WorkerService:
                 "device": settings.device,
                 "precision": settings.precision,
                 "batch_size": 1,
+                "segmentation": "fixed",
+                "chunk_length_seconds": settings.chunk_length_seconds,
             },
         )
         environment = dict(inspection.environment)
@@ -154,12 +156,17 @@ class WorkerService:
         if backend_name not in self._factories:
             raise ValueError(f"Unsupported Granite backend {backend_name!r}; expected 'granite'")
         options = cast(dict[str, JSONValue], params["options"])
-        unknown = sorted(set(options) - {"max_new_tokens"})
+        unknown = sorted(set(options) - {"max_new_tokens", "chunk_length_seconds"})
         if unknown:
             raise ValueError(f"Unknown Granite options: {', '.join(unknown)}")
         max_new_tokens = options.get("max_new_tokens", 200)
         if isinstance(max_new_tokens, bool) or not isinstance(max_new_tokens, int):
             raise TypeError("max_new_tokens must be an integer")
+        chunk_length_seconds = options.get("chunk_length_seconds", 30.0)
+        if isinstance(chunk_length_seconds, bool) or not isinstance(
+            chunk_length_seconds, (int, float)
+        ):
+            raise TypeError("chunk_length_seconds must be a number")
         quantization = params.get("quantization")
         if quantization not in (None, "none"):
             raise ValueError("The Transformers Granite worker does not support quantization")
@@ -175,6 +182,7 @@ class WorkerService:
             device=cast(str, params["device"]),  # type: ignore[arg-type]
             precision=cast(str, params["precision"]),  # type: ignore[arg-type]
             max_new_tokens=max_new_tokens,
+            chunk_length_seconds=float(chunk_length_seconds),
             preset_id=cast(str | None, preset),
         )
 

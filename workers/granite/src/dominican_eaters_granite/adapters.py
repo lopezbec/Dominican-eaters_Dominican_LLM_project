@@ -5,6 +5,7 @@ from __future__ import annotations
 import gc
 import importlib
 import importlib.metadata
+import math
 import platform
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -17,6 +18,7 @@ DEFAULT_MODEL = "ibm-granite/granite-speech-4.1-2b"
 PROMPT_TEMPLATE_ID = "granite-speech-4.1-asr-punctuated-v1"
 PROMPT = "<|audio|>transcribe the speech with proper punctuation and capitalization."
 ENVIRONMENT_LOCK_ID = "dominican-eaters-granite-transformers-v2"
+DEFAULT_CHUNK_LENGTH_SECONDS = 30.0
 
 
 class GraniteDependencyError(ImportError):
@@ -43,6 +45,8 @@ class _Tensor(Protocol):
 class _AudioSamples(Protocol):
     @property
     def shape(self) -> tuple[int, ...]: ...
+
+    def __getitem__(self, key: slice) -> _AudioSamples: ...
 
 
 class _TorchRuntime(Protocol):
@@ -137,6 +141,7 @@ class GraniteSettings:
     device: Literal["auto", "cpu", "cuda"] = "auto"
     precision: Literal["auto", "fp32", "fp16"] = "auto"
     max_new_tokens: int = 200
+    chunk_length_seconds: float = DEFAULT_CHUNK_LENGTH_SECONDS
     preset_id: str | None = None
 
     def __post_init__(self) -> None:
@@ -152,6 +157,8 @@ class GraniteSettings:
             raise ValueError("Granite FP16 requires CUDA")
         if self.max_new_tokens <= 0:
             raise ValueError("max_new_tokens must be positive")
+        if not math.isfinite(self.chunk_length_seconds) or self.chunk_length_seconds <= 0:
+            raise ValueError("chunk_length_seconds must be finite and positive")
 
 
 @dataclass(slots=True)
@@ -183,7 +190,12 @@ class GraniteBackend:
             effective_device=self._resolved_device,
             effective_precision=self._resolved_precision,
             runtime_versions=dict(self._runtime_versions),
-            options={"max_new_tokens": self.settings.max_new_tokens, "batch_size": 1},
+            options={
+                "max_new_tokens": self.settings.max_new_tokens,
+                "batch_size": 1,
+                "segmentation": "fixed",
+                "chunk_length_seconds": self.settings.chunk_length_seconds,
+            },
             preset_id=self.settings.preset_id,
             runtime_id="granite",
             model_revision_requested=self.settings.model_revision,
@@ -249,20 +261,37 @@ class GraniteBackend:
         )
         if len(samples.shape) != 1 or sample_rate != 16_000:
             raise ValueError("Granite input must be mono 16 kHz audio")
-        waveform = runtime.torch.from_numpy(samples).unsqueeze(0)
+        sample_count = int(samples.shape[0])
+        if sample_count == 0:
+            raise ValueError("Granite input must contain audio samples")
+        chunk_samples = max(1, int(self.settings.chunk_length_seconds * sample_rate))
+        chunk_count = max(1, (sample_count + chunk_samples - 1) // chunk_samples)
+        resolved_duration = (
+            duration_seconds if duration_seconds is not None else sample_count / sample_rate
+        )
         if self._resolved_device == "cuda":
             runtime.torch.cuda.reset_peak_memory_stats()
-        text = self._infer(waveform)
-        if self._resolved_device == "cuda":
-            runtime.torch.cuda.synchronize()
         allocated = reserved = None
-        if self._resolved_device == "cuda":
-            allocated = int(runtime.torch.cuda.max_memory_allocated())
-            reserved = int(runtime.torch.cuda.max_memory_reserved())
+        chunks: list[str] = []
+        try:
+            for start in range(0, sample_count, chunk_samples):
+                chunk = samples[start : start + chunk_samples]
+                waveform = runtime.torch.from_numpy(chunk).unsqueeze(0)
+                text = self._infer(waveform)
+                if text:
+                    chunks.append(text)
+            if self._resolved_device == "cuda":
+                runtime.torch.cuda.synchronize()
+                allocated = int(runtime.torch.cuda.max_memory_allocated())
+                reserved = int(runtime.torch.cuda.max_memory_reserved())
+        finally:
+            # A failed long sample must not poison every later request in this worker.
+            if self._resolved_device == "cuda":
+                runtime.torch.cuda.empty_cache()
         return Transcript(
-            text=text,
+            text=" ".join(chunks),
             language=self.settings.language,
-            audio_duration_seconds=duration_seconds,
+            audio_duration_seconds=resolved_duration,
             gpu_peak_allocated_bytes=allocated,
             gpu_peak_reserved_bytes=reserved,
             metadata={
@@ -270,6 +299,9 @@ class GraniteBackend:
                 "device": self._resolved_device,
                 "precision": self._resolved_precision,
                 "prompt_template_id": PROMPT_TEMPLATE_ID,
+                "segmentation": "fixed",
+                "chunk_length_seconds": self.settings.chunk_length_seconds,
+                "chunk_count": chunk_count,
             },
         )
 

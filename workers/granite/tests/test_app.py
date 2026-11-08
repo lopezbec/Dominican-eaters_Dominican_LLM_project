@@ -123,6 +123,8 @@ def test_preflight_is_no_weight_and_reports_environment() -> None:
 
     assert result["ready"] is True
     assert result["environment"]["weights_loaded"] is False  # type: ignore[index]
+    assert result["checks"][0]["details"]["segmentation"] == "fixed"  # type: ignore[index]
+    assert result["checks"][0]["details"]["chunk_length_seconds"] == 30.0  # type: ignore[index]
     assert factory_calls == 0
 
 
@@ -132,6 +134,22 @@ def test_preflight_rejects_quantization_and_unknown_options() -> None:
     assert result["ready"] is False
     result = service.preflight(params(options={"timestamps": True}))  # type: ignore[arg-type]
     assert result["ready"] is False
+    result = service.preflight(params(options={"chunk_length_seconds": True}))  # type: ignore[arg-type]
+    assert result["ready"] is False
+
+
+def test_load_accepts_fixed_window_length() -> None:
+    created: list[FakeBackend] = []
+
+    def factory(settings: GraniteSettings) -> FakeBackend:
+        backend = FakeBackend(settings)
+        created.append(backend)
+        return backend
+
+    service = WorkerService({"granite": factory})
+    service.load(params(options={"chunk_length_seconds": 20.0}))  # type: ignore[arg-type]
+
+    assert created[0].settings.chunk_length_seconds == 20.0
 
 
 def test_load_error_is_structured_and_does_not_corrupt_stdout() -> None:

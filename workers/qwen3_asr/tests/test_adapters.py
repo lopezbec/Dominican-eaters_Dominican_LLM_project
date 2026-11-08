@@ -51,14 +51,21 @@ class FakeTorch:
 
 
 class FakeMonoAudio:
-    shape = (8_000,)
+    def __init__(self, frame_count: int = 8_000) -> None:
+        self.shape = (frame_count,)
+        self.slices: list[slice] = []
+
+    def __getitem__(self, item: slice) -> FakeMonoAudio:
+        self.slices.append(item)
+        start = 0 if item.start is None else item.start
+        stop = self.shape[0] if item.stop is None else item.stop
+        return FakeMonoAudio(stop - start)
 
 
 class FakeAudioFrames:
-    shape = (8_000, 2)
-
-    def __init__(self) -> None:
-        self.mono = FakeMonoAudio()
+    def __init__(self, frame_count: int = 8_000) -> None:
+        self.shape = (frame_count, 2)
+        self.mono = FakeMonoAudio(frame_count)
         self.mean_axes: list[int] = []
 
     def mean(self, *, axis: int) -> FakeMonoAudio:
@@ -283,3 +290,54 @@ def test_normalized_wav_contract_rejects_wrong_sample_rate(tmp_path: Path) -> No
 
     with pytest.raises(ValueError, match="requires normalized 16000 Hz"):
         backend.transcribe(wav_file(tmp_path / "sample.wav"))
+
+
+def test_long_audio_is_joined_from_t4_bounded_segments(tmp_path: Path) -> None:
+    bundle, torch, model, processor, _model_factory, _processor_factory = runtime(
+        cuda=True, parsed={"language": "Spanish", "transcription": "segmento"}
+    )
+    bundle.soundfile.frames = FakeAudioFrames(40_000)
+    backend = Qwen3ASRBackend(
+        Qwen3Settings(
+            model="model", device="cuda", precision="fp16", chunk_seconds=1.0
+        ),
+        runtime_loader=lambda: bundle,
+    )
+    backend.load()
+
+    result = backend.transcribe(wav_file(tmp_path / "sample.wav"))
+
+    assert len(processor.requests) == 3
+    assert [request["audio"].shape[0] for request in processor.requests] == [
+        16_000,
+        16_000,
+        8_000,
+    ]
+    assert len(model.generate_calls) == 3
+    assert result.text == "segmento\nsegmento\nsegmento"
+    assert result.audio_duration_seconds == 2.5
+    assert result.metadata["long_form_policy"] == "fixed-segment"
+    assert result.metadata["segment_seconds"] == 1.0
+    assert result.metadata["segment_count"] == 3
+    assert torch.cuda.empty_calls == 3
+
+
+def test_failed_generation_releases_cuda_cache(tmp_path: Path) -> None:
+    bundle, torch, model, _processor, _model_factory, _processor_factory = runtime(
+        cuda=True, parsed={"language": "Spanish", "transcription": "segmento"}
+    )
+
+    def fail(**_inputs: object) -> object:
+        raise RuntimeError("CUDA out of memory")
+
+    model.generate = fail  # type: ignore[method-assign]
+    backend = Qwen3ASRBackend(
+        Qwen3Settings(model="model", device="cuda", precision="fp16"),
+        runtime_loader=lambda: bundle,
+    )
+    backend.load()
+
+    with pytest.raises(RuntimeError, match="out of memory"):
+        backend.transcribe(wav_file(tmp_path / "sample.wav"))
+
+    assert torch.cuda.empty_calls == 1

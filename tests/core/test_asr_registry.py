@@ -72,16 +72,19 @@ def test_non_current_presets_have_an_honest_reason() -> None:
 
 def test_capabilities_do_not_claim_unavailable_timestamps_or_streaming() -> None:
     whisper = MODEL_PRESETS["whisper-base"].capabilities
+    granite = MODEL_PRESETS["granite-speech-4.1-2b"].capabilities
     qwen3 = MODEL_PRESETS["qwen3-asr-1.7b"].capabilities
     voxtral = MODEL_PRESETS["voxtral-mini-3b-2507"].capabilities
 
     assert not whisper.timestamps
+    assert granite.long_form_policy == "chunked"
     assert not qwen3.timestamps
     assert not qwen3.streaming
     assert qwen3.language_detection
+    assert qwen3.long_form_policy == "chunked"
     assert not voxtral.timestamps
     assert not voxtral.streaming
-    assert voxtral.long_form_policy == "native-30-minutes"
+    assert voxtral.long_form_policy == "chunked"
 
 
 def test_runtime_specs_capture_isolation_and_compatibility_fields() -> None:

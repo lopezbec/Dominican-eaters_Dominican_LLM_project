@@ -131,6 +131,7 @@ def test_preflight_imports_runtime_without_loading_weights(
     assert response.result["ready"] is True
     assert response.result["environment"]["weights_loaded"] is False  # type: ignore[index]
     assert response.result["checks"][0]["details"]["max_new_tokens"] == 1_024  # type: ignore[index]
+    assert response.result["checks"][0]["details"]["chunk_seconds"] == 300.0  # type: ignore[index]
     assert model_loads == []
 
 
@@ -166,3 +167,6 @@ def test_protocol_lifecycle_and_constraints(tmp_path: Path) -> None:
     preflight = invalid.preflight(params(options={"timestamps": True}))
     assert preflight["ready"] is False
     assert "forced-aligner" in str(preflight["checks"])
+    preflight = invalid.preflight(params(options={"chunk_seconds": 0}))
+    assert preflight["ready"] is False
+    assert "positive and finite" in str(preflight["checks"])
