@@ -19,6 +19,7 @@ PROMPT_TEMPLATE_ID = "granite-speech-4.1-asr-punctuated-v1"
 PROMPT = "<|audio|>transcribe the speech with proper punctuation and capitalization."
 ENVIRONMENT_LOCK_ID = "dominican-eaters-granite-transformers-v2"
 DEFAULT_CHUNK_LENGTH_SECONDS = 30.0
+MINIMUM_FINAL_CHUNK_SECONDS = 1.0
 
 
 class GraniteDependencyError(ImportError):
@@ -59,9 +60,7 @@ class _TorchRuntime(Protocol):
 
 
 class _AudioRuntime(Protocol):
-    def read(
-        self, path: str, *, dtype: str, always_2d: bool
-    ) -> tuple[_AudioSamples, int]: ...
+    def read(self, path: str, *, dtype: str, always_2d: bool) -> tuple[_AudioSamples, int]: ...
 
 
 class _Batch(Protocol):
@@ -110,6 +109,25 @@ class GraniteRuntimeBundle:
 
 
 RuntimeLoader = Callable[[], GraniteRuntimeBundle]
+
+
+def _fixed_window_spans(
+    sample_count: int,
+    chunk_samples: int,
+    *,
+    minimum_final_samples: int,
+) -> list[tuple[int, int]]:
+    """Return contiguous bounded windows without leaving an undersized tail."""
+
+    boundaries = list(range(0, sample_count, chunk_samples))
+    boundaries.append(sample_count)
+    if len(boundaries) > 2:
+        final_samples = boundaries[-1] - boundaries[-2]
+        combined_final_samples = boundaries[-1] - boundaries[-3]
+        target_final_samples = min(minimum_final_samples, combined_final_samples // 2)
+        if final_samples < target_final_samples:
+            boundaries[-2] = sample_count - target_final_samples
+    return list(zip(boundaries[:-1], boundaries[1:], strict=True))
 
 
 def load_granite_runtime() -> GraniteRuntimeBundle:
@@ -265,7 +283,12 @@ class GraniteBackend:
         if sample_count == 0:
             raise ValueError("Granite input must contain audio samples")
         chunk_samples = max(1, int(self.settings.chunk_length_seconds * sample_rate))
-        chunk_count = max(1, (sample_count + chunk_samples - 1) // chunk_samples)
+        spans = _fixed_window_spans(
+            sample_count,
+            chunk_samples,
+            minimum_final_samples=int(MINIMUM_FINAL_CHUNK_SECONDS * sample_rate),
+        )
+        chunk_count = len(spans)
         resolved_duration = (
             duration_seconds if duration_seconds is not None else sample_count / sample_rate
         )
@@ -274,8 +297,8 @@ class GraniteBackend:
         allocated = reserved = None
         chunks: list[str] = []
         try:
-            for start in range(0, sample_count, chunk_samples):
-                chunk = samples[start : start + chunk_samples]
+            for start, stop in spans:
+                chunk = samples[start:stop]
                 waveform = runtime.torch.from_numpy(chunk).unsqueeze(0)
                 text = self._infer(waveform)
                 if text:

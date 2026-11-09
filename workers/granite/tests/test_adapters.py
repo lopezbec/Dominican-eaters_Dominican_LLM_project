@@ -88,9 +88,7 @@ class FakeSoundFile:
         self.rate = rate
         self.calls: list[tuple[str, str, bool]] = []
 
-    def read(
-        self, path: str, *, dtype: str, always_2d: bool
-    ) -> tuple[FakeAudioSamples, int]:
+    def read(self, path: str, *, dtype: str, always_2d: bool) -> tuple[FakeAudioSamples, int]:
         self.calls.append((path, dtype, always_2d))
         return self.samples, self.rate
 
@@ -275,6 +273,31 @@ def test_long_audio_uses_fixed_windows_joins_text_and_derives_duration(tmp_path:
     assert torch.cuda.reset_calls == 1
     assert torch.cuda.sync_calls == 1
     assert torch.cuda.empty_calls == 1
+
+
+@pytest.mark.parametrize("tail_samples", [18, 26, 212])
+def test_near_chunk_multiple_rebalances_tiny_final_window(
+    tmp_path: Path, tail_samples: int
+) -> None:
+    bundle, _torch, audio, processor, _model, *_ = runtime()
+    sample_count = 60 * 16_000 + tail_samples
+    audio.samples = FakeAudioSamples((sample_count,))
+    backend = GraniteBackend(
+        GraniteSettings(device="cuda", precision="fp16", chunk_length_seconds=30.0),
+        runtime_loader=lambda: bundle,
+    )
+    path = tmp_path / "near-multiple.wav"
+    path.write_bytes(b"fixture")
+
+    backend.load()
+    transcript = backend.transcribe(path.resolve())
+
+    window_sizes = [call[1].shape[1] for call in processor.calls]
+    assert window_sizes == [30 * 16_000, 29 * 16_000 + tail_samples, 16_000]
+    assert sum(window_sizes) == sample_count
+    assert max(window_sizes) <= 30 * 16_000
+    assert transcript.audio_duration_seconds == sample_count / 16_000
+    assert transcript.metadata["chunk_count"] == 3
 
 
 def test_failed_generation_releases_cuda_cache_for_next_sample(tmp_path: Path) -> None:
